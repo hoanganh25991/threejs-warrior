@@ -25,7 +25,6 @@
 - [ ] Add mana bar on hero
 - [ ] Add stamina bar on hero
 - [ ] Add a skill system, like attack, defend, cast spell, etc.
-
 - [ ] Add skills for each hero
 - [ ] Add basic attach for hero, some hero attach melee, some hero attach range
 - [ ] Add attach animation for hero
