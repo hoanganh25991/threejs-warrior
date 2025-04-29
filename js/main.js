@@ -188,22 +188,24 @@ class Game {
             const heroPosition = this.hero.getPosition();
             const heroDirection = this.hero.getDirection();
             
-            // Update camera to follow hero with offset based on direction
-            // Position camera behind and slightly above the hero
-            const cameraOffset = new THREE.Vector3(0, 3, 8); // Adjust these values as needed
+            // Disable OrbitControls when game is started
+            this.controls.enabled = false;
             
-            // Calculate camera position based on hero rotation
-            const rotatedOffset = cameraOffset.clone().applyAxisAngle(
-                new THREE.Vector3(0, 1, 0), 
-                this.hero.rotation.y
-            );
+            // Get the hero's position and rotation
+            const heroRotation = this.hero.rotation;
             
-            // Set camera position
-            this.camera.position.copy(heroPosition).add(rotatedOffset);
+            // Set the camera position to match the hero's position (first-person view)
+            // Position the camera at the hero's eye level
+            const eyeHeight = 1.7; // Approximate eye height
+            this.camera.position.copy(heroPosition);
+            this.camera.position.y += eyeHeight;
             
-            // Look at a point slightly above the hero
-            const lookTarget = heroPosition.clone();
-            lookTarget.y += 1.5; // Look at head level
+            // Set the camera's rotation to match the hero's rotation
+            this.camera.rotation.set(heroRotation.x, heroRotation.y, 0, 'YXZ');
+            
+            // Update the camera's direction to match the hero's look direction
+            const lookDirection = this.hero.getDirection();
+            const lookTarget = new THREE.Vector3().copy(this.camera.position).add(lookDirection);
             this.camera.lookAt(lookTarget);
         }
         

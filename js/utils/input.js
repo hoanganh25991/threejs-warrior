@@ -11,7 +11,7 @@ export class InputHandler {
             buttons: [false, false, false]
         };
         this.isPointerLocked = false;
-        this.mouseSensitivity = 0.5; // Adjust this value to change mouse sensitivity
+        this.mouseSensitivity = config.controls.mouse.sensitivity; // Use sensitivity from config
         
         // Initialize key states
         for (const action in config.controls.keyboard) {
@@ -155,6 +155,7 @@ export class InputHandler {
     // Get look direction from E and Q keys or mouse
     getLookDirection() {
         let lookX = 0;
+        let lookY = 0;
         
         // Handle E and Q keys for simple left/right looking
         if (this.keys['e']) {
@@ -167,11 +168,12 @@ export class InputHandler {
         // Add mouse movement if pointer is locked
         if (this.isPointerLocked) {
             lookX += this.mouse.movementX;
+            lookY += this.mouse.movementY; // Add vertical mouse movement
         }
         
         return {
             x: lookX,
-            y: this.isPointerLocked ? this.mouse.movementY : 0
+            y: lookY
         };
     }
     

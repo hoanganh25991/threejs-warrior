@@ -123,9 +123,10 @@ export class Hero {
         
         // Vertical rotation (around X axis) - limit to avoid flipping
         this.rotation.x -= lookDir.y * 0.01;
-        this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+        // Clamp vertical rotation to prevent flipping over
+        this.rotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.rotation.x));
         
-        // Apply rotation to the group
+        // Apply rotation to the group - only Y rotation affects the character model
         this.group.rotation.y = this.rotation.y;
         
         // Reset input handler movement to avoid continuous rotation
@@ -133,7 +134,7 @@ export class Hero {
     }
     
     updateDirection() {
-        // Update direction vector based on current rotation
+        // Update direction vector based on current rotation (both horizontal and vertical)
         this.direction.set(0, 0, -1).applyEuler(this.rotation);
     }
     
