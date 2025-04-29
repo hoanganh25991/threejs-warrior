@@ -1,2 +1,30 @@
 - [x] Base on the `docs/requirement.md`, Implemented Features, only use simple setup: index.html, script tag type module, three.js
 - [x] Add mouse capture for look direction control and E/Q keys for simple left/right looking
+- [ ] Add a skybox
+- [ ] Add a ground plane
+- [ ] Add some objects to interact with
+- [ ] Add some lights
+- [ ] Add some sounds
+- [ ] Add some animations
+- [ ] Add collision check, hero can jump on the rock, hero can stand on roof, hero can walk, jump on brige, stair, add stair on castle to test that we can walk on stair
+- [ ] Press go forward + go left: auto go forward and look direction change left
+- [ ] Press go forward + go right: auto go forward and look direction change right
+- [ ] Press go backward + go left: auto go backward and look direction change left
+- [ ] Press go backward + go right: auto go backward and look direction change right
+- [ ] Press go up + go left: auto go up and look direction change left
+- [ ] Press go down + go left: auto go down and look direction change left
+- [ ] Press go up + go right: auto go up and look direction change right
+- [ ] Press go down + go right: auto go down and look direction change right
+- [ ] Add a camera follow hero
+- [ ] Add a UI panel to show current status of hero, like health bar, mana bar, etc.
+- [ ] Add a HUD to show current status of game, like time, score, etc.
+- [ ] Add health bar above head of hero
+- [ ] Add mana bar on hero
+- [ ] Add stamina bar on hero
+- [ ] Add a skill system, like attack, defend, cast spell, etc.
+
+- [ ] Add skills for each hero
+- [ ] Add basic attach for hero, some hero attach melee, some hero attach range
+- [ ] Add attach animation for hero
+- [ ] Add attach sound for hero
+- [ ] Add attach effect for hero

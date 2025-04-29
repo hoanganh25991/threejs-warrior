@@ -44,33 +44,23 @@ export class Hero {
         this.group = new THREE.Group();
         this.scene.add(this.group);
         
-        // Create a simple placeholder mesh for now
-        // In a full implementation, we would load a GLTF model
-        const geometry = new THREE.BoxGeometry(1, 2, 1);
-        
-        // Different colors for different hero types
-        let color;
+        // Create a complex hero model based on hero type
         switch(this.heroType) {
             case 'dragon-knight':
-                color = 0xff0000; // Red
+                this.createDragonKnight();
                 break;
             case 'axe':
-                color = 0x8b0000; // Dark red
+                this.createAxe();
                 break;
             case 'crystal-maiden':
-                color = 0x00ffff; // Cyan
+                this.createCrystalMaiden();
                 break;
             case 'lina':
-                color = 0xff4500; // Orange red
+                this.createLina();
                 break;
             default:
-                color = 0xffffff; // White
+                this.createDefaultHero();
         }
-        
-        const material = new THREE.MeshStandardMaterial({ color });
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.y = 1; // Set height
-        this.mesh.castShadow = true;
         
         // Add a direction indicator (arrow) to show which way the hero is facing
         const arrowGeometry = new THREE.ConeGeometry(0.2, 0.8, 8);
@@ -82,12 +72,625 @@ export class Hero {
         // Create wings (initially hidden)
         this.createWings();
         
-        // Add mesh and arrow to group
-        this.group.add(this.mesh);
+        // Add arrow to group
         this.group.add(this.arrow);
         
         // Initialize skills based on hero type
         this.initSkills();
+    }
+    
+    createDragonKnight() {
+        // Create a more complex Dragon Knight model
+        const bodyGroup = new THREE.Group();
+        
+        // Body - slightly larger and more armored
+        const bodyGeometry = new THREE.BoxGeometry(1.2, 1.4, 0.8);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B0000, // Dark red
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.9;
+        body.castShadow = true;
+        bodyGroup.add(body);
+        
+        // Head with dragon-like features
+        const headGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+        const headMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xA52A2A, // Brown
+            metalness: 0.5,
+            roughness: 0.5
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.75;
+        head.castShadow = true;
+        bodyGroup.add(head);
+        
+        // Dragon horns
+        const hornGeometry = new THREE.ConeGeometry(0.1, 0.4, 8);
+        const hornMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x696969, // Dark gray
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        
+        // Left horn
+        const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        leftHorn.position.set(-0.25, 2.1, 0);
+        leftHorn.rotation.z = Math.PI / 6;
+        leftHorn.castShadow = true;
+        bodyGroup.add(leftHorn);
+        
+        // Right horn
+        const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+        rightHorn.position.set(0.25, 2.1, 0);
+        rightHorn.rotation.z = -Math.PI / 6;
+        rightHorn.castShadow = true;
+        bodyGroup.add(rightHorn);
+        
+        // Armor plates
+        const plateGeometry = new THREE.BoxGeometry(1.4, 0.3, 1);
+        const plateMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xCD5C5C, // Indian red
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        
+        // Shoulder plates
+        const shoulderPlate = new THREE.Mesh(plateGeometry, plateMaterial);
+        shoulderPlate.position.y = 1.5;
+        shoulderPlate.castShadow = true;
+        bodyGroup.add(shoulderPlate);
+        
+        // Arms - more muscular
+        const armGeometry = new THREE.BoxGeometry(0.3, 0.8, 0.3);
+        const armMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B0000, // Dark red
+            metalness: 0.6,
+            roughness: 0.4
+        });
+        
+        // Left arm
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        leftArm.position.set(-0.75, 1.2, 0);
+        leftArm.castShadow = true;
+        bodyGroup.add(leftArm);
+        
+        // Right arm
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+        rightArm.position.set(0.75, 1.2, 0);
+        rightArm.castShadow = true;
+        bodyGroup.add(rightArm);
+        
+        // Legs
+        const legGeometry = new THREE.BoxGeometry(0.3, 0.9, 0.3);
+        const legMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B0000, // Dark red
+            metalness: 0.6,
+            roughness: 0.4
+        });
+        
+        // Left leg
+        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        leftLeg.position.set(-0.3, 0.45, 0);
+        leftLeg.castShadow = true;
+        bodyGroup.add(leftLeg);
+        
+        // Right leg
+        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        rightLeg.position.set(0.3, 0.45, 0);
+        rightLeg.castShadow = true;
+        bodyGroup.add(rightLeg);
+        
+        // Sword
+        const swordGroup = new THREE.Group();
+        
+        // Sword blade
+        const bladeGeometry = new THREE.BoxGeometry(0.1, 1.2, 0.05);
+        const bladeMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xC0C0C0, // Silver
+            metalness: 1.0,
+            roughness: 0.0
+        });
+        const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+        blade.position.y = 0.6;
+        blade.castShadow = true;
+        swordGroup.add(blade);
+        
+        // Sword handle
+        const handleGeometry = new THREE.BoxGeometry(0.15, 0.3, 0.15);
+        const handleMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B4513, // Saddle brown
+            metalness: 0.2,
+            roughness: 0.8
+        });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.position.y = -0.15;
+        handle.castShadow = true;
+        swordGroup.add(handle);
+        
+        // Position sword in right hand
+        swordGroup.position.set(1.1, 1.2, 0.2);
+        swordGroup.rotation.z = Math.PI / 4;
+        bodyGroup.add(swordGroup);
+        
+        // Shield
+        const shieldGeometry = new THREE.BoxGeometry(0.1, 0.8, 0.6);
+        const shieldMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xB22222, // Firebrick
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+        shield.position.set(-1.0, 1.2, 0);
+        shield.castShadow = true;
+        bodyGroup.add(shield);
+        
+        // Add the complete body to the group
+        this.group.add(bodyGroup);
+        this.mesh = body; // Set the main body as the reference mesh
+    }
+    
+    createAxe() {
+        // Create a more complex Axe model
+        const bodyGroup = new THREE.Group();
+        
+        // Body - bulky and muscular
+        const bodyGeometry = new THREE.BoxGeometry(1.5, 1.3, 0.9);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B0000, // Dark red
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.9;
+        body.castShadow = true;
+        bodyGroup.add(body);
+        
+        // Head - smaller relative to body
+        const headGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+        const headMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xA0522D, // Sienna
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.85;
+        head.castShadow = true;
+        bodyGroup.add(head);
+        
+        // Helmet
+        const helmetGeometry = new THREE.CylinderGeometry(0.35, 0.4, 0.4, 8);
+        const helmetMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x696969, // Dark gray
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+        helmet.position.y = 2.0;
+        helmet.castShadow = true;
+        bodyGroup.add(helmet);
+        
+        // Shoulder armor - massive
+        const shoulderGeometry = new THREE.SphereGeometry(0.4, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+        const shoulderMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B0000, // Dark red
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        
+        // Left shoulder
+        const leftShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+        leftShoulder.position.set(-0.75, 1.5, 0);
+        leftShoulder.rotation.z = -Math.PI / 2;
+        leftShoulder.castShadow = true;
+        bodyGroup.add(leftShoulder);
+        
+        // Right shoulder
+        const rightShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial);
+        rightShoulder.position.set(0.75, 1.5, 0);
+        rightShoulder.rotation.z = Math.PI / 2;
+        rightShoulder.castShadow = true;
+        bodyGroup.add(rightShoulder);
+        
+        // Arms - very muscular
+        const armGeometry = new THREE.BoxGeometry(0.4, 0.9, 0.4);
+        const armMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xA0522D, // Sienna
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        
+        // Left arm
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        leftArm.position.set(-0.95, 1.1, 0);
+        leftArm.castShadow = true;
+        bodyGroup.add(leftArm);
+        
+        // Right arm
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+        rightArm.position.set(0.95, 1.1, 0);
+        rightArm.castShadow = true;
+        bodyGroup.add(rightArm);
+        
+        // Legs - thick and powerful
+        const legGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.4);
+        const legMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B4513, // Saddle brown
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        
+        // Left leg
+        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        leftLeg.position.set(-0.4, 0.4, 0);
+        leftLeg.castShadow = true;
+        bodyGroup.add(leftLeg);
+        
+        // Right leg
+        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        rightLeg.position.set(0.4, 0.4, 0);
+        rightLeg.castShadow = true;
+        bodyGroup.add(rightLeg);
+        
+        // Battle Axe
+        const axeGroup = new THREE.Group();
+        
+        // Axe handle
+        const handleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2, 8);
+        const handleMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B4513, // Saddle brown
+            metalness: 0.2,
+            roughness: 0.8
+        });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        handle.castShadow = true;
+        axeGroup.add(handle);
+        
+        // Axe blade
+        const bladeGeometry = new THREE.ConeGeometry(0.4, 0.8, 4);
+        const bladeMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xC0C0C0, // Silver
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+        blade.position.y = 0.8;
+        blade.rotation.z = Math.PI / 2;
+        blade.castShadow = true;
+        axeGroup.add(blade);
+        
+        // Position axe in hands
+        axeGroup.position.set(0.8, 1.2, 0.5);
+        axeGroup.rotation.x = Math.PI / 4;
+        bodyGroup.add(axeGroup);
+        
+        // Add the complete body to the group
+        this.group.add(bodyGroup);
+        this.mesh = body; // Set the main body as the reference mesh
+    }
+    
+    createCrystalMaiden() {
+        // Create a more complex Crystal Maiden model
+        const bodyGroup = new THREE.Group();
+        
+        // Body - slender and feminine
+        const bodyGeometry = new THREE.BoxGeometry(0.8, 1.4, 0.6);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x87CEFA, // Light sky blue
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.9;
+        body.castShadow = true;
+        bodyGroup.add(body);
+        
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const headMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFFE4E1, // Misty rose
+            metalness: 0.1,
+            roughness: 0.9
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.8;
+        head.castShadow = true;
+        bodyGroup.add(head);
+        
+        // Hair/Hood
+        const hoodGeometry = new THREE.ConeGeometry(0.4, 0.8, 16, 1, true);
+        const hoodMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x00BFFF, // Deep sky blue
+            metalness: 0.2,
+            roughness: 0.8,
+            side: THREE.DoubleSide
+        });
+        const hood = new THREE.Mesh(hoodGeometry, hoodMaterial);
+        hood.position.y = 2.0;
+        hood.rotation.x = Math.PI;
+        hood.castShadow = true;
+        bodyGroup.add(hood);
+        
+        // Cape
+        const capeGeometry = new THREE.PlaneGeometry(1.2, 1.8);
+        const capeMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x00BFFF, // Deep sky blue
+            metalness: 0.2,
+            roughness: 0.8,
+            side: THREE.DoubleSide
+        });
+        const cape = new THREE.Mesh(capeGeometry, capeMaterial);
+        cape.position.set(0, 1.2, -0.4);
+        cape.castShadow = true;
+        bodyGroup.add(cape);
+        
+        // Arms - slender
+        const armGeometry = new THREE.BoxGeometry(0.2, 0.7, 0.2);
+        const armMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x87CEFA, // Light sky blue
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        
+        // Left arm
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        leftArm.position.set(-0.5, 1.2, 0);
+        leftArm.castShadow = true;
+        bodyGroup.add(leftArm);
+        
+        // Right arm
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+        rightArm.position.set(0.5, 1.2, 0);
+        rightArm.castShadow = true;
+        bodyGroup.add(rightArm);
+        
+        // Legs
+        const legGeometry = new THREE.BoxGeometry(0.25, 0.8, 0.25);
+        const legMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x87CEFA, // Light sky blue
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        
+        // Left leg
+        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        leftLeg.position.set(-0.25, 0.4, 0);
+        leftLeg.castShadow = true;
+        bodyGroup.add(leftLeg);
+        
+        // Right leg
+        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        rightLeg.position.set(0.25, 0.4, 0);
+        rightLeg.castShadow = true;
+        bodyGroup.add(rightLeg);
+        
+        // Staff
+        const staffGroup = new THREE.Group();
+        
+        // Staff rod
+        const rodGeometry = new THREE.CylinderGeometry(0.03, 0.03, 1.8, 8);
+        const rodMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xDEB887, // Burlywood
+            metalness: 0.2,
+            roughness: 0.8
+        });
+        const rod = new THREE.Mesh(rodGeometry, rodMaterial);
+        rod.castShadow = true;
+        staffGroup.add(rod);
+        
+        // Crystal top
+        const crystalGeometry = new THREE.OctahedronGeometry(0.2);
+        const crystalMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xADD8E6, // Light blue
+            metalness: 0.9,
+            roughness: 0.1,
+            transparent: true,
+            opacity: 0.8,
+            emissive: 0x00BFFF,
+            emissiveIntensity: 0.5
+        });
+        const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+        crystal.position.y = 1.0;
+        crystal.castShadow = true;
+        staffGroup.add(crystal);
+        
+        // Position staff in right hand
+        staffGroup.position.set(0.7, 0.9, 0.2);
+        staffGroup.rotation.z = Math.PI / 12;
+        bodyGroup.add(staffGroup);
+        
+        // Ice particles
+        const particlesGroup = new THREE.Group();
+        for (let i = 0; i < 10; i++) {
+            const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const particleMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xADD8E6, // Light blue
+                emissive: 0x00BFFF,
+                emissiveIntensity: 0.8,
+                transparent: true,
+                opacity: 0.7
+            });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            
+            // Random position around the crystal
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 0.3 + Math.random() * 0.2;
+            particle.position.set(
+                Math.cos(angle) * radius,
+                1.0 + Math.random() * 0.4,
+                Math.sin(angle) * radius
+            );
+            
+            particlesGroup.add(particle);
+        }
+        staffGroup.add(particlesGroup);
+        
+        // Add the complete body to the group
+        this.group.add(bodyGroup);
+        this.mesh = body; // Set the main body as the reference mesh
+    }
+    
+    createLina() {
+        // Create a more complex Lina model
+        const bodyGroup = new THREE.Group();
+        
+        // Body - slender and feminine
+        const bodyGeometry = new THREE.BoxGeometry(0.8, 1.4, 0.6);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF4500, // Orange red
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.9;
+        body.castShadow = true;
+        bodyGroup.add(body);
+        
+        // Head
+        const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const headMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFFE4C4, // Bisque
+            metalness: 0.1,
+            roughness: 0.9
+        });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.8;
+        head.castShadow = true;
+        bodyGroup.add(head);
+        
+        // Hair
+        const hairGeometry = new THREE.ConeGeometry(0.4, 0.8, 16, 1, true);
+        const hairMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF4500, // Orange red
+            metalness: 0.4,
+            roughness: 0.6,
+            side: THREE.DoubleSide
+        });
+        const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+        hair.position.y = 2.0;
+        hair.rotation.x = Math.PI;
+        hair.castShadow = true;
+        bodyGroup.add(hair);
+        
+        // Arms
+        const armGeometry = new THREE.BoxGeometry(0.2, 0.7, 0.2);
+        const armMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF4500, // Orange red
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        
+        // Left arm
+        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+        leftArm.position.set(-0.5, 1.2, 0);
+        leftArm.castShadow = true;
+        bodyGroup.add(leftArm);
+        
+        // Right arm
+        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+        rightArm.position.set(0.5, 1.2, 0);
+        rightArm.castShadow = true;
+        bodyGroup.add(rightArm);
+        
+        // Legs
+        const legGeometry = new THREE.BoxGeometry(0.25, 0.8, 0.25);
+        const legMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF4500, // Orange red
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        
+        // Left leg
+        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+        leftLeg.position.set(-0.25, 0.4, 0);
+        leftLeg.castShadow = true;
+        bodyGroup.add(leftLeg);
+        
+        // Right leg
+        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+        rightLeg.position.set(0.25, 0.4, 0);
+        rightLeg.castShadow = true;
+        bodyGroup.add(rightLeg);
+        
+        // Fire staff
+        const staffGroup = new THREE.Group();
+        
+        // Staff rod
+        const rodGeometry = new THREE.CylinderGeometry(0.03, 0.03, 1.8, 8);
+        const rodMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B4513, // Saddle brown
+            metalness: 0.2,
+            roughness: 0.8
+        });
+        const rod = new THREE.Mesh(rodGeometry, rodMaterial);
+        rod.castShadow = true;
+        staffGroup.add(rod);
+        
+        // Fire orb
+        const orbGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+        const orbMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF4500, // Orange red
+            metalness: 0.5,
+            roughness: 0.5,
+            emissive: 0xFF0000,
+            emissiveIntensity: 0.8
+        });
+        const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+        orb.position.y = 1.0;
+        orb.castShadow = true;
+        staffGroup.add(orb);
+        
+        // Position staff in right hand
+        staffGroup.position.set(0.7, 0.9, 0.2);
+        staffGroup.rotation.z = Math.PI / 12;
+        bodyGroup.add(staffGroup);
+        
+        // Fire particles
+        const fireGroup = new THREE.Group();
+        for (let i = 0; i < 15; i++) {
+            const flameGeometry = new THREE.ConeGeometry(0.05, 0.2, 8);
+            const flameMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xFF4500, // Orange red
+                emissive: 0xFF0000,
+                emissiveIntensity: 0.8,
+                transparent: true,
+                opacity: 0.7
+            });
+            const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+            
+            // Random position around the orb
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 0.2 + Math.random() * 0.2;
+            flame.position.set(
+                Math.cos(angle) * radius,
+                1.0 + Math.random() * 0.3,
+                Math.sin(angle) * radius
+            );
+            
+            // Random rotation
+            flame.rotation.x = Math.random() * Math.PI;
+            flame.rotation.y = Math.random() * Math.PI;
+            flame.rotation.z = Math.random() * Math.PI;
+            
+            fireGroup.add(flame);
+        }
+        staffGroup.add(fireGroup);
+        
+        // Add the complete body to the group
+        this.group.add(bodyGroup);
+        this.mesh = body; // Set the main body as the reference mesh
+    }
+    
+    createDefaultHero() {
+        // Create a simple default hero
+        const geometry = new THREE.BoxGeometry(1, 2, 1);
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        this.mesh = new THREE.Mesh(geometry, material);
+        this.mesh.position.y = 1;
+        this.mesh.castShadow = true;
+        this.group.add(this.mesh);
     }
     
     createWings() {
@@ -160,7 +763,7 @@ export class Hero {
         wingGroup.add(rightWing);
         
         // Position wings on hero's back
-        wingGroup.position.set(0, 1, 0.5);
+        wingGroup.position.set(0, 1.2, 0.5);
         
         // Hide wings initially
         wingGroup.visible = false;
@@ -395,20 +998,54 @@ export class Hero {
                         'flying:', this.isFlying);
         }
         
-        // Show/hide wings based on height
+        // Show/hide wings based on height - FIXED to ensure wings show up
         if (this.wings) {
-            if (this.group.position.y > config.player.flyingHeight && !this.wingsVisible) {
-                // Show wings when above tree height
-                this.wings.visible = true;
-                this.wingsVisible = true;
+            // Debug logging for wings
+            console.log('Wings check - Height:', this.group.position.y, 
+                        'Flying height threshold:', config.player.flyingHeight,
+                        'Wings visible:', this.wingsVisible,
+                        'Wings object:', this.wings);
+            
+            // Force wings to be visible when above flying height
+            if (this.group.position.y > 3) { // Lower threshold to make wings appear sooner
+                if (!this.wingsVisible) {
+                    console.log('SHOWING WINGS!');
+                    this.wings.visible = true;
+                    this.wingsVisible = true;
+                    
+                    // Animate wings appearing
+                    this.wings.scale.set(0.5, 0.5, 0.5); // Larger initial scale
+                    this.animateWings();
+                }
                 
-                // Animate wings appearing
-                this.wings.scale.set(0.1, 0.1, 0.1);
-                this.animateWings();
-            } else if (this.group.position.y <= config.player.flyingHeight && this.wingsVisible) {
-                // Hide wings when below tree height
+                // Flap wings while flying
+                this.flapWings(deltaTime);
+            } else if (this.group.position.y <= 3 && this.wingsVisible) {
+                // Hide wings when below threshold
+                console.log('HIDING WINGS!');
                 this.wings.visible = false;
                 this.wingsVisible = false;
+            }
+        }
+    }
+    
+    flapWings(deltaTime) {
+        // Add wing flapping animation
+        if (this.wings && this.wings.visible) {
+            // Simple flapping motion
+            const flapSpeed = 5;
+            const flapAmount = 0.2;
+            this.wingFlapTime = (this.wingFlapTime || 0) + deltaTime * flapSpeed;
+            
+            // Sine wave for smooth flapping
+            const flapPosition = Math.sin(this.wingFlapTime) * flapAmount;
+            
+            // Apply rotation to wings
+            if (this.wings.children.length >= 2) {
+                // Left wing
+                this.wings.children[0].rotation.z = flapPosition + 0.2;
+                // Right wing
+                this.wings.children[1].rotation.z = -flapPosition - 0.2;
             }
         }
     }
