@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B0000"/>
+      <stop offset="100%" stop-color="#FF4500"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#bg)" stroke="#333" stroke-width="2"/>
+  <path d="M60,70 L140,70 L140,130 L60,130 Z" fill="#333" opacity="0.6"/>
+  <path d="M70,60 L130,60 L130,140 L70,140 Z" fill="#333" opacity="0.6"/>
+  <path d="M50,100 L150,100" stroke="#FFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100,50 L100,150" stroke="#FFF" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="100" cy="100" r="15" fill="#FFF"/>
+  <text x="100" y="170" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#FFF">AXE</text>
+</svg>
