@@ -135,12 +135,14 @@ export class Hero {
         
         // Create wing material
         const wingMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: 0x88ccff,
             side: THREE.DoubleSide,
             transparent: true,
             opacity: 0.7,
-            metalness: 0.2,
-            roughness: 0.3
+            emissive: 0x3399ff,
+            emissiveIntensity: 0.8,
+            metalness: 0.3,
+            roughness: 0.2
         });
         
         // Create left wing mesh
@@ -158,7 +160,7 @@ export class Hero {
         wingGroup.add(rightWing);
         
         // Position wings on hero's back
-        wingGroup.position.set(0, 1, 0.3);
+        wingGroup.position.set(0, 1, 0.5);
         
         // Hide wings initially
         wingGroup.visible = false;
@@ -352,35 +354,45 @@ export class Hero {
             }
         }
         
-        // Note: We're not handling the space key jump here anymore
-        // It's now handled by the direct event listeners in main.js
-        // This is to ensure the jump works reliably
-        
-        // Debug logging
+        // Handle continuous jumping with space key
         if (keys[' ']) {
-            console.log('Space pressed in hero update, onGround:', this.onGround, 'isJumping:', this.isJumping);
-        }
-        
-        // Check if we should enter flying mode (double jump)
-        if (keys[' '] && this.isJumping && !this.isFlying && !this.onGround) {
-            // Only allow flying if we're already in the air from a jump
-            if (this.velocity.y < 0) {  // We're falling
-                this.velocity.y = config.player.jumpForce * 0.8; // Smaller boost for second jump
-                this.isFlying = true;
-            }
-        }
-        
-        // Handle flying
-        if (this.isFlying) {
-            if (keys[' ']) {
-                // Apply upward force while space is held
-                this.velocity.y += config.player.gravity * 0.7 * deltaTime; // Counteract gravity partially
+            // If on ground, initiate jump
+            if (this.onGround) {
+                console.log('Jump initiated from ground!');
+                this.velocity.y = config.player.jumpForce;
+                this.isJumping = true;
+                this.onGround = false;
                 
-                // Cap upward velocity
-                if (this.velocity.y > config.player.jumpForce * 0.5) {
-                    this.velocity.y = config.player.jumpForce * 0.5;
+                // Play jump sound
+                if (window.soundManager) {
+                    window.soundManager.playSound('jump');
                 }
             }
+            // If already in the air, add continuous upward force
+            else if (this.isJumping || this.isFlying) {
+                // Add continuous boost while space is held
+                this.velocity.y += config.player.jumpForce * 0.05; // Small continuous boost
+                
+                // Cap upward velocity to prevent going too fast
+                if (this.velocity.y > config.player.jumpForce * 0.8) {
+                    this.velocity.y = config.player.jumpForce * 0.8;
+                }
+                
+                // Enter flying mode if not already
+                if (!this.isFlying && this.group.position.y > 2) {
+                    this.isFlying = true;
+                    
+                    // Play a whoosh sound for flying
+                    if (window.soundManager) {
+                        window.soundManager.playSound('dash');
+                    }
+                }
+            }
+            
+            // Debug logging
+            console.log('Space pressed, y-pos:', this.group.position.y.toFixed(2), 
+                        'velocity:', this.velocity.y.toFixed(2), 
+                        'flying:', this.isFlying);
         }
         
         // Show/hide wings based on height
@@ -400,7 +412,6 @@ export class Hero {
             }
         }
     }
-    
     animateWings() {
         // Animate wings growing
         if (this.wings && this.wings.visible) {

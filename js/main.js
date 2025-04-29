@@ -182,56 +182,93 @@ class Game {
         // Set up jump button
         const jumpButton = document.getElementById('jump-button');
         if (jumpButton) {
-            jumpButton.addEventListener('click', () => {
-                console.log('Jump button clicked');
-                if (this.hero && this.hero.onGround && !this.hero.isJumping) {
-                    console.log('Jumping via button click');
-                    this.hero.velocity.y = 15; // Use hardcoded value for simplicity
+            // Variable to track if button is being held
+            let isJumpButtonHeld = false;
+            let jumpInterval = null;
+            
+            // Function to apply continuous jump force
+            const applyJumpForce = () => {
+                if (!this.hero) return;
+                
+                // If on ground, initiate jump
+                if (this.hero.onGround && !this.hero.isJumping) {
+                    console.log('Jumping via button');
+                    this.hero.velocity.y = 15; // Initial jump force
                     this.hero.isJumping = true;
                     this.hero.onGround = false;
                     
-                    // Play jump sound if available
+                    // Play jump sound
                     if (this.soundManager) {
                         this.soundManager.playSound('jump');
                     }
+                }
+                // If already in the air, add continuous upward force
+                else if (this.hero.isJumping || this.hero.isFlying) {
+                    // Add continuous boost while button is held
+                    this.hero.velocity.y += 0.5; // Small continuous boost
+                    
+                    // Cap upward velocity
+                    if (this.hero.velocity.y > 12) {
+                        this.hero.velocity.y = 12;
+                    }
+                    
+                    // Enter flying mode if not already
+                    if (!this.hero.isFlying && this.hero.group.position.y > 2) {
+                        this.hero.isFlying = true;
+                        
+                        // Play a whoosh sound for flying
+                        if (this.soundManager) {
+                            this.soundManager.playSound('dash');
+                        }
+                    }
+                }
+            };
+            
+            // Mouse events for desktop
+            jumpButton.addEventListener('mousedown', () => {
+                console.log('Jump button pressed');
+                isJumpButtonHeld = true;
+                applyJumpForce();
+                
+                // Set up interval for continuous jumping while held
+                jumpInterval = setInterval(applyJumpForce, 100);
+            });
+            
+            jumpButton.addEventListener('mouseup', () => {
+                console.log('Jump button released');
+                isJumpButtonHeld = false;
+                clearInterval(jumpInterval);
+            });
+            
+            jumpButton.addEventListener('mouseleave', () => {
+                if (isJumpButtonHeld) {
+                    console.log('Mouse left jump button');
+                    isJumpButtonHeld = false;
+                    clearInterval(jumpInterval);
                 }
             });
             
-            // Add touch events for mobile
+            // Touch events for mobile
             jumpButton.addEventListener('touchstart', (event) => {
                 event.preventDefault();
                 console.log('Jump button touched');
-                if (this.hero && this.hero.onGround && !this.hero.isJumping) {
-                    console.log('Jumping via button touch');
-                    this.hero.velocity.y = 15; // Use hardcoded value for simplicity
-                    this.hero.isJumping = true;
-                    this.hero.onGround = false;
-                    
-                    // Play jump sound if available
-                    if (this.soundManager) {
-                        this.soundManager.playSound('jump');
-                    }
-                }
+                isJumpButtonHeld = true;
+                applyJumpForce();
+                
+                // Set up interval for continuous jumping while held
+                jumpInterval = setInterval(applyJumpForce, 100);
+            });
+            
+            jumpButton.addEventListener('touchend', (event) => {
+                event.preventDefault();
+                console.log('Jump button touch released');
+                isJumpButtonHeld = false;
+                clearInterval(jumpInterval);
             });
         }
         
-        // Add specific keyboard event listener for space key
-        document.addEventListener('keydown', (event) => {
-            if ((event.key === ' ' || event.code === 'Space') && this.hero) {
-                console.log('Space key detected in game event listener');
-                if (this.hero.onGround && !this.hero.isJumping) {
-                    console.log('Jumping via space key in game event listener');
-                    this.hero.velocity.y = 15; // Use hardcoded value for simplicity
-                    this.hero.isJumping = true;
-                    this.hero.onGround = false;
-                    
-                    // Play jump sound if available
-                    if (this.soundManager) {
-                        this.soundManager.playSound('jump');
-                    }
-                }
-            }
-        });
+        // We don't need this specific space key handler anymore
+        // The continuous jumping is now handled directly in the hero's handleJumpAndFly method
         
         // Set game as started
         this.isGameStarted = true;
@@ -361,26 +398,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add global keyboard event listener for debugging
     document.addEventListener('keydown', (event) => {
         console.log('Key pressed:', event.key, 'Code:', event.code);
-        
-        // Handle space key for jumping
-        if (event.key === ' ' || event.code === 'Space') {
-            console.log('Space key detected globally');
-            
-            // If we have a hero, try to make it jump directly
-            if (game.hero && game.hero.onGround && !game.hero.isJumping) {
-                console.log('Attempting to jump directly from global handler');
-                // Access jumpForce through the game's hero
-                if (game.hero.velocity) {
-                    game.hero.velocity.y = 15; // Use a hardcoded value for simplicity
-                    game.hero.isJumping = true;
-                    game.hero.onGround = false;
-                    
-                    // Play jump sound if available
-                    if (window.soundManager) {
-                        window.soundManager.playSound('jump');
-                    }
-                }
-            }
-        }
     });
 });
