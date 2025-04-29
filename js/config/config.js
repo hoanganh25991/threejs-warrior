@@ -4,7 +4,7 @@ export const config = {
     game: {
         title: "ARPG Game",
         version: "0.1.0",
-        debug: false
+        debug: true  // Enable debug mode
     },
     
     // Camera settings

@@ -23,12 +23,20 @@ export class Hero {
         
         // Physics properties
         this.velocity = new THREE.Vector3(0, 0, 0);
-        this.onGround = true;
+        this.onGround = true; // Start on the ground
         this.wings = null;
         this.wingsVisible = false;
         
+        // Debug flag
+        this.debug = config.game.debug;
+        
         // Initialize the hero
         this.init();
+        
+        // Ensure we're on the ground at start
+        this.group.position.y = 0;
+        
+        console.log('Hero initialized, onGround:', this.onGround);
     }
     
     init() {
@@ -208,6 +216,44 @@ export class Hero {
             const wingFlapAmount = 0.1;
             this.wings.rotation.z = Math.sin(Date.now() * 0.005 * wingFlapSpeed) * wingFlapAmount;
         }
+        
+        // Update debug display if debug mode is enabled
+        if (this.debug) {
+            this.updateDebugDisplay();
+        }
+    }
+    
+    updateDebugDisplay() {
+        // Create or update debug display
+        let debugDisplay = document.getElementById('debug-display');
+        
+        if (!debugDisplay) {
+            debugDisplay = document.createElement('div');
+            debugDisplay.id = 'debug-display';
+            debugDisplay.style.position = 'absolute';
+            debugDisplay.style.top = '100px';
+            debugDisplay.style.left = '10px';
+            debugDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            debugDisplay.style.color = 'white';
+            debugDisplay.style.padding = '10px';
+            debugDisplay.style.fontFamily = 'monospace';
+            debugDisplay.style.fontSize = '12px';
+            debugDisplay.style.zIndex = '1000';
+            debugDisplay.style.pointerEvents = 'none'; // Don't block mouse events
+            document.body.appendChild(debugDisplay);
+        }
+        
+        // Update debug info
+        debugDisplay.innerHTML = `
+            <h3>Hero Debug Info</h3>
+            <p>Position: x=${this.group.position.x.toFixed(2)}, y=${this.group.position.y.toFixed(2)}, z=${this.group.position.z.toFixed(2)}</p>
+            <p>Velocity: x=${this.velocity.x.toFixed(2)}, y=${this.velocity.y.toFixed(2)}, z=${this.velocity.z.toFixed(2)}</p>
+            <p>onGround: ${this.onGround}</p>
+            <p>isJumping: ${this.isJumping}</p>
+            <p>isFlying: ${this.isFlying}</p>
+            <p>wingsVisible: ${this.wingsVisible}</p>
+            <p>Space key pressed: ${window.inputHandler ? window.inputHandler.isKeyPressed(' ') : 'N/A'}</p>
+        `;
     }
     
     handleRotation(inputHandler) {
@@ -306,21 +352,17 @@ export class Hero {
             }
         }
         
-        // Handle jumping with space key
-        if (keys.space && this.onGround && !this.isJumping) {
-            // Apply initial jump velocity
-            this.velocity.y = config.player.jumpForce;
-            this.isJumping = true;
-            this.onGround = false;
-            
-            // Play jump sound (if available)
-            if (window.soundManager) {
-                window.soundManager.playSound('jump');
-            }
+        // Note: We're not handling the space key jump here anymore
+        // It's now handled by the direct event listeners in main.js
+        // This is to ensure the jump works reliably
+        
+        // Debug logging
+        if (keys[' ']) {
+            console.log('Space pressed in hero update, onGround:', this.onGround, 'isJumping:', this.isJumping);
         }
         
         // Check if we should enter flying mode (double jump)
-        if (keys.space && this.isJumping && !this.isFlying && !this.onGround) {
+        if (keys[' '] && this.isJumping && !this.isFlying && !this.onGround) {
             // Only allow flying if we're already in the air from a jump
             if (this.velocity.y < 0) {  // We're falling
                 this.velocity.y = config.player.jumpForce * 0.8; // Smaller boost for second jump
@@ -330,7 +372,7 @@ export class Hero {
         
         // Handle flying
         if (this.isFlying) {
-            if (keys.space) {
+            if (keys[' ']) {
                 // Apply upward force while space is held
                 this.velocity.y += config.player.gravity * 0.7 * deltaTime; // Counteract gravity partially
                 

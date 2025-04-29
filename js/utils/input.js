@@ -32,6 +32,47 @@ export class InputHandler {
         document.addEventListener('keydown', this.handleKeyDown.bind(this));
         document.addEventListener('keyup', this.handleKeyUp.bind(this));
         
+        // Special handler for space key to debug jumping issues
+        document.addEventListener('keydown', (event) => {
+            if (event.key === ' ' || event.code === 'Space') {
+                console.log('Space key pressed (direct event)');
+                this.keys[' '] = true;
+                
+                // Add a visual indicator for space key press
+                let spaceIndicator = document.getElementById('space-indicator');
+                if (!spaceIndicator) {
+                    spaceIndicator = document.createElement('div');
+                    spaceIndicator.id = 'space-indicator';
+                    spaceIndicator.style.position = 'absolute';
+                    spaceIndicator.style.bottom = '20px';
+                    spaceIndicator.style.left = '20px';
+                    spaceIndicator.style.backgroundColor = 'green';
+                    spaceIndicator.style.color = 'white';
+                    spaceIndicator.style.padding = '10px';
+                    spaceIndicator.style.borderRadius = '5px';
+                    spaceIndicator.style.fontFamily = 'Arial, sans-serif';
+                    spaceIndicator.style.zIndex = '1000';
+                    document.body.appendChild(spaceIndicator);
+                }
+                spaceIndicator.textContent = 'SPACE PRESSED';
+                spaceIndicator.style.backgroundColor = 'green';
+            }
+        });
+        
+        document.addEventListener('keyup', (event) => {
+            if (event.key === ' ' || event.code === 'Space') {
+                console.log('Space key released (direct event)');
+                this.keys[' '] = false;
+                
+                // Update visual indicator
+                const spaceIndicator = document.getElementById('space-indicator');
+                if (spaceIndicator) {
+                    spaceIndicator.textContent = 'SPACE RELEASED';
+                    spaceIndicator.style.backgroundColor = 'red';
+                }
+            }
+        });
+        
         // Mouse events
         document.addEventListener('mousemove', this.handleMouseMove.bind(this));
         document.addEventListener('mousedown', this.handleMouseDown.bind(this));
@@ -73,6 +114,15 @@ export class InputHandler {
     
     handleKeyDown(event) {
         const key = event.key.toLowerCase();
+        
+        // Special handling for space key
+        if (event.key === ' ' || event.code === 'Space') {
+            this.keys[' '] = true;
+            console.log('Space key pressed (handleKeyDown)');
+            event.preventDefault();
+            return;
+        }
+        
         if (this.keys.hasOwnProperty(key)) {
             this.keys[key] = true;
             event.preventDefault();
@@ -81,6 +131,15 @@ export class InputHandler {
     
     handleKeyUp(event) {
         const key = event.key.toLowerCase();
+        
+        // Special handling for space key
+        if (event.key === ' ' || event.code === 'Space') {
+            this.keys[' '] = false;
+            console.log('Space key released (handleKeyUp)');
+            event.preventDefault();
+            return;
+        }
+        
         if (this.keys.hasOwnProperty(key)) {
             this.keys[key] = false;
             event.preventDefault();

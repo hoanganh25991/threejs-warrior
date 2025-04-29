@@ -85,6 +85,22 @@ class Game {
         // Add event listeners
         window.addEventListener('resize', this.onWindowResize.bind(this));
         
+        // Add specific event listener for the canvas to handle jumping
+        const canvas = document.getElementById('game-canvas');
+        if (canvas) {
+            canvas.addEventListener('keydown', (event) => {
+                console.log('Canvas key pressed:', event.key, 'Code:', event.code);
+                
+                // Handle space key for jumping
+                if (event.key === ' ' || event.code === 'Space') {
+                    console.log('Space key detected on canvas');
+                }
+            });
+            
+            // Make canvas focusable
+            canvas.tabIndex = 1;
+        }
+        
         // Add hero selection event listeners
         const heroButtons = document.querySelectorAll('.select-hero-btn');
         heroButtons.forEach(button => {
@@ -148,6 +164,9 @@ class Game {
         // Initialize input handler
         this.inputHandler = new InputHandler();
         
+        // Make input handler globally accessible
+        window.inputHandler = this.inputHandler;
+        
         // Initialize skill manager
         this.skillManager = new SkillManager(this.scene);
         
@@ -159,6 +178,60 @@ class Game {
         
         // Start background music
         this.soundManager.playMusic();
+        
+        // Set up jump button
+        const jumpButton = document.getElementById('jump-button');
+        if (jumpButton) {
+            jumpButton.addEventListener('click', () => {
+                console.log('Jump button clicked');
+                if (this.hero && this.hero.onGround && !this.hero.isJumping) {
+                    console.log('Jumping via button click');
+                    this.hero.velocity.y = 15; // Use hardcoded value for simplicity
+                    this.hero.isJumping = true;
+                    this.hero.onGround = false;
+                    
+                    // Play jump sound if available
+                    if (this.soundManager) {
+                        this.soundManager.playSound('jump');
+                    }
+                }
+            });
+            
+            // Add touch events for mobile
+            jumpButton.addEventListener('touchstart', (event) => {
+                event.preventDefault();
+                console.log('Jump button touched');
+                if (this.hero && this.hero.onGround && !this.hero.isJumping) {
+                    console.log('Jumping via button touch');
+                    this.hero.velocity.y = 15; // Use hardcoded value for simplicity
+                    this.hero.isJumping = true;
+                    this.hero.onGround = false;
+                    
+                    // Play jump sound if available
+                    if (this.soundManager) {
+                        this.soundManager.playSound('jump');
+                    }
+                }
+            });
+        }
+        
+        // Add specific keyboard event listener for space key
+        document.addEventListener('keydown', (event) => {
+            if ((event.key === ' ' || event.code === 'Space') && this.hero) {
+                console.log('Space key detected in game event listener');
+                if (this.hero.onGround && !this.hero.isJumping) {
+                    console.log('Jumping via space key in game event listener');
+                    this.hero.velocity.y = 15; // Use hardcoded value for simplicity
+                    this.hero.isJumping = true;
+                    this.hero.onGround = false;
+                    
+                    // Play jump sound if available
+                    if (this.soundManager) {
+                        this.soundManager.playSound('jump');
+                    }
+                }
+            }
+        });
         
         // Set game as started
         this.isGameStarted = true;
@@ -284,4 +357,30 @@ class Game {
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const game = new Game();
+    
+    // Add global keyboard event listener for debugging
+    document.addEventListener('keydown', (event) => {
+        console.log('Key pressed:', event.key, 'Code:', event.code);
+        
+        // Handle space key for jumping
+        if (event.key === ' ' || event.code === 'Space') {
+            console.log('Space key detected globally');
+            
+            // If we have a hero, try to make it jump directly
+            if (game.hero && game.hero.onGround && !game.hero.isJumping) {
+                console.log('Attempting to jump directly from global handler');
+                // Access jumpForce through the game's hero
+                if (game.hero.velocity) {
+                    game.hero.velocity.y = 15; // Use a hardcoded value for simplicity
+                    game.hero.isJumping = true;
+                    game.hero.onGround = false;
+                    
+                    // Play jump sound if available
+                    if (window.soundManager) {
+                        window.soundManager.playSound('jump');
+                    }
+                }
+            }
+        }
+    });
 });
