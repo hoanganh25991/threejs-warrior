@@ -21,6 +21,12 @@ export class Hero {
         this.rotation = new THREE.Euler(0, 0, 0, 'YXZ'); // YXZ order for FPS-style rotation
         this.direction = new THREE.Vector3(0, 0, -1); // Forward direction
         
+        // Physics properties
+        this.velocity = new THREE.Vector3(0, 0, 0);
+        this.onGround = true;
+        this.wings = null;
+        this.wingsVisible = false;
+        
         // Initialize the hero
         this.init();
     }
@@ -65,12 +71,95 @@ export class Hero {
         this.arrow.position.set(0, 1.5, -0.8); // Position above and in front of hero
         this.arrow.rotation.x = Math.PI / 2; // Rotate to point forward
         
+        // Create wings (initially hidden)
+        this.createWings();
+        
         // Add mesh and arrow to group
         this.group.add(this.mesh);
         this.group.add(this.arrow);
         
         // Initialize skills based on hero type
         this.initSkills();
+    }
+    
+    createWings() {
+        // Create wings for the hero
+        const wingGroup = new THREE.Group();
+        
+        // Left wing
+        const leftWingGeometry = new THREE.BufferGeometry();
+        const leftWingShape = new THREE.Shape();
+        
+        // Create wing shape
+        leftWingShape.moveTo(0, 0);
+        leftWingShape.quadraticCurveTo(-1, 1, -2, 0.5);
+        leftWingShape.quadraticCurveTo(-1.5, 0, -2, -0.5);
+        leftWingShape.quadraticCurveTo(-1, -0.5, 0, 0);
+        
+        // Create wing geometry
+        const leftWingPoints = leftWingShape.getPoints();
+        const leftWingVertices = [];
+        
+        // Create 3D wing by extruding points slightly
+        for (let i = 0; i < leftWingPoints.length; i++) {
+            leftWingVertices.push(
+                leftWingPoints[i].x, leftWingPoints[i].y, 0,
+                leftWingPoints[i].x, leftWingPoints[i].y, 0.1
+            );
+        }
+        
+        // Create faces
+        const leftWingIndices = [];
+        for (let i = 0; i < leftWingPoints.length - 1; i++) {
+            const a = i * 2;
+            const b = i * 2 + 1;
+            const c = (i + 1) * 2;
+            const d = (i + 1) * 2 + 1;
+            
+            leftWingIndices.push(a, b, c);
+            leftWingIndices.push(c, b, d);
+        }
+        
+        // Set geometry attributes
+        leftWingGeometry.setIndex(leftWingIndices);
+        leftWingGeometry.setAttribute('position', new THREE.Float32BufferAttribute(leftWingVertices, 3));
+        leftWingGeometry.computeVertexNormals();
+        
+        // Create wing material
+        const wingMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.7,
+            metalness: 0.2,
+            roughness: 0.3
+        });
+        
+        // Create left wing mesh
+        const leftWing = new THREE.Mesh(leftWingGeometry, wingMaterial);
+        leftWing.position.set(-0.5, 0.5, 0);
+        leftWing.scale.set(1, 1, 1);
+        
+        // Create right wing (mirror of left wing)
+        const rightWing = leftWing.clone();
+        rightWing.position.set(0.5, 0.5, 0);
+        rightWing.scale.set(-1, 1, 1); // Mirror by scaling X negatively
+        
+        // Add wings to group
+        wingGroup.add(leftWing);
+        wingGroup.add(rightWing);
+        
+        // Position wings on hero's back
+        wingGroup.position.set(0, 1, 0.3);
+        
+        // Hide wings initially
+        wingGroup.visible = false;
+        
+        // Store wings reference
+        this.wings = wingGroup;
+        
+        // Add wings to hero group
+        this.group.add(this.wings);
     }
     
     initSkills() {
@@ -111,6 +200,14 @@ export class Hero {
         
         // Update direction vector based on current rotation
         this.updateDirection();
+        
+        // Animate wings if visible
+        if (this.wings && this.wings.visible) {
+            // Make wings flap gently
+            const wingFlapSpeed = 5;
+            const wingFlapAmount = 0.1;
+            this.wings.rotation.z = Math.sin(Date.now() * 0.005 * wingFlapSpeed) * wingFlapAmount;
+        }
     }
     
     handleRotation(inputHandler) {
@@ -180,52 +277,101 @@ export class Hero {
     }
     
     handleJumpAndFly(deltaTime, keys) {
-        // Handle jumping
-        if (keys.space && !this.isJumping && !this.isFlying) {
-            this.isJumping = true;
-            this.jumpTime = 0;
+        // Apply gravity if not on ground
+        if (!this.onGround || this.isJumping) {
+            // Apply gravity to velocity
+            this.velocity.y -= config.player.gravity * deltaTime;
+            
+            // Update position based on velocity
+            this.group.position.y += this.velocity.y * deltaTime;
+            
+            // Check if we've landed
+            if (this.group.position.y <= 0) {
+                // Only play landing sound if we were falling with significant velocity
+                if (this.velocity.y < -5 && window.soundManager) {
+                    window.soundManager.playSound('land');
+                }
+                
+                this.group.position.y = 0;
+                this.velocity.y = 0;
+                this.onGround = true;
+                this.isJumping = false;
+                this.isFlying = false;
+                
+                // Hide wings when landing
+                if (this.wings && this.wingsVisible) {
+                    this.wings.visible = false;
+                    this.wingsVisible = false;
+                }
+            }
         }
         
-        if (this.isJumping) {
-            this.jumpTime += deltaTime;
+        // Handle jumping with space key
+        if (keys.space && this.onGround && !this.isJumping) {
+            // Apply initial jump velocity
+            this.velocity.y = config.player.jumpForce;
+            this.isJumping = true;
+            this.onGround = false;
             
-            // Jump animation using a simple sine curve
-            const jumpHeight = config.player.jumpHeight;
-            const jumpDuration = config.player.jumpDuration;
-            
-            // Calculate jump height based on time
-            const jumpProgress = this.jumpTime / jumpDuration;
-            
-            if (jumpProgress < 1) {
-                // Rising and falling
-                this.group.position.y = jumpHeight * Math.sin(jumpProgress * Math.PI);
-            } else {
-                // Jump completed
-                this.group.position.y = 0;
-                this.isJumping = false;
-                
-                // Check if we should enter flying mode
-                // In a full implementation, we would have a more sophisticated system
-                if (keys.space && this.jumpTime < jumpDuration * 1.2) {
-                    this.isFlying = true;
-                }
+            // Play jump sound (if available)
+            if (window.soundManager) {
+                window.soundManager.playSound('jump');
+            }
+        }
+        
+        // Check if we should enter flying mode (double jump)
+        if (keys.space && this.isJumping && !this.isFlying && !this.onGround) {
+            // Only allow flying if we're already in the air from a jump
+            if (this.velocity.y < 0) {  // We're falling
+                this.velocity.y = config.player.jumpForce * 0.8; // Smaller boost for second jump
+                this.isFlying = true;
             }
         }
         
         // Handle flying
         if (this.isFlying) {
             if (keys.space) {
-                // Ascend
-                this.group.position.y += config.player.moveSpeed * 0.5 * deltaTime;
-            } else {
-                // Descend
-                this.group.position.y -= config.player.moveSpeed * 0.3 * deltaTime;
+                // Apply upward force while space is held
+                this.velocity.y += config.player.gravity * 0.7 * deltaTime; // Counteract gravity partially
                 
-                // Check if we've landed
-                if (this.group.position.y <= 0) {
-                    this.group.position.y = 0;
-                    this.isFlying = false;
+                // Cap upward velocity
+                if (this.velocity.y > config.player.jumpForce * 0.5) {
+                    this.velocity.y = config.player.jumpForce * 0.5;
                 }
+            }
+        }
+        
+        // Show/hide wings based on height
+        if (this.wings) {
+            if (this.group.position.y > config.player.flyingHeight && !this.wingsVisible) {
+                // Show wings when above tree height
+                this.wings.visible = true;
+                this.wingsVisible = true;
+                
+                // Animate wings appearing
+                this.wings.scale.set(0.1, 0.1, 0.1);
+                this.animateWings();
+            } else if (this.group.position.y <= config.player.flyingHeight && this.wingsVisible) {
+                // Hide wings when below tree height
+                this.wings.visible = false;
+                this.wingsVisible = false;
+            }
+        }
+    }
+    
+    animateWings() {
+        // Animate wings growing
+        if (this.wings && this.wings.visible) {
+            // Get current scale
+            const currentScale = this.wings.scale.x;
+            
+            if (currentScale < 1) {
+                // Increase scale
+                const newScale = Math.min(currentScale + 0.05, 1);
+                this.wings.scale.set(newScale, newScale, newScale);
+                
+                // Continue animation in next frame
+                requestAnimationFrame(() => this.animateWings());
             }
         }
     }

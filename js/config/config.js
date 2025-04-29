@@ -18,8 +18,10 @@ export const config = {
     // Player settings
     player: {
         moveSpeed: 5,
-        jumpHeight: 2,
-        jumpDuration: 0.5,
+        jumpHeight: 5,         // Increased jump height
+        jumpForce: 15,         // Initial upward force
+        gravity: 25,           // Gravity force
+        flyingHeight: 7,       // Height at which wings appear (same as tree height)
         health: 100,
         mana: 100,
         experience: {

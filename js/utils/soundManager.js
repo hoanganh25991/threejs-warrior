@@ -46,21 +46,59 @@ export class SoundManager {
     }
     
     loadSound(name, path) {
-        // Create audio element
-        const audio = new Audio();
-        audio.src = path;
-        audio.volume = this.soundVolume;
-        
-        // Store in sounds object
-        this.sounds[name] = audio;
+        try {
+            // Create audio element
+            const audio = new Audio();
+            
+            // Add error handling
+            audio.onerror = () => {
+                console.warn(`Failed to load sound: ${path}`);
+                // Create a silent audio element as fallback
+                const fallbackAudio = new Audio();
+                fallbackAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // Empty WAV
+                this.sounds[name] = fallbackAudio;
+            };
+            
+            audio.src = path;
+            audio.volume = this.soundVolume;
+            
+            // Store in sounds object
+            this.sounds[name] = audio;
+        } catch (error) {
+            console.error(`Error loading sound ${name}:`, error);
+            // Create a silent audio element as fallback
+            const fallbackAudio = new Audio();
+            fallbackAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // Empty WAV
+            this.sounds[name] = fallbackAudio;
+        }
     }
     
     loadMusic() {
-        // Create audio element for background music
-        this.music = new Audio();
-        this.music.src = 'assets/sounds/background-music.mp3';
-        this.music.volume = this.musicVolume;
-        this.music.loop = true;
+        try {
+            // Create audio element for background music
+            this.music = new Audio();
+            
+            // Add error handling
+            this.music.onerror = () => {
+                console.warn('Failed to load background music');
+                // Create a silent audio element as fallback
+                const fallbackAudio = new Audio();
+                fallbackAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // Empty WAV
+                fallbackAudio.loop = true;
+                this.music = fallbackAudio;
+            };
+            
+            this.music.src = 'assets/sounds/background-music.mp3';
+            this.music.volume = this.musicVolume;
+            this.music.loop = true;
+        } catch (error) {
+            console.error('Error loading background music:', error);
+            // Create a silent audio element as fallback
+            const fallbackAudio = new Audio();
+            fallbackAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // Empty WAV
+            fallbackAudio.loop = true;
+            this.music = fallbackAudio;
+        }
     }
     
     playSound(name) {

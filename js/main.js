@@ -74,6 +74,9 @@ class Game {
         // Initialize sound manager
         this.soundManager = new SoundManager();
         
+        // Make sound manager globally accessible
+        window.soundManager = this.soundManager;
+        
         // Add controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
