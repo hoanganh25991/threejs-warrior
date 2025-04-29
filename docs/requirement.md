@@ -42,7 +42,8 @@ Give me characters, using idea from Dota 1:
 
 - **W, A, S, D**: Move the character
 - **Space**: Jump (press multiple times to jump higher)
-- **Mouse**: Control looks
+- **Mouse**: Control looks direction
+- **Y, U, I, H, J, K**: Activate different skills
 
 ## Game Mechanics
 
@@ -64,24 +65,3 @@ Give me characters, using idea from Dota 1:
 - Level up when enough experience is earned
 - Each level increases health and damage
 - Higher levels allow you to defeat stronger enemies
-
-## Running the Game
-
-1. Start a local server in the project directory
-2. Open `index.html` in your browser
-
-## Project Structure
-
-- `index.html`: Main entry point
-- `js/main.js`: Game initialization and main loop
-- `js/config/config.js`: Game configuration settings
-- `js/characters/hero.js`: Hero character implementation
-- `js/characters/enemy.js`: Enemy character implementation
-- `js/characters/enemyManager.js`: Enemy spawning and management
-- `js/skills/skillManager.js`: Skill system implementation
-- `js/utils/input.js`: Input handling
-- `js/utils/world.js`: World and environment creation
-- `js/utils/soundManager.js`: Sound effects and music management
-- `assets/models/`: 3D models for characters and objects
-- `assets/textures/`: Textures for the environment
-- `assets/sounds/`: Sound effects and music files
