@@ -7,19 +7,26 @@ export class World {
         this.scene = scene;
         this.water = null;
         this.sky = null;
+        this.skybox = null;
         
         // Initialize the world
         this.init();
     }
     
     init() {
+        // Initialize collections for interactive objects
+        this.interactiveObjects = [];
+        
+        // Add skybox (this should be first to be in the background)
+        this.addSkybox();
+        
         // Add ground
         this.addGround();
         
         // Add water
         this.addWater();
         
-        // Add sky
+        // Add sky (atmospheric sky)
         this.addSky();
         
         // Add mountains
@@ -33,16 +40,95 @@ export class World {
         
         // Add rocks
         this.addRocks();
+        
+        // Add interactive objects
+        this.addInteractiveObjects();
+        
+        // Add stairs to castle
+        this.addStairs();
+        
+        // Add bridge
+        this.addBridge();
     }
     
     addGround() {
-        // Create ground
-        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+        // Create a more detailed ground with texture
+        const groundSize = 1000;
+        const groundSegments = 128;
+        const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize, groundSegments, groundSegments);
+        
+        // Create a canvas for the ground texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const context = canvas.getContext('2d');
+        
+        // Fill with base color
+        context.fillStyle = '#3a7e4f';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add some texture variation
+        for (let i = 0; i < 5000; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 4 + 1;
+            const alpha = Math.random() * 0.2 + 0.05;
+            
+            // Randomly choose between darker and lighter patches
+            if (Math.random() > 0.5) {
+                context.fillStyle = `rgba(30, 80, 30, ${alpha})`;  // Darker green
+            } else {
+                context.fillStyle = `rgba(100, 180, 100, ${alpha})`;  // Lighter green
+            }
+            
+            context.beginPath();
+            context.arc(x, y, size, 0, Math.PI * 2);
+            context.fill();
+        }
+        
+        // Create texture from canvas
+        const groundTexture = new THREE.CanvasTexture(canvas);
+        groundTexture.wrapS = THREE.RepeatWrapping;
+        groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(10, 10);
+        
+        // Create bump map for more detail
+        const bumpCanvas = document.createElement('canvas');
+        bumpCanvas.width = 1024;
+        bumpCanvas.height = 1024;
+        const bumpContext = bumpCanvas.getContext('2d');
+        
+        // Fill with neutral gray
+        bumpContext.fillStyle = '#808080';
+        bumpContext.fillRect(0, 0, bumpCanvas.width, bumpCanvas.height);
+        
+        // Add random bumps
+        for (let i = 0; i < 8000; i++) {
+            const x = Math.random() * bumpCanvas.width;
+            const y = Math.random() * bumpCanvas.height;
+            const size = Math.random() * 6 + 1;
+            const value = Math.random() * 60 + 100;  // Values between 100-160
+            
+            bumpContext.fillStyle = `rgb(${value}, ${value}, ${value})`;
+            bumpContext.beginPath();
+            bumpContext.arc(x, y, size, 0, Math.PI * 2);
+            bumpContext.fill();
+        }
+        
+        const bumpTexture = new THREE.CanvasTexture(bumpCanvas);
+        bumpTexture.wrapS = THREE.RepeatWrapping;
+        bumpTexture.wrapT = THREE.RepeatWrapping;
+        bumpTexture.repeat.set(10, 10);
+        
+        // Create ground material with textures
         const groundMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x3a7e4f,  // Green color for grass
+            map: groundTexture,
+            bumpMap: bumpTexture,
+            bumpScale: 0.2,
             roughness: 0.8,
-            metalness: 0.2
+            metalness: 0.1
         });
+        
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
         
         // Rotate and position the ground
@@ -51,6 +137,9 @@ export class World {
         ground.receiveShadow = true;
         
         this.scene.add(ground);
+        
+        // Add collision detection for the ground
+        this.ground = ground;
     }
     
     addWater() {
@@ -79,6 +168,51 @@ export class World {
         this.water.position.y = -5;
         
         this.scene.add(this.water);
+    }
+    
+    addSkybox() {
+        // Create a skybox using a cube texture
+        const loader = new THREE.CubeTextureLoader();
+        loader.setPath('/Users/anhle/work-station/game-v5/assets/images/skybox/');
+        
+        // Use placeholder colors for the skybox faces
+        const materialArray = [];
+        const faceColors = [0x0077ff, 0x00aaff, 0x55aaff, 0x55aaff, 0x0088ff, 0x0088ff]; // Different blue shades
+        
+        for (let i = 0; i < 6; i++) {
+            // Create a canvas for each face
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const context = canvas.getContext('2d');
+            
+            // Fill with color
+            context.fillStyle = '#' + faceColors[i].toString(16).padStart(6, '0');
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add some simple clouds or stars to make it more interesting
+            context.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let j = 0; j < 100; j++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = Math.random() * 3 + 1;
+                context.beginPath();
+                context.arc(x, y, size, 0, Math.PI * 2);
+                context.fill();
+            }
+            
+            // Create texture from canvas
+            const texture = new THREE.CanvasTexture(canvas);
+            materialArray.push(new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.BackSide
+            }));
+        }
+        
+        // Create skybox mesh
+        const skyboxGeo = new THREE.BoxGeometry(1000, 1000, 1000);
+        this.skybox = new THREE.Mesh(skyboxGeo, materialArray);
+        this.scene.add(this.skybox);
     }
     
     addSky() {
@@ -255,10 +389,15 @@ export class World {
         }
     }
     
-    update(deltaTime) {
+    update(deltaTime, camera) {
         // Update water
         if (this.water) {
             this.water.material.uniforms['time'].value += deltaTime;
+        }
+        
+        // Update skybox position to follow camera
+        if (this.skybox && camera) {
+            this.skybox.position.copy(camera.position);
         }
     }
 }

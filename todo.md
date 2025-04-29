@@ -32,4 +32,33 @@
 - [ ] Add attach effect for hero
 - [ ] Reduce e,q change looks direction slower
 - [ ] Update enemy model, make different kinds of hero, make enemy model much complex and beauty
-
+- [ ] Everything must be in 3d, wing 3d, hero model is 3d, enemy is 3d, ground is 3d, skybox is 3d, everything must be in 3d
+- [ ] Add a boss fight scene
+- [ ] Add a boss model, make him very strong and difficult to defeat
+- [ ] Add a boss battle music
+- [ ] Add a boss battle background image
+- [ ] Add a boss battle background video
+- [ ] Add a boss battle background audio
+- [ ] Add a boss battle background music
+- [ ] Add a boss battle background video/audio/music looping
+- [ ] Add another aspect of ARPG game, like dungeon crawler, tower defense, etc.
+- [ ] Add a dungeon crawler map
+- [ ] Allow to move from map to map to map
+- [ ] Add a tower defense map
+- [ ] Allow to move from map to map
+- [ ] Add a RPG game mode, allow player to choose class, level up, buy items, etc.
+- [ ] Add teleport from place to place
+- [ ] Add a shop where players can buy items, sell items, etc.
+- [ ] Add a crafting system where players can craft items, weapons, armor, etc.
+- [ ] Add effect animation when hero attacks or defends
+- [ ] Add effect animation when hero casts spells
+- [ ] Add effect animation when hero takes damage
+- [ ] Add effect animation when hero dies
+- [ ] Add effect animation when hero levels up
+- [ ] Add effect animation when hero buys/sells/crafts items/weapons/armors/etc.
+- [ ] Update terrain texture, terrain heightmap, terrain normalmap, terrain displacementmap, terrain specularmap, terrain bumpmap, terrain ambientocclusionmap, terrain lightmap, etc.
+- [ ] Add a particle system for smoke, fire, dust, blood, etc.
+- [ ] Add a particle system for explosion, lightning, thunder, rain, snow, etc.
+- [ ] Add a particle system for water splash, wave, foam, etc.
+- [ ] Add more skills, skill tree system, skill point system, skill upgrade system, skill cooldown system, skill cost system, skill targetting system, skill area of effect system, skill projectile system, skill animation system, skill sound system, skill effect system, etc.
+- [ ] Add more characters, each character has his own unique abilities, skills, stats, etc.

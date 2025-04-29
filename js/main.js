@@ -203,7 +203,7 @@ class Game {
         
         // Update world
         if (this.world) {
-            this.world.update(deltaTime);
+            this.world.update(deltaTime, this.camera);
         }
         
         // Update hero
