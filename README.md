@@ -38,9 +38,10 @@ A simple 3D action role-playing game built with Three.js.
 
 ## Controls
 
-- **W, A, S, D**: Move the character
+- **W, A, S, D**: Move the character (relative to facing direction)
+- **Q, E**: Look left and right
+- **Mouse**: Control look direction (click on game to capture mouse, ESC to release)
 - **Space**: Jump (press multiple times to jump higher)
-- **Mouse**: Control looks
 - **Y, U, I, H, J, K**: Use skills
 
 ## Project Structure

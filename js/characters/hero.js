@@ -18,12 +18,18 @@ export class Hero {
         this.jumpTime = 0;
         this.skills = {};
         this.cooldowns = {};
+        this.rotation = new THREE.Euler(0, 0, 0, 'YXZ'); // YXZ order for FPS-style rotation
+        this.direction = new THREE.Vector3(0, 0, -1); // Forward direction
         
         // Initialize the hero
         this.init();
     }
     
     init() {
+        // Create a group to hold the hero and allow for rotation
+        this.group = new THREE.Group();
+        this.scene.add(this.group);
+        
         // Create a simple placeholder mesh for now
         // In a full implementation, we would load a GLTF model
         const geometry = new THREE.BoxGeometry(1, 2, 1);
@@ -49,9 +55,19 @@ export class Hero {
         
         const material = new THREE.MeshStandardMaterial({ color });
         this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.set(0, 1, 0);
+        this.mesh.position.y = 1; // Set height
         this.mesh.castShadow = true;
-        this.scene.add(this.mesh);
+        
+        // Add a direction indicator (arrow) to show which way the hero is facing
+        const arrowGeometry = new THREE.ConeGeometry(0.2, 0.8, 8);
+        const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        this.arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        this.arrow.position.set(0, 1.5, -0.8); // Position above and in front of hero
+        this.arrow.rotation.x = Math.PI / 2; // Rotate to point forward
+        
+        // Add mesh and arrow to group
+        this.group.add(this.mesh);
+        this.group.add(this.arrow);
         
         // Initialize skills based on hero type
         this.initSkills();
@@ -75,7 +91,12 @@ export class Hero {
         }
     }
     
-    update(deltaTime, keys) {
+    update(deltaTime, keys, inputHandler) {
+        // Handle rotation from mouse and Q/E keys
+        if (inputHandler) {
+            this.handleRotation(inputHandler);
+        }
+        
         // Handle movement
         this.handleMovement(deltaTime, keys);
         
@@ -87,23 +108,73 @@ export class Hero {
         
         // Handle skill activation
         this.handleSkills(keys);
+        
+        // Update direction vector based on current rotation
+        this.updateDirection();
+    }
+    
+    handleRotation(inputHandler) {
+        // Get look direction from input handler
+        const lookDir = inputHandler.getLookDirection();
+        
+        // Apply rotation
+        // Horizontal rotation (around Y axis)
+        this.rotation.y -= lookDir.x * 0.01;
+        
+        // Vertical rotation (around X axis) - limit to avoid flipping
+        this.rotation.x -= lookDir.y * 0.01;
+        this.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.x));
+        
+        // Apply rotation to the group
+        this.group.rotation.y = this.rotation.y;
+        
+        // Reset input handler movement to avoid continuous rotation
+        inputHandler.resetMovement();
+    }
+    
+    updateDirection() {
+        // Update direction vector based on current rotation
+        this.direction.set(0, 0, -1).applyEuler(this.rotation);
     }
     
     handleMovement(deltaTime, keys) {
         const moveSpeed = config.player.moveSpeed * deltaTime;
         
-        // Handle WASD movement
+        // Calculate movement direction relative to facing direction
+        let moveX = 0;
+        let moveZ = 0;
+        
         if (keys.w) {
-            this.mesh.position.z -= moveSpeed;
+            moveZ -= 1; // Forward
         }
         if (keys.s) {
-            this.mesh.position.z += moveSpeed;
+            moveZ += 1; // Backward
         }
         if (keys.a) {
-            this.mesh.position.x -= moveSpeed;
+            moveX -= 1; // Left
         }
         if (keys.d) {
-            this.mesh.position.x += moveSpeed;
+            moveX += 1; // Right
+        }
+        
+        // Normalize if moving diagonally
+        if (moveX !== 0 && moveZ !== 0) {
+            const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+            moveX /= length;
+            moveZ /= length;
+        }
+        
+        // Apply movement relative to facing direction
+        if (moveX !== 0 || moveZ !== 0) {
+            // Create movement vector
+            const movement = new THREE.Vector3(moveX, 0, moveZ);
+            
+            // Rotate movement vector by hero's Y rotation
+            movement.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
+            
+            // Apply movement
+            this.group.position.x += movement.x * moveSpeed;
+            this.group.position.z += movement.z * moveSpeed;
         }
     }
     
@@ -126,10 +197,10 @@ export class Hero {
             
             if (jumpProgress < 1) {
                 // Rising and falling
-                this.mesh.position.y = 1 + jumpHeight * Math.sin(jumpProgress * Math.PI);
+                this.group.position.y = jumpHeight * Math.sin(jumpProgress * Math.PI);
             } else {
                 // Jump completed
-                this.mesh.position.y = 1;
+                this.group.position.y = 0;
                 this.isJumping = false;
                 
                 // Check if we should enter flying mode
@@ -144,14 +215,14 @@ export class Hero {
         if (this.isFlying) {
             if (keys.space) {
                 // Ascend
-                this.mesh.position.y += config.player.moveSpeed * 0.5 * deltaTime;
+                this.group.position.y += config.player.moveSpeed * 0.5 * deltaTime;
             } else {
                 // Descend
-                this.mesh.position.y -= config.player.moveSpeed * 0.3 * deltaTime;
+                this.group.position.y -= config.player.moveSpeed * 0.3 * deltaTime;
                 
                 // Check if we've landed
-                if (this.mesh.position.y <= 1) {
-                    this.mesh.position.y = 1;
+                if (this.group.position.y <= 0) {
+                    this.group.position.y = 0;
                     this.isFlying = false;
                 }
             }
@@ -249,13 +320,22 @@ export class Hero {
         }
         
         const effect = new THREE.Mesh(geometry, material);
-        effect.position.copy(this.mesh.position);
         
-        // Adjust position based on skill
-        if (skill.name === 'Heal' || skill.name === 'Shield') {
-            effect.position.y = this.mesh.position.y;
-        } else {
-            effect.position.z = this.mesh.position.z - 2; // Position in front of player
+        // Position effect in front of the hero based on direction
+        const spawnPosition = this.getPosition().clone();
+        spawnPosition.y += 1; // Adjust height to be at center of hero
+        
+        // For directional skills, position in front of hero based on facing direction
+        if (['Fireball', 'Ice Spike', 'Thunder Strike'].includes(skill.name)) {
+            const offset = this.direction.clone().multiplyScalar(2);
+            spawnPosition.add(offset);
+        }
+        
+        effect.position.copy(spawnPosition);
+        
+        // For directional skills, orient them in the direction the hero is facing
+        if (['Fireball', 'Ice Spike', 'Thunder Strike'].includes(skill.name)) {
+            effect.lookAt(spawnPosition.clone().add(this.direction));
         }
         
         this.scene.add(effect);
@@ -264,6 +344,14 @@ export class Hero {
         setTimeout(() => {
             this.scene.remove(effect);
         }, 1000);
+    }
+    
+    getPosition() {
+        return this.group.position.clone();
+    }
+    
+    getDirection() {
+        return this.direction.clone();
     }
     
     takeDamage(amount) {

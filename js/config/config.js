@@ -115,6 +115,8 @@ export const config = {
             moveBackward: "s",
             moveLeft: "a",
             moveRight: "d",
+            lookLeft: "q",
+            lookRight: "e",
             jump: " ", // space
             skill1: "y",
             skill2: "u",
@@ -125,6 +127,7 @@ export const config = {
         },
         mouse: {
             look: true,
+            sensitivity: 0.5,
             attack: 0 // left mouse button
         }
     },

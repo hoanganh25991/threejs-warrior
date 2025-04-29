@@ -181,20 +181,40 @@ class Game {
         
         // Update hero
         if (this.hero && this.inputHandler) {
-            this.hero.update(deltaTime, this.inputHandler.keys);
+            // Pass the input handler to the hero for rotation
+            this.hero.update(deltaTime, this.inputHandler.keys, this.inputHandler);
             
-            // Update camera to follow hero
-            this.camera.position.x = this.hero.mesh.position.x;
-            this.camera.position.z = this.hero.mesh.position.z + 10;
-            this.camera.lookAt(this.hero.mesh.position);
+            // Get hero position and direction
+            const heroPosition = this.hero.getPosition();
+            const heroDirection = this.hero.getDirection();
+            
+            // Update camera to follow hero with offset based on direction
+            // Position camera behind and slightly above the hero
+            const cameraOffset = new THREE.Vector3(0, 3, 8); // Adjust these values as needed
+            
+            // Calculate camera position based on hero rotation
+            const rotatedOffset = cameraOffset.clone().applyAxisAngle(
+                new THREE.Vector3(0, 1, 0), 
+                this.hero.rotation.y
+            );
+            
+            // Set camera position
+            this.camera.position.copy(heroPosition).add(rotatedOffset);
+            
+            // Look at a point slightly above the hero
+            const lookTarget = heroPosition.clone();
+            lookTarget.y += 1.5; // Look at head level
+            this.camera.lookAt(lookTarget);
         }
         
         // Update enemies
         if (this.enemyManager && this.hero) {
-            this.enemyManager.update(deltaTime, this.hero.mesh.position);
+            // Use hero's group position instead of mesh position
+            const heroPosition = this.hero.getPosition();
+            this.enemyManager.update(deltaTime, heroPosition);
             
             // Check for collisions between hero and enemies
-            const collisions = this.enemyManager.checkCollisions(this.hero.mesh.position);
+            const collisions = this.enemyManager.checkCollisions(heroPosition);
             
             // Handle damage to hero
             for (const collision of collisions) {
@@ -218,9 +238,12 @@ class Game {
                     // Use skill
                     const skillName = this.hero.skills[key].name;
                     
-                    // Create skill effect
-                    const direction = new THREE.Vector3(0, 0, -1); // Forward direction
-                    this.skillManager.useSkill(skillName, this.hero.mesh.position.clone(), direction);
+                    // Create skill effect using hero's direction
+                    const heroPosition = this.hero.getPosition().clone();
+                    heroPosition.y += 1; // Adjust to center of hero
+                    const heroDirection = this.hero.getDirection();
+                    
+                    this.skillManager.useSkill(skillName, heroPosition, heroDirection);
                     
                     // Play sound
                     this.soundManager.playSound(skillName.toLowerCase().replace(/\s+/g, ''));

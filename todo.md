@@ -1,1 +1,2 @@
 - [x] Base on the `docs/requirement.md`, Implemented Features, only use simple setup: index.html, script tag type module, three.js
+- [x] Add mouse capture for look direction control and E/Q keys for simple left/right looking
