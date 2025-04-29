@@ -6,6 +6,9 @@
 - [ ] Add some lights
 - [ ] Add some sounds
 - [ ] Add some animations
+- [ ] Update wing, wing should be smaller than body, wing in white, wing with curve
+- [ ] Add a hero model, it's just a cube now, but later will be replaced by a more complex modelr on the back, 
+- [ ] Add model for hero, each character must be different and must be complex close dota 1 appearance
 - [ ] Add collision check, hero can jump on the rock, hero can stand on roof, hero can walk, jump on brige, stair, add stair on castle to test that we can walk on stair
 - [ ] Press go forward + go left: auto go forward and look direction change left
 - [ ] Press go forward + go right: auto go forward and look direction change right
@@ -28,3 +31,6 @@
 - [ ] Add attach animation for hero
 - [ ] Add attach sound for hero
 - [ ] Add attach effect for hero
+- [ ] Reduce e,q change looks direction slower
+- [ ] Update enemy model, make different kinds of hero, make enemy model much complex and beauty
+
