@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export class DefaultHero extends THREE.Object3D {
+export default class DefaultHero extends THREE.Object3D {
   constructor(scene) {
     // Create a simple default hero
     const modelGroup = new THREE.Group();

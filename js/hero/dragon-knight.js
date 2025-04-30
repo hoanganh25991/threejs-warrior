@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export class DragonKnight extends THREE.Object3D {
+export default class DragonKnight extends THREE.Object3D {
   constructor() {
     // Create a more complex Dragon Knight model
     const modelGroup = new THREE.Group();

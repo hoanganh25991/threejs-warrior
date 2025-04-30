@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,29 +25,29 @@
             flex-direction: column;
             height: 100vh;
         }
-        
+
         .container {
             display: flex;
             flex: 1;
         }
-        
+
         .sidebar {
             width: 250px;
             background-color: #2a2a2a;
             padding: 20px;
             overflow-y: auto;
         }
-        
+
         .viewer {
             flex: 1;
             position: relative;
         }
-        
+
         #model-canvas {
             width: 100%;
             height: 100%;
         }
-        
+
         h1 {
             margin-top: 0;
             color: #4a9df0;
@@ -55,7 +56,7 @@
             background-color: #222;
             margin-bottom: 20px;
         }
-        
+
         select {
             width: 100%;
             padding: 8px;
@@ -65,14 +66,14 @@
             border: 1px solid #444;
             border-radius: 4px;
         }
-        
+
         /* Custom Select Styling */
         .custom-select-wrapper {
             position: relative;
             width: 100%;
             margin-bottom: 15px;
         }
-        
+
         .custom-select {
             position: relative;
             width: 100%;
@@ -82,14 +83,14 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        
+
         .custom-select-trigger {
             position: relative;
             display: block;
             padding: 10px;
             font-size: 14px;
         }
-        
+
         .custom-select-trigger:after {
             content: '▼';
             position: absolute;
@@ -98,11 +99,11 @@
             font-size: 10px;
             transition: transform 0.3s;
         }
-        
+
         .custom-select.opened .custom-select-trigger:after {
             transform: rotate(180deg);
         }
-        
+
         .custom-options {
             position: absolute;
             display: none;
@@ -117,41 +118,41 @@
             border-radius: 0 0 4px 4px;
             z-index: 10;
         }
-        
+
         .custom-select.opened .custom-options {
             display: block;
         }
-        
+
         .custom-option {
             position: relative;
             padding: 10px;
             border-bottom: 1px solid #444;
         }
-        
+
         .custom-option:hover {
             background-color: #3a3a3a;
         }
-        
+
         .custom-option.selected {
             background-color: #4a9df0;
         }
-        
+
         .custom-option-name {
             font-weight: bold;
         }
-        
+
         .custom-option-path {
             font-size: 0.9em;
             opacity: 0.8;
         }
-        
+
         .custom-option-description {
             display: block;
             margin-top: 5px;
             font-size: 0.9em;
             color: #aaa;
         }
-        
+
         button {
             width: 100%;
             padding: 10px;
@@ -162,18 +163,18 @@
             cursor: pointer;
             margin-bottom: 10px;
         }
-        
+
         button:hover {
             background-color: #3a8de0;
         }
-        
+
         .model-info {
             margin-top: 20px;
             padding: 10px;
             background-color: #333;
             border-radius: 4px;
         }
-        
+
         .controls-info {
             position: absolute;
             bottom: 10px;
@@ -185,6 +186,7 @@
         }
     </style>
 </head>
+
 <body>
     <h1>3D Model Viewer</h1>
     <div class="container">
@@ -221,12 +223,12 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        
+
         // Main variables
         let scene, camera, renderer, controls;
         let currentModel = null;
         let netBox = null; // Visual representation of the "net" area
-        
+
         // Model registry - maps file paths to model information
         const modelRegistry = {
             'js/world/castle.js': {
@@ -285,15 +287,22 @@
             'js/world/interactive-objects/training-dummy.js': {
                 name: 'Training Dummy',
                 description: 'A combat training dummy that can be attacked for practice.'
-            }
+            },
+            // Hero
+            'js/hero/axe.js': {},
+            'js/hero/crystal-maiden.js': {},
+            'js/hero/default-hero.js': {},
+            'js/hero/dragon-knight.js': {},
+            'js/hero/lina.js': {},
+            'js/hero/wings.js': {},
         };
-        
+
         // Initialize the scene
         function init() {
             // Create scene
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb); // Sky blue background
-            
+
             // Create camera
             camera = new THREE.PerspectiveCamera(
                 75,
@@ -302,58 +311,58 @@
                 1000
             );
             camera.position.set(50, 30, 50);
-            
+
             // Create renderer
             const canvas = document.getElementById('model-canvas');
-            renderer = new THREE.WebGLRenderer({ 
+            renderer = new THREE.WebGLRenderer({
                 canvas: canvas,
-                antialias: true 
+                antialias: true
             });
             renderer.setSize(canvas.clientWidth, canvas.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.shadowMap.enabled = true;
-            
+
             // Add controls
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            
+
             // Add lights
             addLights();
-            
+
             // Add grid helper
             const gridHelper = new THREE.GridHelper(100, 20, 0x555555, 0x333333);
             scene.add(gridHelper);
-            
+
             // Add axes helper
             const axesHelper = new THREE.AxesHelper(20);
             scene.add(axesHelper);
-            
+
             // Add net box to visualize the area models should fit within
             createNetBox();
-            
+
             // Populate model selector
             populateModelSelector();
-            
+
             // Add event listeners
             window.addEventListener('resize', onWindowResize);
             document.getElementById('reset-view-btn').addEventListener('click', resetView);
-            
+
             // Start animation loop
             animate();
         }
-        
+
         // Add lights to the scene
         function addLights() {
             // Ambient light
             const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
             scene.add(ambientLight);
-            
+
             // Directional light (sun)
             const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
             directionalLight.position.set(50, 100, 50);
             directionalLight.castShadow = true;
-            
+
             // Set up shadow properties
             directionalLight.shadow.mapSize.width = 2048;
             directionalLight.shadow.mapSize.height = 2048;
@@ -363,159 +372,159 @@
             directionalLight.shadow.camera.right = 100;
             directionalLight.shadow.camera.top = 100;
             directionalLight.shadow.camera.bottom = -100;
-            
+
             scene.add(directionalLight);
-            
+
             // Add a hemisphere light
             const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x3a7e4f, 0.6);
             scene.add(hemisphereLight);
         }
-        
+
         // Populate the model selector dropdown
         function populateModelSelector() {
             const selector = document.getElementById('model-selector');
             const customOptions = document.querySelector('.custom-options');
             const customTrigger = document.querySelector('.custom-select-trigger');
-            
+
             // Clear existing options except the first one
             while (selector.options.length > 1) {
                 selector.remove(1);
             }
-            
+
             // Clear custom options except the first one
             const customOptionElements = customOptions.querySelectorAll('.custom-option');
             for (let i = 1; i < customOptionElements.length; i++) {
                 customOptions.removeChild(customOptionElements[i]);
             }
-            
+
             // Add options for each model in the registry
             for (const [path, model] of Object.entries(modelRegistry)) {
                 // Extract filename from path for fallback display
                 const filename = path.split('/').pop().replace('.js', '');
-                
+
                 // Get name or use filename as fallback
                 const name = model.name || filename;
-                
+
                 // Add to hidden select element
                 const option = document.createElement('option');
                 option.value = path;
                 option.textContent = name;
                 selector.appendChild(option);
-                
+
                 // Add to custom select
                 const customOption = document.createElement('div');
                 customOption.className = 'custom-option';
                 customOption.setAttribute('data-value', path);
-                
+
                 // Create structured content with name, path, and description
                 let optionHTML = `<span class="custom-option-name">${name}</span>`;
                 optionHTML += `<span class="custom-option-path">${path}</span>`;
-                
+
                 if (model.description) {
                     optionHTML += `<span class="custom-option-description">${model.description}</span>`;
                 }
-                
+
                 customOption.innerHTML = optionHTML;
                 customOptions.appendChild(customOption);
-                
+
                 // Add click event to custom option
-                customOption.addEventListener('click', function() {
+                customOption.addEventListener('click', function () {
                     // Update the hidden select value
                     selector.value = this.getAttribute('data-value');
-                    
+
                     // Update the trigger text
                     customTrigger.textContent = name;
-                    
+
                     // Close the dropdown
                     document.querySelector('.custom-select').classList.remove('opened');
-                    
+
                     // Mark this option as selected
                     document.querySelectorAll('.custom-option').forEach(opt => {
                         opt.classList.remove('selected');
                     });
                     this.classList.add('selected');
-                    
+
                     // Load the model automatically
                     if (this.getAttribute('data-value')) {
                         loadSelectedModel();
                     }
                 });
             }
-            
+
             // Add click event to custom select trigger
-            document.querySelector('.custom-select-trigger').addEventListener('click', function() {
+            document.querySelector('.custom-select-trigger').addEventListener('click', function () {
                 document.querySelector('.custom-select').classList.toggle('opened');
             });
-            
+
             // Close custom select when clicking outside
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 const select = document.querySelector('.custom-select');
                 if (!select.contains(e.target)) {
                     select.classList.remove('opened');
                 }
             });
         }
-        
+
         // Load the selected model
         async function loadSelectedModel() {
             const selector = document.getElementById('model-selector');
             const selectedPath = selector.value;
-            
+
             if (!selectedPath) {
                 alert('Please select a model to load');
                 return;
             }
-            
+
             // Clear previous model
             if (currentModel) {
                 scene.remove(currentModel);
                 currentModel = null;
             }
-            
+
             // Get model info
             const modelInfo = modelRegistry[selectedPath];
-            
+
             try {
                 // Dynamically import the model module
                 const modulePath = `./${selectedPath}`;
                 const modelModule = await import(modulePath);
                 const ModelConstructor = modelModule.default;
-                
+
                 // Create new instance of the model
                 let model;
-                
+
                 model = new ModelConstructor(scene);
-                
+
                 // If the model is an array (like some functions might return), add the first item
                 if (Array.isArray(model)) {
                     model = model[0];
                 }
-                
+
                 // Add to scene
                 if (model) {
                     // Define the "net" area - the area we want models to fit within
                     const netSize = { x: 50, y: 50, z: 50 }; // Adjust based on your grid size
-                    
+
                     // Get the bounding box of the model
                     const boundingBox = new THREE.Box3().setFromObject(model);
                     const size = boundingBox.getSize(new THREE.Vector3());
                     const center = boundingBox.getCenter(new THREE.Vector3());
-                    
+
                     // Calculate scale needed to fit in the net
                     let scale = 1.0;
                     const maxDimension = Math.max(size.x, size.y, size.z);
                     const maxNetDimension = Math.min(netSize.x, netSize.y, netSize.z);
-                    
+
                     if (maxDimension > maxNetDimension) {
                         scale = maxNetDimension / maxDimension;
                         model.scale.set(scale, scale, scale);
-                        
+
                         // Recalculate bounding box after scaling
                         boundingBox.setFromObject(model);
                         boundingBox.getSize(size);
                         boundingBox.getCenter(center);
                     }
-                    
+
                     // Center the model at origin (middle of the net)
                     // First, check if the model already has a position set in its file
                     const originalPosition = {
@@ -523,47 +532,47 @@
                         y: model.position.y,
                         z: model.position.z
                     };
-                    
+
                     // Reset position to zero before calculating center
                     model.position.set(0, 0, 0);
-                    
+
                     // Recalculate bounding box after resetting position
                     boundingBox.setFromObject(model);
                     boundingBox.getCenter(center);
-                    
+
                     // Center the model at origin (middle of the net)
                     model.position.x = -center.x;
                     model.position.y = -center.y;
                     model.position.z = -center.z;
-                    
+
                     // Log the centering process
                     console.log(`Original model position: X: ${originalPosition.x}, Y: ${originalPosition.y}, Z: ${originalPosition.z}`);
                     console.log(`Center offset: X: ${center.x}, Y: ${center.y}, Z: ${center.z}`);
                     console.log(`New position: X: ${model.position.x}, Y: ${model.position.y}, Z: ${model.position.z}`);
-                    
+
                     // Ensure model is positioned at the center of the net
                     // This is especially important for models that might have an offset center
                     const netCenter = new THREE.Vector3(0, 0, 0);
-                    
+
                     // Store size, scale, and position information with the model
-                    model.userData.originalSize = { 
-                        x: size.x / scale, 
-                        y: size.y / scale, 
-                        z: size.z / scale 
+                    model.userData.originalSize = {
+                        x: size.x / scale,
+                        y: size.y / scale,
+                        z: size.z / scale
                     };
                     model.userData.currentSize = { x: size.x, y: size.y, z: size.z };
                     model.userData.scale = scale;
                     model.userData.originalPosition = originalPosition;
-                    
+
                     scene.add(model);
                     currentModel = model;
-                    
+
                     // Reset camera to view the model
                     resetView();
-                    
+
                     // Update model info display with size and scale
                     updateModelInfo(selectedPath, modelInfo, model.userData);
-                    
+
                     console.log(`Loaded model: ${modelInfo.name}`);
                     console.log(`Original size: ${JSON.stringify(model.userData.originalSize)}`);
                     console.log(`Current size: ${JSON.stringify(model.userData.currentSize)}`);
@@ -576,24 +585,24 @@
                 alert(`Error loading model: ${error.message}`);
             }
         }
-        
+
         // Update the model information display
         function updateModelInfo(path, modelInfo, userData) {
             const infoElement = document.getElementById('model-info');
-            
+
             let sizeInfo = '';
             let scaleInfo = '';
             let positionInfo = '';
-            
+
             if (userData) {
                 // Format size information
                 const originalSize = userData.originalSize;
                 const currentSize = userData.currentSize;
                 const scale = userData.scale;
-                
+
                 // Format numbers to 2 decimal places
                 const formatNum = (num) => Math.round(num * 100) / 100;
-                
+
                 sizeInfo = `
                     <h4>Size Information</h4>
                     <p><strong>Original Size:</strong> 
@@ -607,12 +616,12 @@
                         Z: ${formatNum(currentSize.z)}
                     </p>
                 `;
-                
+
                 scaleInfo = `
                     <h4>Scale Information</h4>
                     <p><strong>Scale Applied:</strong> ${formatNum(scale)}${scale !== 1 ? ' (resized to fit)' : ' (original size)'}</p>
                 `;
-                
+
                 // Get position information
                 if (currentModel) {
                     positionInfo = `
@@ -623,7 +632,7 @@
                             Z: ${formatNum(currentModel.position.z)}
                         </p>
                     `;
-                    
+
                     // Add original position if available
                     if (currentModel.userData.originalPosition) {
                         const origPos = currentModel.userData.originalPosition;
@@ -637,7 +646,7 @@
                     }
                 }
             }
-            
+
             infoElement.innerHTML = `
                 <h3>Model Information</h3>
                 <p><strong>Name:</strong> ${modelInfo.name}</p>
@@ -648,38 +657,38 @@
                 ${positionInfo}
             `;
         }
-        
+
         // Create a visual representation of the "net" area
         function createNetBox() {
             // Remove existing net box if it exists
             if (netBox) {
                 scene.remove(netBox);
             }
-            
+
             // Define the net size - this should match the size in loadSelectedModel
             const netSize = { x: 50, y: 50, z: 50 };
-            
+
             // Create a wireframe box to represent the net
             const geometry = new THREE.BoxGeometry(netSize.x, netSize.y, netSize.z);
             const edges = new THREE.EdgesGeometry(geometry);
             const material = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
-            
+
             netBox = new THREE.LineSegments(edges, material);
             scene.add(netBox);
-            
+
             // Add a semi-transparent box to better visualize the volume
-            const meshMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0x00ff00, 
-                transparent: true, 
+            const meshMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                transparent: true,
                 opacity: 0.05,
                 side: THREE.DoubleSide
             });
             const meshBox = new THREE.Mesh(geometry, meshMaterial);
             netBox.add(meshBox);
-            
+
             return netBox;
         }
-        
+
         // Reset the camera view to focus on the current model
         function resetView() {
             if (currentModel) {
@@ -687,25 +696,25 @@
                 const box = new THREE.Box3().setFromObject(currentModel);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3());
-                
+
                 // Calculate the distance based on the size of the model
                 const maxDim = Math.max(size.x, size.y, size.z);
                 const fov = camera.fov * (Math.PI / 180);
                 let distance = maxDim / (2 * Math.tan(fov / 2));
-                
+
                 // Set a minimum distance
                 distance = Math.max(distance, 10);
-                
+
                 // Position the camera
                 camera.position.set(
                     center.x + distance,
                     center.y + distance / 2,
                     center.z + distance
                 );
-                
+
                 // Look at the center of the model
                 camera.lookAt(center);
-                
+
                 // Update the controls target
                 controls.target.copy(center);
                 controls.update();
@@ -717,7 +726,7 @@
                 controls.update();
             }
         }
-        
+
         // Handle window resize
         function onWindowResize() {
             const canvas = document.getElementById('model-canvas');
@@ -725,25 +734,26 @@
             camera.updateProjectionMatrix();
             renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         }
-        
+
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            
+
             // Update controls
             controls.update();
-            
+
             // Update any animated models
             if (currentModel && currentModel.update) {
                 currentModel.update(0.016); // Approximate for 60fps
             }
-            
+
             // Render the scene
             renderer.render(scene, camera);
         }
-        
+
         // Initialize the application
         init();
     </script>
 </body>
+
 </html>

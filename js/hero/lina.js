@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export class Lina extends THREE.Object3D {
+export default class Lina extends THREE.Object3D {
   constructor() {
     // Create a more complex Lina model
     const modelGroup = new THREE.Group();

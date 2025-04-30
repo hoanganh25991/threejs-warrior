@@ -1,13 +1,14 @@
 import * as THREE from "three";
 
-export class Wings extends THREE.Object3D {
+export default class Wings extends THREE.Object3D {
   constructor() {
+    super();
     const modelGroup = new THREE.Group();
 
     // Create beautiful angel wings for the hero
     // Create a more beautiful wing shape with enhanced curves
     // Create wing geometry from the shape
-    const wingShape = createWingShape();
+    const wingShape = this.createWingShape();
     const wingGeometry = new THREE.ShapeGeometry(wingShape, 32); // Higher segment count for smoother curves
 
     // Create a beautiful pure white wing material with enhanced glow
@@ -33,8 +34,8 @@ export class Wings extends THREE.Object3D {
     rightWing.scale.set(-0.4, 0.4, 0.4); // Mirror by scaling X negatively, smaller size
 
     // Add feather details to make wings more beautiful
-    addFeatherDetails(leftWing, -1);
-    addFeatherDetails(rightWing, 1);
+    this.addFeatherDetails(leftWing, -1);
+    this.addFeatherDetails(rightWing, 1);
 
     // Add wings to group
     modelGroup.add(leftWing);
@@ -46,18 +47,18 @@ export class Wings extends THREE.Object3D {
     // Add slight angle to wings
     modelGroup.rotation.x = 0.1;
 
-    modelGroup.visible = false;
+    modelGroup.visible = true;
 
     modelGroup.setVisible = (visible) => {
       modelGroup.visible = visible;
     };
 
-    modelGroup.isVisible = () => modelGroup.visible 
+    modelGroup.isVisible = () => modelGroup.visible;
 
     return modelGroup;
   }
 
-  createWingShape = () => {
+  createWingShape() {
     const shape = new THREE.Shape();
 
     // Starting point at the base
@@ -114,7 +115,7 @@ export class Wings extends THREE.Object3D {
     );
 
     return shape;
-  };
+  }
 
   addFeatherDetails(wing, side) {
     // Add beautiful feather details to the wings
