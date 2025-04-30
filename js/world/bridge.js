@@ -2,12 +2,10 @@ import * as THREE from "three";
 
 /**
  * Creates and adds a bridge to the scene
- * @param {THREE.Scene} scene - The scene to add the bridge to
- * @returns {Object} - The bridge object with its properties
  */
 
-export default class Bridge {
-  constructor(scene) {
+export default class Bridge extends THREE.Object3D {
+  constructor() {
     const bridgeGroup = new THREE.Group();
     
     // Add a type property to identify this as a bridge for collision detection

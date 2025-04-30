@@ -2,11 +2,9 @@ import * as THREE from "three";
 
 /**
  * Creates and adds rocks to the scene
- * @param {THREE.Scene} scene - The scene to add rocks to
- * @returns {Array} - Array of rock objects added to the scene
  */
-export default class Rock {
-  constructor(scene) {
+export default class Rock extends THREE.Object3D {
+  constructor() {
     const rockGeometry = new THREE.DodecahedronGeometry(
       1 + Math.random() * 2,
       0

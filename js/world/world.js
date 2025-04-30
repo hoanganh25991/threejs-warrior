@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { addGround } from './ground.js';
-import { addWater } from './water.js';
+import Groud from './ground.js';
+import Water from './water.js';
 import Skybox from './skybox.js';
-import { addSky } from './sky.js';
-import { addMountains } from './mountains.js';
+import Sky from './sky.js';
+import Moutain from './mountains.js';
 import Castle from './castle.js';
-import Tree from './trees.js';
+import Tree from './tree.js';
 import Rock from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';
 import { addStairs } from './stairs.js';
@@ -14,64 +14,63 @@ import Bridge from './bridge.js';
 export class World {
     constructor(scene) {
         this.scene = scene;
-        this.water = null;
-        this.sky = null;
-        this.skybox = null;
-        this.ground = null;
-        this.interactiveObjects = [];
-        
-        // Initialize the world
         this.init();
     }
     
-    init() {
+    init(scene) {
         // Initialize collections for interactive objects
         this.interactiveObjects = [];
         
         // Add skybox (this should be first to be in the background)
         this.skybox = new Skybox();
-        this.scene.add(this.skybox);
+        scene.add(this.skybox);
         
         // Add ground
-        this.ground = addGround(this.scene);
+        this.ground = new Groud();
+        scene.add(this.ground);
         
         // Add water
-        this.water = addWater(this.scene);
+        this.water = new Water();
+        scene.add(this.water);
         
         // Add sky (atmospheric sky)
-        this.sky = addSky(this.scene);
+        this.sky = new Sky();
+        scene.add(this.sky);
         
         // Add mountains
-        this.mountains = addMountains(this.scene);
+        for (let i = 0; i < 5; i++) {
+            const mountain = Moutain(scene);
+            scene.add(mountain);
+        }
         
         // Add castle
         this.castle = new Castle();
-        this.scene.add(this.castle);
+        scene.add(this.castle);
         
         // Add trees
         for (let i = 0; i < 40; ++i) {
-            const tree = new Tree(this.scene);
-            this.scene.add(tree);
+            const tree = new Tree(scene);
+            scene.add(tree);
         }
         // Trees are already added to the scene in the Trees constructor
         
         // Add rocks
         for (let i = 0; i < 30; ++i) {
-            const rock = new Rock(this.scene);
-            this.scene.add(rock);
+            const rock = new Rock(scene);
+            scene.add(rock);
         }
         
         // Add interactive objects
-        const interactiveObjects = addInteractiveObjects(this.scene);
+        const interactiveObjects = addInteractiveObjects(scene);
         this.interactiveObjects.push(...interactiveObjects);
         
         // Add stairs to castle
-        const stairs = addStairs(this.scene);
+        const stairs = addStairs(scene);
         this.interactiveObjects.push(stairs);
         
         // Add bridge
-        const bridge = new Bridge(this.scene);
-        this.scene.add(bridge);
+        const bridge = new Bridge(scene);
+        scene.add(bridge);
         this.interactiveObjects.push(bridge);
     }
     

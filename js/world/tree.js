@@ -2,11 +2,9 @@ import * as THREE from "three";
 
 /**
  * Creates and adds trees to the scene
- * @param {THREE.Scene} scene - The scene to add trees to
- * @returns {Array} - Array of tree groups added to the scene
  */
-export default class Tree {
-  constructor(scene) {
+export default class Tree extends THREE.Object3D {
+  constructor() {
     // Add trees around the scene
     const treeGroup = new THREE.Group();
 

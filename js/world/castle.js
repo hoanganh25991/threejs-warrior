@@ -2,12 +2,10 @@ import * as THREE from "three";
 
 /**
  * Creates and adds a castle to the scene
- * @param {THREE.Scene} scene - The scene to add the castle to
- * @returns {THREE.Group} - The castle group
  */
 
-export default class Castle {
-  constructor(scene) {
+export default class Castle extends THREE.Object3D {
+  constructor() {
     // Create a simple castle in the distance
     const castleGroup = new THREE.Group();
     

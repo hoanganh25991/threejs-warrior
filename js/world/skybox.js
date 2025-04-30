@@ -2,10 +2,8 @@ import * as THREE from 'three';
 
 /**
  * Creates and adds a skybox to the scene
- * @param {THREE.Scene} scene - The scene to add the skybox to
- * @returns {THREE.Mesh} - The skybox mesh
  */
-export default class Skybox {
+export default class Skybox extends THREE.Object3D {
    constructor() {
      // Use placeholder colors for the skybox faces
      const materialArray = [];
