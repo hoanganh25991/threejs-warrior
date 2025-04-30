@@ -9,7 +9,7 @@
 - [x] Update wing, wing should be smaller than body, wing in white, wing with curve
 - [x] Add a hero model, it's just a cube now, but later will be replaced by a more complex modelr on the back, 
 - [x] Add model for hero, each character must be different and must be complex close dota 1 appearance
-- [ ] Add collision check, hero can jump on the rock, hero can stand on roof, hero can walk, jump on brige, stair, add stair on castle to test that we can walk on stair
+- [x] Add collision check, hero can jump on the rock, hero can stand on roof, hero can walk, jump on brige, stair, add stair on castle to test that we can walk on stair
 - [x] Press go forward + go left: auto go forward and look direction change left
 - [x] Press go forward + go right: auto go forward and look direction change right
 - [x] Press go backward + go left: auto go backward and look direction change left
@@ -18,38 +18,38 @@
 - [x] Press go down + go left: auto go down and look direction change left
 - [x] Press go up + go right: auto go up and look direction change right
 - [x] Press go down + go right: auto go down and look direction change right
-- [ ] Add a HUD to show current status of game, like time, score, etc.
-- [ ] Add a skill system, like attack, defend, cast spell, etc.
-- [ ] Add unique skills for each hero
-- [ ] Add basic attack for hero, some hero attack melee, some hero attack range
-- [ ] Add attack animation for hero
-- [ ] Add attack sound for hero
-- [ ] Add attack effect for hero
-- [ ] Update enemy model, make different kinds of hero, make enemy model much complex and beauty
-- [ ] Everything must be in 3d, wing 3d, hero model is 3d, enemy is 3d, ground is 3d, skybox is 3d, everything must be in 3d
-- [ ] Add a boss fight scene
-- [ ] Add a boss model, make him very strong and difficult to defeat
-- [ ] Add a boss battle music
-- [ ] Add a boss battle background image
-- [ ] Add a boss battle background video
-- [ ] Add a boss battle background audio
-- [ ] Add a boss battle background music
-- [ ] Add a boss battle background video/audio/music looping
-- [ ] Add another aspect of ARPG game, like dungeon crawler, tower defense, etc.
-- [ ] Add a dungeon crawler map
-- [ ] Add teleport from place to place, navigate map to map
-- [ ] Add a RPG game mode, allow player to choose class, level up, buy items, etc.
-- [ ] Add a shop where player can buy items, sell items, etc.
-- [ ] Add a crafting system where player can craft items, weapons, armor, etc.
-- [ ] Add effect animation when hero attacks or defends
-- [ ] Add effect animation when hero casts spells
-- [ ] Add effect animation when hero takes damage
-- [ ] Add effect animation when hero dies
-- [ ] Add effect animation when hero levels up
-- [ ] Add effect animation when hero buys/sells/crafts items/weapons/armors/etc.
-- [ ] Update terrain texture, terrain heightmap, terrain normalmap, terrain displacementmap, terrain specularmap, terrain bumpmap, terrain ambientocclusionmap, terrain lightmap, etc.
-- [ ] Add a particle system for smoke, fire, dust, blood, etc.
-- [ ] Add a particle system for explosion, lightning, thunder, rain, snow, etc.
-- [ ] Add a particle system for water splash, wave, foam, etc.
-- [ ] Add more skills, skill tree system, skill point system, skill upgrade system, skill cooldown system, skill cost system, skill targetting system, skill area of effect system, skill projectile system, skill animation system, skill sound system, skill effect system, etc.
-- [ ] Add more characters, each character has his own unique abilities, skills, stats, etc.
+- [x] Add a HUD to show current status of game, like time, score, etc.
+- [x] Add a skill system, like attack, defend, cast spell, etc.
+- [x] Add unique skills for each hero
+- [x] Add basic attack for hero, some hero attack melee, some hero attack range
+- [x] Add attack animation for hero
+- [x] Add attack sound for hero
+- [x] Add attack effect for hero
+- [x] Update enemy model, make different kinds of hero, make enemy model much complex and beauty
+- [x] Everything must be in 3d, wing 3d, hero model is 3d, enemy is 3d, ground is 3d, skybox is 3d, everything must be in 3d
+- [x] Add a boss fight scene
+- [x] Add a boss model, make him very strong and difficult to defeat
+- [x] Add a boss battle music
+- [x] Add a boss battle background image
+- [x] Add a boss battle background video
+- [x] Add a boss battle background audio
+- [x] Add a boss battle background music
+- [x] Add a boss battle background video/audio/music looping
+- [x] Add another aspect of ARPG game, like dungeon crawler, tower defense, etc.
+- [x] Add a dungeon crawler map
+- [x] Add teleport from place to place, navigate map to map
+- [x] Add effect animation when hero attacks or defends
+- [x] Add effect animation when hero casts spells
+- [x] Add effect animation when hero takes damage
+- [x] Add effect animation when hero dies
+- [x] Add effect animation when hero levels up
+- [x] Add effect animation when hero buys/sells/crafts items/weapons/armors/etc.
+- [x] Add a RPG game mode, allow player to choose class, level up, buy items, etc.
+- [x] Add a shop where player can buy items, sell items, etc.
+- [x] Add a crafting system where player can craft items, weapons, armor, etc.
+- [x] Update terrain texture, terrain heightmap, terrain normalmap, terrain displacementmap, terrain specularmap, terrain bumpmap, terrain ambientocclusionmap, terrain lightmap, etc.
+- [x] Add a particle system for smoke, fire, dust, blood, etc.
+- [x] Add a particle system for explosion, lightning, thunder, rain, snow, etc.
+- [x] Add a particle system for water splash, wave, foam, etc.
+- [x] Add more skills, skill tree system, skill point system, skill upgrade system, skill cooldown system, skill cost system, skill targetting system, skill area of effect system, skill projectile system, skill animation system, skill sound system, skill effect system, etc.
+- [x] Add more characters, each character has his own unique abilities, skills, stats, etc.

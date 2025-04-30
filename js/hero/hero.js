@@ -4,6 +4,10 @@ import CrystalMaiden from "./crystal-maiden.js";
 import Lina from "./lina.js";
 import DefaultHero from "./default-hero.js";
 import Wings from "./wings.js";
+import DragonBreath from "../skills/dragon-knight/dragon-breath.js";
+import FrostNova from "../skills/crystal-maiden/frost-nova.js";
+import SoundManager from "../audio/sound-manager.js";
+import Attack from "../combat/attack.js";
 import * as THREE from "three";
 import { config } from "../config/config.js";
 
@@ -21,8 +25,8 @@ export default class Hero {
     this.isJumping = false;
     this.isFlying = false;
     this.jumpTime = 0;
-    this.skills = {};
-    this.cooldowns = {};
+    this.skills = new Map();
+    this.cooldowns = new Map();
     this.rotation = new THREE.Euler(0, 0, 0, "YXZ"); // YXZ order for FPS-style rotation
     this.direction = new THREE.Vector3(0, 0, -1); // Forward direction
 
@@ -35,6 +39,28 @@ export default class Hero {
     // Debug flag
     this.debug = config.game.debug;
 
+    // Initialize sound manager
+    this.soundManager = new SoundManager();
+    this.soundManager.init();
+
+    // Initialize attack system
+    this.attackSystem = new Attack(this);
+
+    // Set attack type based on hero type
+    switch (heroType) {
+      case 'dragon-knight':
+      case 'axe':
+        this.attackType = 'melee';
+        break;
+      case 'crystal-maiden':
+      case 'lina':
+        this.attackType = 'ranged';
+        this.projectileColor = heroType === 'crystal-maiden' ? 0x00ffff : 0xff4400;
+        break;
+      default:
+        this.attackType = 'melee';
+    }
+
     // Initialize the hero
     this.init();
 
@@ -44,10 +70,66 @@ export default class Hero {
     console.log("Hero initialized, onGround:", this.onGround);
   }
 
+  initializeSkills() {
+    // Initialize skills based on hero type
+    switch (this.heroType) {
+      case 'dragon-knight':
+        this.skills.set('Y', new DragonBreath(this));
+        break;
+      case 'crystal-maiden':
+        this.skills.set('Y', new FrostNova(this));
+        break;
+      // Add more hero types and their skills here
+    }
+  }
+
+  useSkill(key) {
+    const skill = this.skills.get(key);
+    if (skill && skill.canUse()) {
+      skill.activate();
+      this.cooldowns.set(key, skill.getCooldownDuration());
+    }
+  }
+
+  updateSkills(delta) {
+    // Update all skills
+    for (const [key, skill] of this.skills) {
+      skill.update(delta);
+    }
+
+    // Update cooldowns
+    for (const [key, cooldown] of this.cooldowns) {
+      if (cooldown > 0) {
+        this.cooldowns.set(key, cooldown - delta);
+      }
+    }
+
+    // Update attack system
+    this.attackSystem.update(delta);
+  }
+
+  handleInput(input) {
+    // Handle basic attack (left mouse click)
+    if (input.mouseButtons.left) {
+      this.attackSystem.startAttack();
+    }
+
+    // Handle skill activation
+    if (input.keys.Y) this.useSkill('Y');
+    if (input.keys.U) this.useSkill('U');
+    if (input.keys.I) this.useSkill('I');
+    if (input.keys.H) this.useSkill('H');
+    if (input.keys.J) this.useSkill('J');
+    if (input.keys.K) this.useSkill('K');
+  }
+
   init() {
     // Create a group to hold the hero and allow for rotation
     this.group = new THREE.Group();
     this.scene.add(this.group);
+    
+    // Initialize skills based on hero type
+    this.initializeSkills();
 
     // Create a hero model based on hero type
     switch (this.heroType) {
@@ -704,28 +786,11 @@ export default class Hero {
       }
     }
 
-    // Handle vertical movement (flying up/down) with combined look direction changes
-    if (this.isFlying) {
-      // Up movement
-      if (keys[" "]) {
-        // Space key for up
-        // Combined up + left/right movement changes look direction
-        if (keys.a) {
-          lookDirectionChange = -1; // Look left while moving up
-        } else if (keys.d) {
-          lookDirectionChange = 1; // Look right while moving up
-        }
-      }
-
-      // Down movement (when not pressing space while flying)
-      if (!keys[" "] && this.velocity.y < 0) {
-        // Combined down + left/right movement changes look direction
-        if (keys.a) {
-          lookDirectionChange = -1; // Look left while moving down
-        } else if (keys.d) {
-          lookDirectionChange = 1; // Look right while moving down
-        }
-      }
+    // Only handle horizontal look direction changes
+    if (keys.a) {
+      lookDirectionChange = -1;
+    } else if (keys.d) {
+      lookDirectionChange = 1;
     }
 
     // Handle left/right movement without forward/backward
@@ -784,18 +849,9 @@ export default class Hero {
         );
 
         if (collisionResult.canMove) {
-          // Update position with collision-adjusted position
-          this.group.position.copy(collisionResult.newPosition);
-
-          // Update onGround status based on slope
-          this.onGround = collisionResult.isOnSlope || Math.abs(this.group.position.y - collisionResult.newPosition.y) < 0.1;
-
-          // If we're on a slope, adjust movement speed
-          if (collisionResult.isOnSlope) {
-            // Reduce movement speed on slopes
-            this.velocity.x *= 0.8;
-            this.velocity.z *= 0.8;
-          }
+          // Only update X and Z position
+          this.group.position.x = collisionResult.newPosition.x;
+          this.group.position.z = collisionResult.newPosition.z;
         } else {
           // We hit a solid object, slide along it
           const slideDirection = new THREE.Vector3(movement.z, 0, -movement.x).normalize();
@@ -806,7 +862,9 @@ export default class Hero {
           );
 
           if (slideCollision.canMove) {
-            this.group.position.copy(slideCollision.newPosition);
+            // Only update X and Z position when sliding
+            this.group.position.x = slideCollision.newPosition.x;
+            this.group.position.z = slideCollision.newPosition.z;
           }
         }
       } else {
@@ -818,107 +876,155 @@ export default class Hero {
   }
 
   handleJumpAndFly(deltaTime, keys) {
-    // Always apply gravity when not on ground - even when flying
-    // This ensures the hero falls when space is released
+    // Handle jumping when on ground
+    if (this.onGround && keys[" "]) {
+      // Start jump
+      this.velocity.y = config.player.jumpForce;
+      this.isJumping = true;
+      this.onGround = false;
+      this.jumpTime = 0;
+
+      // Play jump sound
+      if (window.soundManager) {
+        window.soundManager.playSound("jump");
+      }
+    }
+
+    // Handle flying
     if (!this.onGround) {
-      // Apply gravity to velocity - reduced gravity when flying for better control
-      const gravityFactor = this.isFlying && keys[" "] ? 0.7 : 1.0;
-      this.velocity.y -= config.player.gravity * gravityFactor * deltaTime;
+      this.jumpTime += deltaTime;
 
-      // Update position based on velocity
-      this.group.position.y += this.velocity.y * deltaTime;
+      // Check if we should transition to flying
+      if (keys[" "] && this.jumpTime >= 0.2 && !this.isFlying && this.group.position.y >= config.player.flyingHeight) {
+        this.isFlying = true;
+        this.isJumping = false;
 
-      // Check for collisions with objects while in the air
-      if (window.collisionDetector) {
-        // Get current position
-        const currentPosition = this.group.position.clone();
+        // Show wings
+        if (this.wings && !this.wingsVisible) {
+          this.wings.visible = true;
+          this.wingsVisible = true;
+          this.setWingState("flying");
+        }
+      }
 
-        // Check if we're colliding with any objects at our current position
-        const collisionResult = window.collisionDetector.checkCollision(
-          currentPosition,
-          new THREE.Vector3(0, 0, 0), // No movement direction
-          0 // No movement distance
-        );
+      // Apply physics
+      if (this.isFlying) {
+        // Flying physics
+        if (keys[" "]) {
+          // Ascend when holding space
+          this.velocity.y = Math.min(this.velocity.y + 20 * deltaTime, 10);
+        } else {
+          // Gentle descent when not holding space
+          this.velocity.y = Math.max(this.velocity.y - 10 * deltaTime, -5);
+        }
 
-        // If we can't move, we've hit something
-        if (!collisionResult.canMove) {
-          // Adjust position based on collision
-          this.group.position.copy(collisionResult.newPosition);
+        // Enforce maximum flying height
+        if (this.group.position.y >= config.player.maxFlyingHeight) {
+          this.group.position.y = config.player.maxFlyingHeight;
+          this.velocity.y = Math.min(this.velocity.y, 0);
+        }
 
-          // If we hit something from above, stop upward velocity
-          if (this.velocity.y > 0) {
-            this.velocity.y = 0;
+        // Update wing animation state
+        if (this.wings) {
+          if (keys[" "]) {
+            this.setWingState("flying");
+          } else {
+            this.setWingState("gliding");
           }
         }
+      } else {
+        // Normal jump physics
+        this.velocity.y -= config.player.gravity * deltaTime;
       }
 
-      // Check if we've landed on something
-      let landingHeight = 0;
-      let hasLanded = false;
+      // Calculate next Y position
+      const newY = this.group.position.y + this.velocity.y * deltaTime;
 
-      // Check if we've landed on the ground
-      if (this.group.position.y <= 0) {
-        landingHeight = 0;
-        hasLanded = true;
-      }
-      // Check if we've landed on an object
-      else if (this.velocity.y < 0 && window.collisionDetector) {
-        // Cast a ray downward to check for objects below
-        const rayStart = this.group.position.clone();
-        const rayDirection = new THREE.Vector3(0, -1, 0);
-        const rayLength = 0.5; // Check 0.5 units below the hero
-
-        // Create a raycaster
-        const raycaster = new THREE.Raycaster(
-          rayStart,
-          rayDirection,
-          0,
-          rayLength
-        );
-
-        // Get all collidable objects
-        const collidableObjects = window.collisionDetector.collisionObjects
-          .filter((obj) => obj.isCollidable && obj.mesh)
-          .map((obj) => obj.mesh);
-
-        // Check for intersections
-        const intersects = raycaster.intersectObjects(collidableObjects, true);
-
-        // If we hit something, we've landed
-        if (intersects.length > 0) {
-          landingHeight = intersects[0].point.y;
-          hasLanded = true;
-
-          if (this.debug) {
-            console.log(`Landed on object at height ${landingHeight}`);
-          }
-        }
-      }
-
-      // Handle landing
-      if (hasLanded) {
-        // Only play landing sound if we were falling with significant velocity
-        if (this.velocity.y < -5 && window.soundManager) {
-          window.soundManager.playSound("land");
-        }
-
-        this.group.position.y = landingHeight;
+      // Ground collision check first
+      if (newY <= 0) {
+        // Hit the ground, stop immediately
+        this.group.position.y = 0;
         this.velocity.y = 0;
-        this.velocity.x = 0; // Stop horizontal movement on landing
-        this.velocity.z = 0;
         this.onGround = true;
         this.isJumping = false;
         this.isFlying = false;
 
-        // Hide wings when landing
+        // Play landing sound if falling fast
+        if (this.velocity.y < -5 && window.soundManager) {
+          window.soundManager.playSound("land");
+        }
+
+        // Hide wings
         if (this.wings && this.wingsVisible) {
           this.wings.visible = false;
           this.wingsVisible = false;
         }
+        return;
+      }
+
+      // Check for other collisions
+      if (window.collisionDetector) {
+        const currentPosition = this.group.position.clone();
+        currentPosition.y = newY;
+
+        const collisionResult = window.collisionDetector.checkCollision(
+          currentPosition,
+          new THREE.Vector3(0, this.velocity.y > 0 ? 1 : -1, 0),
+          Math.abs(this.velocity.y * deltaTime)
+        );
+
+        if (collisionResult.canMove) {
+          // No collision, update Y position
+          this.group.position.y = newY;
+          this.onGround = false;
+        } else {
+          // Hit something
+          this.group.position.y = collisionResult.newPosition.y;
+          
+          if (this.velocity.y < 0) {
+            // We hit something while falling
+            this.velocity.y = 0;
+            this.onGround = true;
+            this.isJumping = false;
+            this.isFlying = false;
+
+            // Play landing sound if falling fast
+            if (this.velocity.y < -5 && window.soundManager) {
+              window.soundManager.playSound("land");
+            }
+
+            // Hide wings
+            if (this.wings && this.wingsVisible) {
+              this.wings.visible = false;
+              this.wingsVisible = false;
+            }
+          } else {
+            // We hit something while going up
+            this.velocity.y = 0;
+          }
+        }
+      } else {
+        // No collision detection, just update Y but respect ground
+        this.group.position.y = Math.max(newY, 0);
+        
+        // Check for ground landing
+        if (this.group.position.y === 0) {
+          this.onGround = true;
+          this.isJumping = false;
+          this.isFlying = false;
+          this.velocity.y = 0;
+
+          // Hide wings
+          if (this.wings && this.wingsVisible) {
+            this.wings.visible = false;
+            this.wingsVisible = false;
+          }
+        } else {
+          this.onGround = false;
+        }
       }
     }
 
-    // Handle jumping and flying with space key
     if (keys[" "]) {
       if (this.onGround) {
         // Normal jump from ground

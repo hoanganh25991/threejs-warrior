@@ -33,6 +33,20 @@ export const config = {
         }
     },
     
+    // Combat settings
+    combat: {
+        attackRange: 2,
+        attackSpeed: 1.0,
+        baseDamage: 20,
+        meleeRange: 2,
+        rangedRange: 10,
+        criticalChance: 0.1,
+        criticalMultiplier: 2.0,
+        knockbackForce: 5,
+        comboTimeWindow: 0.5,
+        maxCombo: 3
+    },
+
     // Enemy settings
     enemies: {
         spawnRate: 5, // seconds between spawns

@@ -115,16 +115,18 @@ export class InputHandler {
     handleKeyDown(event) {
         const key = event.key.toLowerCase();
         
-        // Special handling for space key
-        if (event.key === ' ' || event.code === 'Space') {
+        // Handle all keys including space
+        if (key === ' ' || event.code === 'Space') {
             this.keys[' '] = true;
-            console.log('Space key pressed (handleKeyDown)');
-            event.preventDefault();
-            return;
-        }
-        
-        if (this.keys.hasOwnProperty(key)) {
+        } else if (this.keys.hasOwnProperty(key)) {
             this.keys[key] = true;
+        }
+
+        // Update debug display
+        this.updateKeyDisplay();
+        
+        // Don't prevent default for all keys to allow multiple key presses
+        if (key === ' ' || key === 'w' || key === 'a' || key === 's' || key === 'd') {
             event.preventDefault();
         }
     }
@@ -132,18 +134,47 @@ export class InputHandler {
     handleKeyUp(event) {
         const key = event.key.toLowerCase();
         
-        // Special handling for space key
-        if (event.key === ' ' || event.code === 'Space') {
+        // Handle all keys including space
+        if (key === ' ' || event.code === 'Space') {
             this.keys[' '] = false;
-            console.log('Space key released (handleKeyUp)');
-            event.preventDefault();
-            return;
-        }
-        
-        if (this.keys.hasOwnProperty(key)) {
+        } else if (this.keys.hasOwnProperty(key)) {
             this.keys[key] = false;
+        }
+
+        // Update debug display
+        this.updateKeyDisplay();
+        
+        // Don't prevent default for all keys to allow multiple key presses
+        if (key === ' ' || key === 'w' || key === 'a' || key === 's' || key === 'd') {
             event.preventDefault();
         }
+    }
+
+    updateKeyDisplay() {
+        // Create or update key display
+        let keyDisplay = document.getElementById('key-display');
+        if (!keyDisplay) {
+            keyDisplay = document.createElement('div');
+            keyDisplay.id = 'key-display';
+            keyDisplay.style.position = 'absolute';
+            keyDisplay.style.top = '60px';
+            keyDisplay.style.left = '20px';
+            keyDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            keyDisplay.style.color = 'white';
+            keyDisplay.style.padding = '10px';
+            keyDisplay.style.borderRadius = '5px';
+            keyDisplay.style.fontFamily = 'Arial, sans-serif';
+            keyDisplay.style.zIndex = '1000';
+            document.body.appendChild(keyDisplay);
+        }
+
+        // Show currently pressed keys
+        const pressedKeys = Object.entries(this.keys)
+            .filter(([_, isPressed]) => isPressed)
+            .map(([key, _]) => key.toUpperCase())
+            .join(', ');
+
+        keyDisplay.textContent = `Pressed Keys: ${pressedKeys || 'None'}`;
     }
     
     handleMouseMove(event) {
