@@ -3,7 +3,7 @@ import Groud from './ground.js';
 import Water from './water.js';
 import Skybox from './skybox.js';
 import Sky from './sky.js';
-import Moutain from './mountains.js';
+import Moutain from './mountain.js';
 import Castle from './castle.js';
 import Tree from './tree.js';
 import Rock from './rock.js';
@@ -14,7 +14,7 @@ import Bridge from './bridge.js';
 export class World {
     constructor(scene) {
         this.scene = scene;
-        this.init();
+        this.init(scene);
     }
     
     init(scene) {
@@ -39,7 +39,7 @@ export class World {
         
         // Add mountains
         for (let i = 0; i < 5; i++) {
-            const mountain = Moutain(scene);
+            const mountain = new Moutain();
             scene.add(mountain);
         }
         
@@ -49,14 +49,14 @@ export class World {
         
         // Add trees
         for (let i = 0; i < 40; ++i) {
-            const tree = new Tree(scene);
+            const tree = new Tree();
             scene.add(tree);
         }
         // Trees are already added to the scene in the Trees constructor
         
         // Add rocks
         for (let i = 0; i < 30; ++i) {
-            const rock = new Rock(scene);
+            const rock = new Rock();
             scene.add(rock);
         }
         
