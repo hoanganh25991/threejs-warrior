@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { addGround } from './ground.js';
 import { addWater } from './water.js';
-import { Skybox } from './skybox.js';
+import Skybox from './skybox.js';
 import { addSky } from './sky.js';
 import { addMountains } from './mountains.js';
-import { Castle } from './castle.js';
+import Castle from './castle.js';
 import { addTrees } from './trees.js';
 import { addRocks } from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';

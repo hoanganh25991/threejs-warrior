@@ -476,16 +476,56 @@
                 
                 // Add to scene
                 if (model) {
+                    // Define the "net" area - the area we want models to fit within
+                    const netSize = { x: 50, y: 50, z: 50 }; // Adjust based on your grid size
+                    
+                    // Get the bounding box of the model
+                    const boundingBox = new THREE.Box3().setFromObject(model);
+                    const size = boundingBox.getSize(new THREE.Vector3());
+                    const center = boundingBox.getCenter(new THREE.Vector3());
+                    
+                    // Calculate scale needed to fit in the net
+                    let scale = 1.0;
+                    const maxDimension = Math.max(size.x, size.y, size.z);
+                    const maxNetDimension = Math.min(netSize.x, netSize.y, netSize.z);
+                    
+                    if (maxDimension > maxNetDimension) {
+                        scale = maxNetDimension / maxDimension;
+                        model.scale.set(scale, scale, scale);
+                        
+                        // Recalculate bounding box after scaling
+                        boundingBox.setFromObject(model);
+                        boundingBox.getSize(size);
+                        boundingBox.getCenter(center);
+                    }
+                    
+                    // Center the model at origin
+                    model.position.x = -center.x;
+                    model.position.y = -center.y;
+                    model.position.z = -center.z;
+                    
+                    // Store size and scale information with the model
+                    model.userData.originalSize = { 
+                        x: size.x / scale, 
+                        y: size.y / scale, 
+                        z: size.z / scale 
+                    };
+                    model.userData.currentSize = { x: size.x, y: size.y, z: size.z };
+                    model.userData.scale = scale;
+                    
                     scene.add(model);
                     currentModel = model;
                     
                     // Reset camera to view the model
                     resetView();
                     
-                    // Update model info display
-                    updateModelInfo(selectedPath, modelInfo);
+                    // Update model info display with size and scale
+                    updateModelInfo(selectedPath, modelInfo, model.userData);
                     
                     console.log(`Loaded model: ${modelInfo.name}`);
+                    console.log(`Original size: ${JSON.stringify(model.userData.originalSize)}`);
+                    console.log(`Current size: ${JSON.stringify(model.userData.currentSize)}`);
+                    console.log(`Scale: ${model.userData.scale}`);
                 } else {
                     console.error('Failed to create model instance');
                 }
