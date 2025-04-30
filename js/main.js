@@ -264,6 +264,14 @@ class Game {
 
     // Initialize effect system
     this.effects = new Effects(this.scene);
+    
+    // Disable shadows for effects
+    this.scene.traverse((object) => {
+      if (object instanceof THREE.Points) {
+        object.castShadow = false;
+        object.receiveShadow = false;
+      }
+    });
 
     // Initialize RPG systems
     this.shop = new Shop(this.scene);
