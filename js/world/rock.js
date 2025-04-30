@@ -5,44 +5,62 @@ import * as THREE from "three";
  */
 export default class Rock extends THREE.Object3D {
   constructor() {
+    super();
 
-    const rockGeometry = new THREE.DodecahedronGeometry(
-      1 + Math.random() * 2,
-      0
-    );
+    const rockGroup = new THREE.Group();
+
+    // Random size for the rock
+    const baseSize = 1 + Math.random() * 2;
+    const rockGeometry = new THREE.DodecahedronGeometry(baseSize, 0);
     const rockMaterial = new THREE.MeshStandardMaterial({
       color: 0x808080,
       roughness: 0.9,
       metalness: 0.1,
     });
-    const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+    const rockMesh = new THREE.Mesh(rockGeometry, rockMaterial);
+    rockGroup.add(rockMesh);
 
-    // Add a type property to identify this as a rock for collision detection
-    rock.userData = { type: "rock" };
-
-    // Set properties for collision detection
-    rock.type = "rock";
-    rock.isCollidable = true;
-    rock.isWalkable = false; // Rocks are not walkable, hero should collide with them
+    // Create a collision box that encompasses the rock
+    const box = new THREE.Box3().setFromObject(rockMesh);
+    const boxSize = box.getSize(new THREE.Vector3());
+    const collisionGeometry = new THREE.BoxGeometry(boxSize.x, boxSize.y, boxSize.z);
+    const collisionMaterial = new THREE.MeshBasicMaterial({
+      visible: false, // Invisible collision mesh
+    });
+    const collisionMesh = new THREE.Mesh(collisionGeometry, collisionMaterial);
+    collisionMesh.position.copy(rockMesh.position);
+    rockGroup.add(collisionMesh);
 
     // Position rocks randomly
     const angle = Math.random() * Math.PI * 2;
     const distance = 10 + Math.random() * 90;
-    rock.position.x = Math.cos(angle) * distance;
-    rock.position.z = Math.sin(angle) * distance;
-    rock.position.y = 0.5;
+    rockGroup.position.x = Math.cos(angle) * distance;
+    rockGroup.position.z = Math.sin(angle) * distance;
+    rockGroup.position.y = 0.5;
 
     // Random rotation
-    rock.rotation.x = Math.random() * Math.PI;
-    rock.rotation.y = Math.random() * Math.PI;
-    rock.rotation.z = Math.random() * Math.PI;
+    rockGroup.rotation.x = Math.random() * Math.PI;
+    rockGroup.rotation.y = Math.random() * Math.PI;
+    rockGroup.rotation.z = Math.random() * Math.PI;
 
     // Random scale
     const scale = 0.5 + Math.random() * 1.5;
-    rock.scale.set(scale, scale, scale);
+    rockGroup.scale.set(scale, scale, scale);
 
-    rock.castShadow = true;
-    rock.receiveShadow = true;
-    return rock;
+    rockGroup.castShadow = true;
+    rockGroup.receiveShadow = true;
+
+    // Add collision properties
+    rockGroup.type = "rock";
+    rockGroup.isCollidable = true;
+    rockGroup.isWalkable = false;
+    rockGroup.userData = {
+      type: "rock",
+      collisionMesh: collisionMesh,
+      collisionBox: new THREE.Box3().setFromObject(collisionMesh),
+      collisionType: "box"
+    };
+
+    return rockGroup;
   }
 }

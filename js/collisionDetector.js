@@ -117,74 +117,184 @@ export class CollisionDetector {
         let highestWalkableSurface = groundHeight;
         let walkableObjectFound = false;
         let collidingObject = null;
+        let isOnSlope = false;
+        
+        // Create a sphere around the hero for collision detection
+        const heroRadius = 0.5; // Adjust based on hero size
+        const heroHeight = 2.0; // Height of hero
+        const heroSphere = new THREE.Sphere(newPosition, heroRadius);
         
         // Check for collisions with objects
         for (const obj of this.collisionObjects) {
-            if (!obj.isCollidable || !obj.mesh) continue;
+            if (!obj.mesh) continue;
             
-            // Get the bounding box of the object
-            const boundingBox = new THREE.Box3().setFromObject(obj.mesh);
+            let collision = false;
+            const collisionData = obj.mesh.userData;
             
-            // Create a sphere around the hero for collision detection
-            const heroRadius = 0.5; // Adjust based on hero size
-            const heroSphere = new THREE.Sphere(newPosition, heroRadius);
+            // Handle different collision types
+            if (collisionData.collisionType === "cylinder") {
+                // For trees
+                const radius = collisionData.collisionRadius;
+                const height = collisionData.collisionHeight;
+                const center = new THREE.Vector3();
+                collisionData.collisionMesh.getWorldPosition(center);
+                
+                // Check cylinder collision
+                const dx = newPosition.x - center.x;
+                const dz = newPosition.z - center.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                if (distance < (radius + heroRadius) && 
+                    newPosition.y < (center.y + height) && 
+                    newPosition.y > center.y) {
+                    collision = true;
+                }
+            } 
+            else if (collisionData.collisionType === "box") {
+                // For rocks and walls
+                if (collisionData.collisionBox) {
+                    const box = collisionData.collisionBox.clone();
+                    box.applyMatrix4(obj.mesh.matrixWorld);
+                    if (box.intersectsSphere(heroSphere)) {
+                        collision = true;
+                    }
+                }
+            }
+            else {
+                // Fallback to simple bounding box check
+                const boundingBox = new THREE.Box3().setFromObject(obj.mesh);
+                if (boundingBox.intersectsSphere(heroSphere)) {
+                    collision = true;
+                }
+            }
             
-            // Check if the hero sphere intersects with the object's bounding box
-            if (boundingBox.intersectsSphere(heroSphere)) {
-                // Collision detected
-                if (this.debug) {
-                    console.log(`Collision detected with ${obj.type}`);
+            if (collision) {
+                // For solid objects (trees, rocks, castle walls)
+                if (obj.mesh.isCollidable && !obj.mesh.isWalkable) {
+                    collidingObject = obj;
+                    break;
                 }
                 
-                // Check if the object is marked as walkable
-                if (obj.isWalkable) {
-                    // Calculate the height of the object at this position
-                    const objHeight = this.getObjectHeightAtPosition(obj, newPosition);
-                    
-                    // Check if we can step up onto this object
-                    const heightDifference = objHeight - position.y;
-                    const maxStepHeight = config.player.maxStepHeight; // Maximum height we can step up
-                    
-                    if (heightDifference <= maxStepHeight || position.y >= objHeight - 0.1) {
-                        // We can step up onto this object or we're already on it
-                        if (objHeight > highestWalkableSurface) {
-                            highestWalkableSurface = objHeight;
-                            walkableObjectFound = true;
-                        }
-                    } else {
-                        // Object is too high to step onto - it's a collision
-                        collidingObject = obj;
+                // For walkable objects (stairs, bridges)
+                if (obj.mesh.isWalkable) {
+                    const height = this.getObjectHeightAtPosition(obj, newPosition);
+                    if (height > highestWalkableSurface) {
+                        highestWalkableSurface = height;
+                        walkableObjectFound = true;
                     }
-                } else {
-                    // Non-walkable object - it's a collision
-                    collidingObject = obj;
+                }
+                
+                if (this.debug) {
+                    console.log(`Collision detected with ${obj.type}`);
                 }
             }
         }
         
-        // If we found a walkable surface and no colliding object, we can move
-        if (walkableObjectFound && !collidingObject) {
-            return {
-                canMove: true,
-                newPosition: new THREE.Vector3(newPosition.x, highestWalkableSurface, newPosition.z)
-            };
-        }
-        
-        // If we found a colliding object, we can't move
+        // If we found a solid colliding object, handle collision response
         if (collidingObject) {
-            return {
-                canMove: false,
-                newPosition: position.clone()
-            };
+            // Try to slide along the collision surface
+            const slidePosition = position.clone();
+            const collisionNormal = new THREE.Vector3();
+            
+            // Get collision normal based on collision type
+            if (collidingObject.mesh.userData.collisionType === "cylinder") {
+                // For trees - calculate normal from center to collision point
+                const center = new THREE.Vector3();
+                collidingObject.mesh.userData.collisionMesh.getWorldPosition(center);
+                collisionNormal.subVectors(newPosition, center).normalize();
+                collisionNormal.y = 0; // Keep sliding horizontal for cylinders
+            } 
+            else if (collidingObject.mesh.userData.collisionType === "box") {
+                // For rocks and walls - use box face normal
+                const box = collidingObject.mesh.userData.collisionBox.clone();
+                box.applyMatrix4(collidingObject.mesh.matrixWorld);
+                
+                // Find closest point on box to determine which face we hit
+                const closestPoint = new THREE.Vector3();
+                box.clampPoint(newPosition, closestPoint);
+                collisionNormal.subVectors(newPosition, closestPoint).normalize();
+            }
+            else {
+                // Fallback - use simple push-back from object center
+                collisionNormal.subVectors(newPosition, collidingObject.mesh.position).normalize();
+            }
+            
+            // Calculate slide direction
+            const movement = new THREE.Vector3().subVectors(newPosition, position);
+            const slide = new THREE.Vector3()
+                .copy(movement)
+                .projectOnPlane(collisionNormal)
+                .multiplyScalar(0.8); // Reduce sliding speed slightly
+            
+            // Try sliding
+            slidePosition.add(slide);
+            
+            // Check if sliding position is valid
+            const slideHeroSphere = new THREE.Sphere(slidePosition, heroRadius);
+            let canSlide = true;
+            
+            for (const obj of this.collisionObjects) {
+                if (!obj.mesh || !obj.mesh.isCollidable || obj.mesh.isWalkable) continue;
+                
+                const collisionData = obj.mesh.userData;
+                if (collisionData.collisionType === "cylinder") {
+                    const radius = collisionData.collisionRadius;
+                    const height = collisionData.collisionHeight;
+                    const center = new THREE.Vector3();
+                    collisionData.collisionMesh.getWorldPosition(center);
+                    
+                    const dx = slidePosition.x - center.x;
+                    const dz = slidePosition.z - center.z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+                    
+                    if (distance < (radius + heroRadius) && 
+                        slidePosition.y < (center.y + height) && 
+                        slidePosition.y > center.y) {
+                        canSlide = false;
+                        break;
+                    }
+                }
+                else if (collisionData.collisionType === "box" && collisionData.collisionBox) {
+                    const box = collisionData.collisionBox.clone();
+                    box.applyMatrix4(obj.mesh.matrixWorld);
+                    if (box.intersectsSphere(slideHeroSphere)) {
+                        canSlide = false;
+                        break;
+                    }
+                }
+            }
+            
+            if (canSlide) {
+                // Allow sliding
+                return {
+                    canMove: true,
+                    newPosition: slidePosition,
+                    isSliding: true
+                };
+            } else {
+                // Can't slide, push back slightly
+                return {
+                    canMove: false,
+                    newPosition: position.clone().add(collisionNormal.multiplyScalar(0.1)),
+                    isSliding: false
+                };
+            }
         }
         
-        // No collision detected, can move at ground height
-        // If we're already above ground level (jumping/flying), maintain current height
-        const finalHeight = position.y > groundHeight ? position.y : groundHeight;
+        // Determine final height based on walkable surfaces and slopes
+        let finalHeight;
+        if (position.y > highestWalkableSurface && !isOnSlope) {
+            // If we're in the air (jumping/flying), maintain current height
+            finalHeight = position.y;
+        } else {
+            // Otherwise use the highest walkable surface (including slopes)
+            finalHeight = highestWalkableSurface;
+        }
         
         return {
             canMove: true,
-            newPosition: new THREE.Vector3(newPosition.x, finalHeight, newPosition.z)
+            newPosition: new THREE.Vector3(newPosition.x, finalHeight, newPosition.z),
+            isOnSlope: isOnSlope
         };
     }
     

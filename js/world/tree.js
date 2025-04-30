@@ -23,23 +23,7 @@ export default class Tree extends THREE.Object3D {
     trunk.position.y = 2.5;
     treeGroup.add(trunk);
 
-    // Add an invisible collision cylinder that's slightly larger than the trunk
-    // This ensures better collision detection
-    const collisionGeometry = new THREE.CylinderGeometry(1.0, 1.2, 5, 8);
-    const collisionMaterial = new THREE.MeshBasicMaterial({
-      color: 0xff0000,
-      transparent: true,
-      opacity: 0.0, // Invisible
-      wireframe: true,
-    });
-    const collisionCylinder = new THREE.Mesh(
-      collisionGeometry,
-      collisionMaterial
-    );
-    collisionCylinder.position.y = 2.5;
-    treeGroup.add(collisionCylinder);
-
-    // Tree leaves
+    // Tree leaves (cone)
     const leavesGeometry = new THREE.ConeGeometry(3, 7, 8);
     const leavesMaterial = new THREE.MeshStandardMaterial({
       color: 0x2e8b57,
@@ -50,6 +34,17 @@ export default class Tree extends THREE.Object3D {
     leaves.position.y = 7;
     treeGroup.add(leaves);
 
+    // Create a collision cylinder that encompasses both trunk and leaves
+    const collisionRadius = 2; // Large enough to cover trunk and most of leaves
+    const collisionHeight = 10; // Tall enough for whole tree
+    const collisionGeometry = new THREE.CylinderGeometry(collisionRadius, collisionRadius, collisionHeight, 8);
+    const collisionMaterial = new THREE.MeshBasicMaterial({
+      visible: false, // Invisible collision mesh
+    });
+    const collisionMesh = new THREE.Mesh(collisionGeometry, collisionMaterial);
+    collisionMesh.position.y = collisionHeight / 2;
+    treeGroup.add(collisionMesh);
+
     // Position trees randomly
     const angle = Math.random() * Math.PI * 2;
     const distance = 20 + Math.random() * 80;
@@ -58,6 +53,18 @@ export default class Tree extends THREE.Object3D {
 
     treeGroup.castShadow = true;
     treeGroup.receiveShadow = true;
+
+    // Add collision properties
+    treeGroup.type = "tree";
+    treeGroup.isCollidable = true;
+    treeGroup.isWalkable = false;
+    treeGroup.userData = {
+      type: "tree",
+      collisionMesh: collisionMesh,
+      collisionRadius: collisionRadius,
+      collisionHeight: collisionHeight,
+      collisionType: "cylinder"
+    };
 
     return treeGroup;
   }

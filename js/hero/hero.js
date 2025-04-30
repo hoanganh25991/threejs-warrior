@@ -786,6 +786,28 @@ export default class Hero {
         if (collisionResult.canMove) {
           // Update position with collision-adjusted position
           this.group.position.copy(collisionResult.newPosition);
+
+          // Update onGround status based on slope
+          this.onGround = collisionResult.isOnSlope || Math.abs(this.group.position.y - collisionResult.newPosition.y) < 0.1;
+
+          // If we're on a slope, adjust movement speed
+          if (collisionResult.isOnSlope) {
+            // Reduce movement speed on slopes
+            this.velocity.x *= 0.8;
+            this.velocity.z *= 0.8;
+          }
+        } else {
+          // We hit a solid object, slide along it
+          const slideDirection = new THREE.Vector3(movement.z, 0, -movement.x).normalize();
+          const slideCollision = window.collisionDetector.checkCollision(
+            this.group.position,
+            slideDirection,
+            moveSpeed * 0.5
+          );
+
+          if (slideCollision.canMove) {
+            this.group.position.copy(slideCollision.newPosition);
+          }
         }
       } else {
         // No collision detection, just move
