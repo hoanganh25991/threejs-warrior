@@ -943,6 +943,7 @@ export default class Hero {
         this.velocity.y = config.player.jumpForce;
         this.isJumping = true;
         this.onGround = false;
+        this.isFlying = false; // Reset flying state on new jump
 
         // If we have a jump target, adjust velocity to reach it
         if (jumpTarget) {
@@ -975,58 +976,62 @@ export default class Hero {
           window.soundManager.playSound("jump");
         }
       }
-      // If already in the air, add continuous upward force
+      // If already in the air, handle flying
       else if (this.isJumping || this.isFlying) {
         // Get maximum flying height from config
-        const maxFlyingHeight = config.player.maxFlyingHeight;
+        const maxFlyingHeight = config.player.maxFlyingHeight || 200;
+
+        // Enter flying mode immediately when holding space in air
+        if (!this.isFlying) {
+          this.isFlying = true;
+          if (window.soundManager) {
+            window.soundManager.playSound("dash");
+          }
+        }
 
         // Calculate boost based on current height and velocity
         let boost = 0;
 
-        // If below max height, allow boosting
-        if (this.group.position.y < maxFlyingHeight) {
-          // Reduce boost as we approach max height
-          const heightFactor = Math.max(
-            0.1,
-            1 - this.group.position.y / maxFlyingHeight
-          );
+        if (this.isFlying) {
+          // Strong upward boost when flying
+          boost = config.player.jumpForce * 0.3;
 
-          // Calculate boost based on current velocity
-          // If falling or slow, provide stronger boost to counteract gravity
-          let boostMultiplier = 1.5; // Increased base multiplier for better height gain
-          if (this.velocity.y < 0) {
-            // Stronger boost when falling to quickly recover
-            boostMultiplier =
-              2.0 + Math.min(2.0, Math.abs(this.velocity.y) / 8);
-          } else if (this.velocity.y > 10) {
-            // Reduced boost when already moving up quickly
-            boostMultiplier = 1.0;
+          // If below max height, allow strong boosting
+          if (this.group.position.y < maxFlyingHeight) {
+            // Reduce boost as we approach max height
+            const heightFactor = Math.max(
+              0.2,
+              1 - this.group.position.y / maxFlyingHeight
+            );
+            boost *= heightFactor;
+          } else {
+            // At max height, stop upward movement
+            if (this.velocity.y > 0) {
+              this.velocity.y = 0;
+            }
+            boost = 0;
           }
 
-          boost =
-            config.player.jumpForce * 0.08 * heightFactor * boostMultiplier; // Increased base boost
+          // Apply gravity reduction while flying
+          this.velocity.y *= 0.8; // Reduce downward velocity
         } else {
-          // At max height, provide enough boost to maintain and potentially increase height
-          boost = config.player.gravity * 0.5 * deltaTime;
-
-          // Only cap the height if significantly above the max height
-          if (this.group.position.y > maxFlyingHeight + 10) {
-            this.group.position.y = maxFlyingHeight + 10;
-            this.velocity.y = Math.min(0, this.velocity.y);
+          // Normal jump physics
+          if (this.velocity.y < 0) {
+            boost = config.player.jumpForce * 0.1; // Small boost for better control
           }
         }
 
         // Add the boost to velocity
         this.velocity.y += boost;
 
-        // Enter flying mode if not already
-        if (!this.isFlying && this.group.position.y > 2) {
-          this.isFlying = true;
-
-          // Play a whoosh sound for flying
-          if (window.soundManager) {
-            window.soundManager.playSound("dash");
-          }
+        // Check if we should exit flying mode
+        if (this.onGround || this.group.position.y <= 0.1) {
+            this.isFlying = false;
+            this.isJumping = false;
+            if (this.wings && this.wingsVisible) {
+                this.wings.visible = false;
+                this.wingsVisible = false;
+            }
         }
       }
 
@@ -1041,7 +1046,7 @@ export default class Hero {
       );
     }
 
-    // Show/hide wings based on height and flying state
+    // Show/hide wings based on flying state
     if (this.wings) {
       // Debug logging for wings
       if (this.debug) {
@@ -1049,9 +1054,9 @@ export default class Hero {
           "Wings check - Height:",
           this.group.position.y.toFixed(2),
           "Flying height threshold:",
-          config.player.flyingHeight,
+          2,
           "Max flying height:",
-          config.player.maxFlyingHeight,
+          config.player.maxFlyingHeight || 200,
           "Wings visible:",
           this.wingsVisible,
           "Is flying:",
@@ -1059,43 +1064,32 @@ export default class Hero {
         );
       }
 
-      // Show wings when flying or at sufficient height
-      const minWingHeight = 2; // Lower threshold to make wings appear sooner
-
-      if (
-        (this.isFlying || this.group.position.y > minWingHeight) &&
-        !this.onGround
-      ) {
+      // Show wings when flying or jumping
+      if ((this.isFlying || (this.isJumping && !this.onGround)) && !this.onGround) {
         if (!this.wingsVisible) {
-          console.log("SHOWING WINGS!");
           this.wings.visible = true;
           this.wingsVisible = true;
-
-          // Animate wings appearing
-          this.wings.scale.set(0.5, 0.5, 0.5); // Larger initial scale
+          this.wings.scale.set(0.5, 0.5, 0.5);
           this.animateWings();
         }
 
-        // Flap wings while flying - flap speed based on whether space is pressed
-        const flapIntensity = keys[" "] ? 1.2 : 0.9; // Increased intensity for more continuous flapping
+        // Flap wings with varying intensity
+        const flapIntensity = keys[" "] ? 1.5 : 1.0;
         this.flapWings(deltaTime, flapIntensity);
 
-        // Set appropriate wing state based on movement
-        if (keys[" "] && Math.abs(this.velocity.y) > 5) {
-          this.setWingState("flying"); // Active flying with space pressed
-        } else if (keys[" "]) {
-          this.setWingState("hovering"); // Hovering in place
+        // Set wing state based on movement
+        if (keys[" "]) {
+          this.setWingState("flying");
+        } else if (Math.abs(this.velocity.y) > 5) {
+          this.setWingState("gliding");
         } else {
-          this.setWingState("gliding"); // Gliding when space not pressed
+          this.setWingState("hovering");
         }
-      } else if (
-        (this.group.position.y <= minWingHeight || this.onGround) &&
-        this.wingsVisible
-      ) {
-        // Hide wings when below threshold or on ground
-        console.log("HIDING WINGS!");
+      } else if (this.wingsVisible || this.onGround) {
+        // Hide wings when not flying/jumping or when on ground
         this.wings.visible = false;
         this.wingsVisible = false;
+        this.isFlying = false;
       }
     }
   }

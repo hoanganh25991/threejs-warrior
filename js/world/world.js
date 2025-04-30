@@ -31,9 +31,10 @@ export default class World {
     this.ground = new Groud();
     scene.add(this.ground);
 
-    // Add water (positioned below ground level)
+    // Add water
     this.water = new Water();
-    this.water.position.y = -1; // Place water below ground
+    this.water.position.y = -5; // Place water at proper depth
+    this.water.position.z = -100; // Position water near castle
     scene.add(this.water);
 
     // Add sky (atmospheric sky)
@@ -57,6 +58,12 @@ export default class World {
       const tree = new Tree();
       this.trees.push(tree);
       scene.add(tree);
+      this.interactiveObjects.push({
+        mesh: tree,
+        type: 'tree',
+        isCollidable: true,
+        isWalkable: false
+      });
     }
 
     // Add rocks
@@ -64,24 +71,33 @@ export default class World {
       const rock = new Rock();
       this.rocks.push(rock);
       scene.add(rock);
+      this.interactiveObjects.push({
+        mesh: rock,
+        type: 'rock',
+        isCollidable: true,
+        isWalkable: false
+      });
     }
 
     // Add stairs to castle (positioned in front of castle)
-    const stairs = new Stairs();
-    scene.add(stairs);
+    this.stairs = new Stairs();
+    this.stairs.position.z = -120; // Position in front of castle
+    this.stairs.position.y = 0; // Start at ground level
+    scene.add(this.stairs);
     this.interactiveObjects.push({
-      mesh: stairs,
+      mesh: this.stairs,
       type: 'stairs',
       isCollidable: true,
       isWalkable: true
     });
 
     // Add bridge (positioned between ground and castle)
-    const bridge = new Bridge();
-    bridge.position.z = -150; // Position between ground and castle
-    scene.add(bridge);
+    this.bridge = new Bridge();
+    this.bridge.position.z = -150; // Position between ground and castle
+    this.bridge.position.y = 5; // Elevate bridge slightly
+    scene.add(this.bridge);
     this.interactiveObjects.push({
-      mesh: bridge,
+      mesh: this.bridge,
       type: 'bridge',
       isCollidable: true,
       isWalkable: true

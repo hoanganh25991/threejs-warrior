@@ -44,8 +44,7 @@ export class CollisionDetector {
             }
             else if (obj.mesh.userData.collisionType === "box") {
                 // For rocks and walls - show box
-                const box = obj.mesh.userData.collisionBox;
-                const helper = new THREE.Box3Helper(box, 0xff0000);
+                const helper = new THREE.BoxHelper(obj.mesh, 0xff0000);
                 this.world.scene.add(helper);
                 this.debugHelpers.push(helper);
             }
@@ -81,32 +80,67 @@ export class CollisionDetector {
             this.collisionObjects.push(...this.world.interactiveObjects);
         }
         
-        // Add rocks
+        // Add rocks with proper collision
         if (this.world && this.world.rocks) {
             this.world.rocks.forEach(rock => {
                 this.collisionObjects.push({
                     mesh: rock,
-                    type: 'rock'
+                    type: 'rock',
+                    isCollidable: true,
+                    isWalkable: false
                 });
             });
         }
         
-        // Add trees
+        // Add trees with proper collision
         if (this.world && this.world.trees) {
             this.world.trees.forEach(tree => {
                 this.collisionObjects.push({
                     mesh: tree,
-                    type: 'tree'
+                    type: 'tree',
+                    isCollidable: true,
+                    isWalkable: false
                 });
             });
         }
         
-        // Add castle parts (walls, floor)
+        // Add castle with proper collision
         if (this.world && this.world.castle) {
-            // Castle is already set up with proper collision in castle.js
             this.collisionObjects.push({
                 mesh: this.world.castle,
-                type: 'castle'
+                type: 'castle',
+                isCollidable: true,
+                isWalkable: true
+            });
+        }
+        
+        // Add bridge with proper collision
+        if (this.world && this.world.bridge) {
+            this.collisionObjects.push({
+                mesh: this.world.bridge,
+                type: 'bridge',
+                isCollidable: true,
+                isWalkable: true
+            });
+        }
+        
+        // Add stairs with proper collision
+        if (this.world && this.world.stairs) {
+            this.collisionObjects.push({
+                mesh: this.world.stairs,
+                type: 'stairs',
+                isCollidable: true,
+                isWalkable: true
+            });
+        }
+        
+        // Add ground with proper collision
+        if (this.world && this.world.ground) {
+            this.collisionObjects.push({
+                mesh: this.world.ground,
+                type: 'ground',
+                isCollidable: true,
+                isWalkable: true
             });
         }
         
@@ -143,61 +177,30 @@ export class CollisionDetector {
             let collision = false;
             const collisionData = obj.mesh.userData;
             
-            // Handle different collision types
-            if (collisionData.collisionType === "cylinder") {
-                // For trees
-                const radius = collisionData.collisionRadius;
-                const height = collisionData.collisionHeight;
-                const center = new THREE.Vector3();
-                collisionData.collisionMesh.getWorldPosition(center);
-                
-                // Check cylinder collision
-                const dx = newPosition.x - center.x;
-                const dz = newPosition.z - center.z;
-                const distance = Math.sqrt(dx * dx + dz * dz);
-                
-                if (distance < (radius + heroRadius) && 
-                    newPosition.y < (center.y + height) && 
-                    newPosition.y > center.y) {
-                    collision = true;
-                }
-            } 
-            else if (collisionData.collisionType === "box") {
-                // For rocks and walls
-                if (collisionData.collisionBox) {
-                    const box = collisionData.collisionBox.clone();
-                    box.applyMatrix4(obj.mesh.matrixWorld);
-                    if (box.intersectsSphere(heroSphere)) {
-                        collision = true;
-                    }
-                }
-            }
-            else {
-                // Fallback to simple bounding box check
-                const boundingBox = new THREE.Box3().setFromObject(obj.mesh);
-                if (boundingBox.intersectsSphere(heroSphere)) {
-                    collision = true;
-                }
-            }
+            // Create bounding box for all objects
+            const boundingBox = new THREE.Box3().setFromObject(obj.mesh);
             
-            if (collision) {
+            // Check if the hero sphere intersects with the object's bounding box
+            if (boundingBox.intersectsSphere(heroSphere)) {
                 // For solid objects (trees, rocks, castle walls)
-                if (obj.mesh.isCollidable && !obj.mesh.isWalkable) {
+                if (obj.isCollidable && !obj.isWalkable) {
                     collidingObject = obj;
                     break;
                 }
                 
-                // For walkable objects (stairs, bridges)
-                if (obj.mesh.isWalkable) {
-                    const height = this.getObjectHeightAtPosition(obj, newPosition);
-                    if (height > highestWalkableSurface) {
-                        highestWalkableSurface = height;
-                        walkableObjectFound = true;
+                // For walkable surfaces (ground, platforms)
+                if (obj.isWalkable) {
+                    // Get the height of the walkable surface at this position
+                    const surfaceHeight = this.getObjectHeightAtPosition(obj, newPosition);
+                    
+                    if (surfaceHeight > highestWalkableSurface) {
+                        highestWalkableSurface = surfaceHeight;
+                        
+                        // Check if we're on a slope
+                        if (obj.type === 'slope' || obj.type === 'stairs') {
+                            isOnSlope = true;
+                        }
                     }
-                }
-                
-                if (this.debug) {
-                    console.log(`Collision detected with ${obj.type}`);
                 }
             }
         }
@@ -296,8 +299,13 @@ export class CollisionDetector {
         // Determine final height based on walkable surfaces and slopes
         let finalHeight = newPosition.y; // Start with requested height
         
-        // Only apply gravity if we're not flying
-        if (!this.world.hero || !this.world.hero.isFlying) {
+        // Handle flying and gravity
+        if (this.world.hero && this.world.hero.isFlying) {
+            // When flying, use the requested height but respect max height
+            const maxFlyingHeight = 200; // Maximum flying height
+            finalHeight = Math.min(newPosition.y, maxFlyingHeight);
+        } else {
+            // Not flying - apply gravity and surface snapping
             if (newPosition.y <= highestWalkableSurface || isOnSlope) {
                 // If we're below or at surface level, or on a slope, snap to surface
                 finalHeight = highestWalkableSurface;
@@ -528,7 +536,7 @@ export class CollisionDetector {
         
         // Update debug helpers
         for (const helper of this.debugHelpers) {
-            if (helper instanceof THREE.BoxHelper || helper instanceof THREE.Box3Helper) {
+            if (helper instanceof THREE.BoxHelper) {
                 helper.update();
             }
             else if (helper instanceof THREE.Mesh) {
