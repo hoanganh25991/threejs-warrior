@@ -287,7 +287,9 @@ class Game {
     this.hud = new HUD();
     
     // Play background music
-    this.soundManager.playBackgroundMusic();
+    if (this.soundManager) {
+      this.soundManager.playMusic();
+    }
 
     // Create hero with all systems connected
     this.hero = new Hero(this.scene, this.selectedHero, {
@@ -339,12 +341,15 @@ class Game {
     }
 
     // Update game systems
-    this.particleSystem.update(deltaTime);
-    this.effects.update(deltaTime);
-    this.shop.update(deltaTime);
-    this.crafting.update(deltaTime);
-    this.skillManager.update(deltaTime);
-    this.enemyManager.update(deltaTime);
+    if (this.effects) {
+      this.effects.update(deltaTime);
+    }
+    if (this.skillManager) {
+      this.skillManager.update(deltaTime);
+    }
+    if (this.enemyManager) {
+      this.enemyManager.update(deltaTime);
+    }
 
     // Update boss if present
     if (this.boss) {
@@ -352,13 +357,13 @@ class Game {
     }
 
     // Update UI
-    this.hud.update({
-      hero: this.hero,
-      boss: this.boss,
-      skillManager: this.skillManager,
-      shop: this.shop,
-      crafting: this.crafting
-    });
+    if (this.hud) {
+      this.hud.update({
+        hero: this.hero,
+        boss: this.boss,
+        skillManager: this.skillManager
+      });
+    }
 
     // Update lights
     this.updateLights(deltaTime);

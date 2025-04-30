@@ -159,34 +159,38 @@ export default class HUD {
         document.head.appendChild(style);
     }
 
-    update() {
+    update(data) {
+        if (!data || !data.hero) return;
+        
         // Update health bar
-        const healthPercent = (this.hero.health / this.hero.maxHealth) * 100;
+        const healthPercent = (data.hero.health / data.hero.maxHealth) * 100;
         this.healthBar.bar.style.width = `${healthPercent}%`;
-        this.healthBar.text.textContent = `${Math.ceil(this.hero.health)} / ${this.hero.maxHealth}`;
+        this.healthBar.text.textContent = `${Math.ceil(data.hero.health)} / ${data.hero.maxHealth}`;
 
         // Update mana bar
-        const manaPercent = (this.hero.mana / this.hero.maxMana) * 100;
+        const manaPercent = (data.hero.mana / data.hero.maxMana) * 100;
         this.manaBar.bar.style.width = `${manaPercent}%`;
-        this.manaBar.text.textContent = `${Math.ceil(this.hero.mana)} / ${this.hero.maxMana}`;
+        this.manaBar.text.textContent = `${Math.ceil(data.hero.mana)} / ${data.hero.maxMana}`;
 
         // Update experience bar
-        const expPercent = (this.hero.experience / this.hero.nextLevelExp) * 100;
+        const expPercent = (data.hero.experience / data.hero.nextLevelExp) * 100;
         this.expBar.bar.style.width = `${expPercent}%`;
-        this.expBar.text.textContent = `Level ${this.hero.level} - ${Math.floor(expPercent)}%`;
+        this.expBar.text.textContent = `Level ${data.hero.level} - ${Math.floor(expPercent)}%`;
 
-        // Update skill cooldowns
-        for (const [key, cooldown] of Object.entries(this.hero.cooldowns)) {
-            const slot = this.skillSlots[key];
-            if (slot && cooldown > 0) {
-                const percent = (cooldown / config.skills[key].cooldown) * 100;
-                slot.querySelector('.cooldown').style.height = `${percent}%`;
-            } else if (slot) {
-                slot.querySelector('.cooldown').style.height = '0%';
+        // Update skill cooldowns if hero has them
+        if (data.hero.cooldowns) {
+            for (const [key, cooldown] of Object.entries(data.hero.cooldowns)) {
+                const slot = this.skillSlots[key];
+                if (slot && cooldown > 0) {
+                    const percent = (cooldown / config.skills[key].cooldown) * 100;
+                    slot.querySelector('.cooldown').style.height = `${percent}%`;
+                } else if (slot) {
+                    slot.querySelector('.cooldown').style.height = '0%';
+                }
             }
         }
 
         // Update score
-        this.scoreDisplay.textContent = `Score: ${this.hero.score || 0}`;
+        this.scoreDisplay.textContent = `Score: ${data.hero.score || 0}`;
     }
 }
