@@ -61,7 +61,7 @@ export class CollisionDetector {
                     mesh: rock,
                     type: 'rock',
                     isCollidable: true,
-                    isWalkable: true  // Make rocks walkable
+                    isWalkable: false  // Rocks are not walkable, hero should collide with them
                 });
             });
         }
@@ -251,6 +251,15 @@ export class CollisionDetector {
                 // Use the calculated height if it's reasonable
                 if (calculatedHeight >= 0 && calculatedHeight <= 20) {
                     objectHeight = calculatedHeight;
+                    
+                    // If we're close to the edge of a stair, adjust the height to make it smoother
+                    const stairFraction = Math.abs(relativeZ) - stairIndex;
+                    if (stairFraction > 0.8) {
+                        // We're close to the next stair, start blending heights
+                        const nextStairHeight = (stairIndex + 1) * 0.5 + stairsPosition.y + 0.1;
+                        const blend = (stairFraction - 0.8) * 5; // 0 to 1 over the last 20% of the stair
+                        objectHeight = objectHeight * (1 - blend) + nextStairHeight * blend;
+                    }
                 }
                 
                 if (this.debug) {
@@ -264,11 +273,12 @@ export class CollisionDetector {
                     console.log(`Bridge: height ${objectHeight.toFixed(2)}`);
                 }
             } else if (obj.type === 'rock') {
-                // For rocks, add a small offset
-                objectHeight += 0.1;
+                // For rocks, we want to prevent the hero from walking through them
+                // So we set the height very high to ensure collision
+                objectHeight = position.y + 100; // Set height much higher than hero can reach
                 
                 if (this.debug) {
-                    console.log(`Rock: height ${objectHeight.toFixed(2)}`);
+                    console.log(`Rock: collision height ${objectHeight.toFixed(2)}`);
                 }
             } else if (obj.type === 'castle') {
                 // For castle, add a small offset
@@ -276,19 +286,26 @@ export class CollisionDetector {
                 
                 // If we're on the castle roof, make sure we can walk on it
                 if (objectHeight > 10) {
-                    objectHeight = Math.floor(objectHeight) + 0.1;
+                    // Set to a consistent height for the castle roof
+                    objectHeight = 40.1; // Castle height is 40 units
+                }
+                
+                // If we're at the castle entrance, make it walkable
+                if (Math.abs(position.z + 180) < 10 && Math.abs(position.x) < 10) {
+                    // This is the entrance area near the stairs
+                    objectHeight = 0.1; // Ground level with small offset
                 }
                 
                 if (this.debug) {
                     console.log(`Castle: height ${objectHeight.toFixed(2)}`);
                 }
             } else if (obj.type === 'tree') {
-                // Trees are not walkable, but we still need to calculate their height
-                // for proper collision detection
-                objectHeight += 0.1;
+                // Trees are not walkable, we want to prevent the hero from walking through them
+                // So we set the height very high to ensure collision
+                objectHeight = position.y + 100; // Set height much higher than hero can reach
                 
                 if (this.debug) {
-                    console.log(`Tree: height ${objectHeight.toFixed(2)}`);
+                    console.log(`Tree: collision height ${objectHeight.toFixed(2)}`);
                 }
             }
         }

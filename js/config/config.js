@@ -23,7 +23,7 @@ export const config = {
         gravity: 25,           // Gravity force
         flyingHeight: 7,       // Height at which wings appear (same as tree height)
         maxFlyingHeight: 200,  // Maximum height the player can fly to
-        maxStepHeight: 0.5,    // Maximum height the player can step up without jumping
+        maxStepHeight: 1.0,    // Maximum height the player can step up without jumping (increased for better stair climbing)
         health: 100,
         mana: 100,
         experience: {

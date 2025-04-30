@@ -6,8 +6,8 @@ import * as THREE from "three";
  * @returns {Object} - The bridge object with its properties
  */
 
-export class Bridge {
-  constructor() {
+export default class Bridge {
+  constructor(scene) {
     const bridgeGroup = new THREE.Group();
     
     // Add a type property to identify this as a bridge for collision detection

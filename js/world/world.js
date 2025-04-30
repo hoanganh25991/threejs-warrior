@@ -5,11 +5,11 @@ import Skybox from './skybox.js';
 import { addSky } from './sky.js';
 import { addMountains } from './mountains.js';
 import Castle from './castle.js';
-import Trees from './trees.js';
-import { addRocks } from './rock.js';
+import Tree from './trees.js';
+import Rock from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';
 import { addStairs } from './stairs.js';
-import { Bridge } from './bridge.js';
+import Bridge from './bridge.js';
 
 export class World {
     constructor(scene) {
@@ -49,11 +49,17 @@ export class World {
         this.scene.add(this.castle);
         
         // Add trees
-        this.trees = new Trees(this.scene);
+        for (let i = 0; i < 40; ++i) {
+            const tree = new Tree(this.scene);
+            this.scene.add(tree);
+        }
         // Trees are already added to the scene in the Trees constructor
         
         // Add rocks
-        this.rocks = addRocks(this.scene);
+        for (let i = 0; i < 30; ++i) {
+            const rock = new Rock(this.scene);
+            this.scene.add(rock);
+        }
         
         // Add interactive objects
         const interactiveObjects = addInteractiveObjects(this.scene);
@@ -64,7 +70,7 @@ export class World {
         this.interactiveObjects.push(stairs);
         
         // Add bridge
-        const bridge = new Bridge();
+        const bridge = new Bridge(this.scene);
         this.scene.add(bridge);
         this.interactiveObjects.push(bridge);
     }
