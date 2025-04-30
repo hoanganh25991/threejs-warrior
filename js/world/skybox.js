@@ -5,7 +5,7 @@ import * as THREE from 'three';
  * @param {THREE.Scene} scene - The scene to add the skybox to
  * @returns {THREE.Mesh} - The skybox mesh
  */
-export class Skybox {
+export default class Skybox {
    constructor() {
      // Use placeholder colors for the skybox faces
      const materialArray = [];
@@ -41,8 +41,14 @@ export class Skybox {
          }));
      }
      
-     // Create skybox mesh
-     const skyboxGeo = new THREE.BoxGeometry(1000, 1000, 1000);
-     return new THREE.Mesh(skyboxGeo, materialArray);
+     // Create skybox mesh - make it much larger to ensure it's always far away
+     // Increased size from 1000 to 5000 to ensure player can never reach it
+     const skyboxGeo = new THREE.BoxGeometry(5000, 5000, 5000);
+     const skyboxMesh = new THREE.Mesh(skyboxGeo, materialArray);
+     
+     // Set the renderOrder to ensure skybox is always rendered first (in the background)
+     skyboxMesh.renderOrder = -1000;
+     
+     return skyboxMesh;
    }
 }

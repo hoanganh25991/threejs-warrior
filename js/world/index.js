@@ -73,9 +73,16 @@ export class World {
             this.water.material.uniforms['time'].value += deltaTime;
         }
         
-        // Update skybox position to follow camera
+        // Update skybox position to follow camera but keep it at a distance
+        // This ensures the skybox is always far away and unreachable
         if (this.skybox && camera) {
-            this.skybox.position.copy(camera.position);
+            // Copy camera position but don't move skybox in Y direction
+            // This prevents the player from "standing" on the skybox
+            this.skybox.position.x = camera.position.x;
+            this.skybox.position.z = camera.position.z;
+            
+            // Keep skybox Y position fixed at 0 to prevent flying above it
+            this.skybox.position.y = 0;
         }
         
         // Update interactive objects

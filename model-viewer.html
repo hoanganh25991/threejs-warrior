@@ -202,7 +202,6 @@
                     <option value="">-- Select a model --</option>
                 </select>
             </div>
-            <button id="load-model-btn">Load Model</button>
             <button id="reset-view-btn">Reset View</button>
             <div class="model-info" id="model-info">
                 <h3>Model Information</h3>
@@ -321,7 +320,6 @@
             
             // Add event listeners
             window.addEventListener('resize', onWindowResize);
-            document.getElementById('load-model-btn').addEventListener('click', loadSelectedModel);
             document.getElementById('reset-view-btn').addEventListener('click', resetView);
             
             // Start animation loop
@@ -419,6 +417,11 @@
                         opt.classList.remove('selected');
                     });
                     this.classList.add('selected');
+                    
+                    // Load the model automatically
+                    if (this.getAttribute('data-value')) {
+                        loadSelectedModel();
+                    }
                 });
             }
             

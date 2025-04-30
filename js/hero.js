@@ -778,7 +778,8 @@ export class Hero {
         
         // Position wings directly on hero's back
         // Since hero is facing into screen (negative Z), the back is positive Z
-        wingGroup.position.set(0, 1.5, 0.4);
+        // Move wings further back (increased Z value) to properly position on back
+        wingGroup.position.set(0, 1.5, 0.8);
         
         // Add slight angle to wings
         wingGroup.rotation.x = 0.2;
@@ -1396,29 +1397,42 @@ export class Hero {
             }
             // If already in the air, add continuous upward force
             else if (this.isJumping || this.isFlying) {
-                // Add continuous boost while space is held - increased boost for higher flying
-                // The higher we go, the more boost we get (with a minimum boost)
-                const heightFactor = Math.max(1, this.group.position.y / 15); // Scale boost with height
+                // Define maximum flying height
+                const maxFlyingHeight = 50;
                 
-                // Calculate boost based on current velocity
-                // If falling or slow, provide stronger boost to counteract gravity
-                // If already rising fast, provide less boost for better control
-                let boostMultiplier = 1.0;
-                if (this.velocity.y < 0) {
-                    // Stronger boost when falling to quickly recover
-                    boostMultiplier = 1.5 + Math.min(1.5, Math.abs(this.velocity.y) / 10);
-                } else if (this.velocity.y > 10) {
-                    // Reduced boost when already moving up quickly
-                    boostMultiplier = 0.8;
+                // Calculate boost based on current height and velocity
+                let boost = 0;
+                
+                // If below max height, allow boosting
+                if (this.group.position.y < maxFlyingHeight) {
+                    // Reduce boost as we approach max height
+                    const heightFactor = Math.max(0.1, 1 - (this.group.position.y / maxFlyingHeight));
+                    
+                    // Calculate boost based on current velocity
+                    // If falling or slow, provide stronger boost to counteract gravity
+                    let boostMultiplier = 1.0;
+                    if (this.velocity.y < 0) {
+                        // Stronger boost when falling to quickly recover
+                        boostMultiplier = 1.5 + Math.min(1.5, Math.abs(this.velocity.y) / 10);
+                    } else if (this.velocity.y > 10) {
+                        // Reduced boost when already moving up quickly
+                        boostMultiplier = 0.8;
+                    }
+                    
+                    boost = config.player.jumpForce * 0.06 * heightFactor * boostMultiplier;
+                } else {
+                    // At max height, only provide minimal boost to maintain but not increase height
+                    boost = config.player.gravity * 0.3 * deltaTime;
+                    
+                    // Cap the height to prevent going higher
+                    if (this.group.position.y > maxFlyingHeight + 5) {
+                        this.group.position.y = maxFlyingHeight + 5;
+                        this.velocity.y = Math.min(0, this.velocity.y);
+                    }
                 }
-                
-                const boost = config.player.jumpForce * 0.06 * heightFactor * boostMultiplier;
                 
                 // Add the boost to velocity
                 this.velocity.y += boost;
-                
-                // No cap on upward velocity - allow unlimited height
-                // This allows the player to fly higher and higher as they hold space
                 
                 // Enter flying mode if not already
                 if (!this.isFlying && this.group.position.y > 2) {
