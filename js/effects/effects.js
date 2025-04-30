@@ -1,5 +1,80 @@
-import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
+import * as THREE from 'three';
 import ParticleSystem from './particle-system.js';
+
+class Effects {
+    constructor(scene) {
+        this.scene = scene;
+        this.effects = new Map();
+    }
+
+    createEffect(type, position, options = {}) {
+        const texture = new THREE.TextureLoader().load(`/assets/textures/particles/${type}.png`);
+        const particles = new ParticleSystem(this.scene, {
+            maxParticles: options.maxParticles || 100,
+            particleSize: options.particleSize || 0.1,
+            texture: texture,
+            blending: THREE.AdditiveBlending
+        });
+
+        // Set initial positions and colors
+        for (let i = 0; i < particles.options.maxParticles; i++) {
+            const pos = position.clone();
+            pos.x += (Math.random() - 0.5) * 0.5;
+            pos.y += (Math.random() - 0.5) * 0.5;
+            pos.z += (Math.random() - 0.5) * 0.5;
+            particles.setParticlePosition(i, pos);
+
+            const color = new THREE.Color();
+            switch (type) {
+                case 'fire':
+                    color.setHSL(0.1, 1, 0.5 + Math.random() * 0.5);
+                    break;
+                case 'smoke':
+                    const gray = 0.3 + Math.random() * 0.7;
+                    color.setRGB(gray, gray, gray);
+                    break;
+                case 'explosion':
+                    color.setHSL(0.1, 1, 0.9);
+                    break;
+                default:
+                    color.setRGB(1, 1, 1);
+            }
+            particles.setParticleColor(i, color);
+        }
+
+        this.effects.set(particles, Date.now());
+        return particles;
+    }
+
+    createFireEffect(position, options = {}) {
+        return this.createEffect('fire', position, options);
+    }
+
+    createSmokeEffect(position, options = {}) {
+        return this.createEffect('smoke', position, options);
+    }
+
+    createExplosionEffect(position, options = {}) {
+        return this.createEffect('explosion', position, options);
+    }
+
+    update() {
+        const now = Date.now();
+        for (const [effect, startTime] of this.effects) {
+            if (now - startTime > 2000) { // Remove effects after 2 seconds
+                effect.dispose();
+                this.effects.delete(effect);
+            }
+        }
+    }
+
+    dispose() {
+        for (const [effect] of this.effects) {
+            effect.dispose();
+        }
+        this.effects.clear();
+    }
+}
 
 class FireEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
@@ -329,11 +404,4 @@ class WaterSplashEffect extends ParticleSystem {
     }
 }
 
-export default {
-    FireEffect,
-    SmokeEffect,
-    BloodEffect,
-    RainEffect,
-    ExplosionEffect,
-    WaterSplashEffect
-};
+export default Effects;

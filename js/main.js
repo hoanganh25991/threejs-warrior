@@ -1,6 +1,6 @@
 // Import Three.js
-import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.157.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Import game modules
 import { config } from "./config/config.js";
@@ -81,6 +81,7 @@ class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     // Add lights
     this.addLights();
@@ -261,9 +262,8 @@ class Game {
     this.collisionDetector = new CollisionDetector(this.world);
     window.collisionDetector = this.collisionDetector;
 
-    // Initialize particle and effect systems
-    this.particleSystem = new ParticleSystem(this.scene);
-    this.effects = new Effects(this.scene, this.particleSystem);
+    // Initialize effect system
+    this.effects = new Effects(this.scene);
 
     // Initialize RPG systems
     this.shop = new Shop(this.scene);
@@ -473,6 +473,11 @@ class Game {
     // Update animations
     if (this.mixers.length > 0) {
       this.mixers.forEach((mixer) => mixer.update(deltaTime));
+    }
+
+    // Update effects
+    if (this.effects) {
+      this.effects.update(deltaTime);
     }
   }
 

@@ -1,12 +1,17 @@
+import * as THREE from 'three';
 import { Item } from './item.js';
+import Effects from '../effects/effects.js';
 
 export default class Shop {
-    constructor(scene) {
+    constructor(scene, particleSystem) {
         this.scene = scene;
         this.inventory = new Map();
         this.gold = 1000; // Shop's gold for buying items from players
         this.markup = 1.5; // Price multiplier when selling to players
         this.discount = 0.5; // Price multiplier when buying from players
+        
+        // Initialize effects system
+        this.effects = new Effects(scene, particleSystem);
         
         // Initialize shop inventory
         this.restockInventory();
@@ -255,6 +260,15 @@ export default class Shop {
     }
 
     createPurchaseEffect(player, item) {
+        // Create a gold sparkle effect at the item's position
+        this.effects.createExplosionEffect(player.position, {
+            maxParticles: 20,
+            particleSize: 0.1,
+            startColor: new THREE.Color(1, 0.8, 0),  // Gold color
+            endColor: new THREE.Color(1, 0.5, 0),    // Orange color
+            lifetime: 0.5
+        });
+
         // Emit purchase event for UI and sound effects
         const event = new CustomEvent('itemPurchased', {
             detail: {
@@ -266,6 +280,15 @@ export default class Shop {
     }
 
     createSellEffect(player, item) {
+        // Create a silver sparkle effect at the item's position
+        this.effects.createExplosionEffect(player.position, {
+            maxParticles: 15,
+            particleSize: 0.1,
+            startColor: new THREE.Color(0.8, 0.8, 0.8),  // Silver color
+            endColor: new THREE.Color(0.5, 0.5, 0.5),    // Gray color
+            lifetime: 0.5
+        });
+
         // Emit sell event for UI and sound effects
         const event = new CustomEvent('itemSold', {
             detail: {
