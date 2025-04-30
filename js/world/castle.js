@@ -6,7 +6,7 @@ import * as THREE from "three";
  * @returns {THREE.Group} - The castle group
  */
 
-export class Castle {
+export default class Castle {
   constructor() {
     // Create a simple castle in the distance
     const castleGroup = new THREE.Group();
