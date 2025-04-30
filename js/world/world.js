@@ -18,8 +18,10 @@ export default class World {
   }
 
   init(scene) {
-    // Initialize collections for interactive objects
+    // Initialize collections
     this.interactiveObjects = [];
+    this.trees = [];
+    this.rocks = [];
 
     // Add skybox (this should be first to be in the background)
     this.skybox = new Skybox();
@@ -29,8 +31,9 @@ export default class World {
     this.ground = new Groud();
     scene.add(this.ground);
 
-    // Add water
+    // Add water (positioned below ground level)
     this.water = new Water();
+    this.water.position.y = -1; // Place water below ground
     scene.add(this.water);
 
     // Add sky (atmospheric sky)
@@ -38,8 +41,10 @@ export default class World {
     scene.add(this.sky);
 
     // Add mountains
+    this.mountains = [];
     for (let i = 0; i < 5; i++) {
       const mountain = new Moutain();
+      this.mountains.push(mountain);
       scene.add(mountain);
     }
 
@@ -50,26 +55,41 @@ export default class World {
     // Add trees
     for (let i = 0; i < 40; ++i) {
       const tree = new Tree();
+      this.trees.push(tree);
       scene.add(tree);
     }
-    // Trees are already added to the scene in the Trees constructor
 
     // Add rocks
     for (let i = 0; i < 30; ++i) {
       const rock = new Rock();
+      this.rocks.push(rock);
       scene.add(rock);
     }
 
-    // Add stairs to castle
+    // Add stairs to castle (positioned in front of castle)
     const stairs = new Stairs();
-    this.interactiveObjects.push(stairs);
+    scene.add(stairs);
+    this.interactiveObjects.push({
+      mesh: stairs,
+      type: 'stairs',
+      isCollidable: true,
+      isWalkable: true
+    });
 
-    // Add bridge
+    // Add bridge (positioned between ground and castle)
     const bridge = new Bridge();
+    bridge.position.z = -150; // Position between ground and castle
     scene.add(bridge);
+    this.interactiveObjects.push({
+      mesh: bridge,
+      type: 'bridge',
+      isCollidable: true,
+      isWalkable: true
+    });
 
-    // Add interactive objects
-    this.interactiveObjects = addInteractiveObjects(scene);
+    // Add other interactive objects (chests, crystals, etc)
+    const otherObjects = addInteractiveObjects(scene);
+    this.interactiveObjects.push(...otherObjects);
   }
 
   update(deltaTime, camera) {

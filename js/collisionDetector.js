@@ -24,10 +24,37 @@ export class CollisionDetector {
         for (const obj of this.collisionObjects) {
             if (!obj.mesh) continue;
             
-            // Create a bounding box helper
-            const boxHelper = new THREE.BoxHelper(obj.mesh, 0xff0000);
-            this.world.scene.add(boxHelper);
-            this.debugHelpers.push(boxHelper);
+            // Create appropriate debug visualization based on collision type
+            if (obj.mesh.userData.collisionType === "cylinder") {
+                // For trees - show cylinder
+                const radius = obj.mesh.userData.collisionRadius;
+                const height = obj.mesh.userData.collisionHeight;
+                const geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0xff0000,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const helper = new THREE.Mesh(geometry, material);
+                helper.position.copy(obj.mesh.position);
+                helper.position.y += height/2;
+                this.world.scene.add(helper);
+                this.debugHelpers.push(helper);
+            }
+            else if (obj.mesh.userData.collisionType === "box") {
+                // For rocks and walls - show box
+                const box = obj.mesh.userData.collisionBox;
+                const helper = new THREE.Box3Helper(box, 0xff0000);
+                this.world.scene.add(helper);
+                this.debugHelpers.push(helper);
+            }
+            else {
+                // Fallback to bounding box
+                const helper = new THREE.BoxHelper(obj.mesh, 0xff0000);
+                this.world.scene.add(helper);
+                this.debugHelpers.push(helper);
+            }
             
             // Create a text label for the object type
             const typeLabel = document.createElement('div');
@@ -59,42 +86,27 @@ export class CollisionDetector {
             this.world.rocks.forEach(rock => {
                 this.collisionObjects.push({
                     mesh: rock,
-                    type: 'rock',
-                    isCollidable: true,
-                    isWalkable: false  // Rocks are not walkable, hero should collide with them
+                    type: 'rock'
                 });
-            });
-        }
-        
-        // Add castle
-        if (this.world && this.world.castle) {
-            this.collisionObjects.push({
-                mesh: this.world.castle,
-                type: 'castle',
-                isCollidable: true,
-                isWalkable: true  // Make castle walkable
-            });
-        }
-        
-        // Add bridge
-        if (this.world && this.world.bridge) {
-            this.collisionObjects.push({
-                mesh: this.world.bridge,
-                type: 'bridge',
-                isCollidable: true,
-                isWalkable: true  // Make bridge walkable
             });
         }
         
         // Add trees
-        if (this.world && this.world.trees && this.world.trees.trees) {
-            this.world.trees.trees.forEach(tree => {
+        if (this.world && this.world.trees) {
+            this.world.trees.forEach(tree => {
                 this.collisionObjects.push({
                     mesh: tree,
-                    type: 'tree',
-                    isCollidable: true,
-                    isWalkable: false  // Trees are not walkable
+                    type: 'tree'
                 });
+            });
+        }
+        
+        // Add castle parts (walls, floor)
+        if (this.world && this.world.castle) {
+            // Castle is already set up with proper collision in castle.js
+            this.collisionObjects.push({
+                mesh: this.world.castle,
+                type: 'castle'
             });
         }
         
@@ -282,19 +294,29 @@ export class CollisionDetector {
         }
         
         // Determine final height based on walkable surfaces and slopes
-        let finalHeight;
-        if (position.y > highestWalkableSurface && !isOnSlope) {
-            // If we're in the air (jumping/flying), maintain current height
-            finalHeight = position.y;
-        } else {
-            // Otherwise use the highest walkable surface (including slopes)
-            finalHeight = highestWalkableSurface;
+        let finalHeight = newPosition.y; // Start with requested height
+        
+        // Only apply gravity if we're not flying
+        if (!this.world.hero || !this.world.hero.isFlying) {
+            if (newPosition.y <= highestWalkableSurface || isOnSlope) {
+                // If we're below or at surface level, or on a slope, snap to surface
+                finalHeight = highestWalkableSurface;
+            } else {
+                // If we're above surface level (jumping), apply gravity
+                const gravity = 9.8; // m/s^2
+                const deltaTime = 1/60; // Assuming 60 FPS
+                finalHeight = Math.max(
+                    highestWalkableSurface,
+                    newPosition.y - gravity * deltaTime
+                );
+            }
         }
         
         return {
             canMove: true,
             newPosition: new THREE.Vector3(newPosition.x, finalHeight, newPosition.z),
-            isOnSlope: isOnSlope
+            isOnSlope: isOnSlope,
+            isInAir: finalHeight > highestWalkableSurface
         };
     }
     
@@ -506,7 +528,21 @@ export class CollisionDetector {
         
         // Update debug helpers
         for (const helper of this.debugHelpers) {
-            helper.update();
+            if (helper instanceof THREE.BoxHelper || helper instanceof THREE.Box3Helper) {
+                helper.update();
+            }
+            else if (helper instanceof THREE.Mesh) {
+                // For cylinder helpers - update position to match object
+                const obj = this.collisionObjects.find(o => 
+                    o.mesh && o.mesh.userData.collisionType === "cylinder" &&
+                    Math.abs(o.mesh.position.x - helper.position.x) < 0.1 &&
+                    Math.abs(o.mesh.position.z - helper.position.z) < 0.1
+                );
+                if (obj) {
+                    helper.position.copy(obj.mesh.position);
+                    helper.position.y = obj.mesh.position.y + obj.mesh.userData.collisionHeight/2;
+                }
+            }
         }
         
         // Update debug labels
