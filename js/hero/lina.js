@@ -3,7 +3,7 @@ import * as THREE from "three";
 export class Lina extends THREE.Object3D {
   constructor() {
     // Create a more complex Lina model
-    const bodyGroup = new THREE.Group();
+    const modelGroup = new THREE.Group();
 
     // Body - slender and feminine
     const bodyGeometry = new THREE.BoxGeometry(0.8, 1.4, 0.6);
@@ -15,7 +15,7 @@ export class Lina extends THREE.Object3D {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.y = 0.9;
     body.castShadow = true;
-    bodyGroup.add(body);
+    modelGroup.add(body);
 
     // Head
     const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
@@ -27,7 +27,7 @@ export class Lina extends THREE.Object3D {
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.y = 1.8;
     head.castShadow = true;
-    bodyGroup.add(head);
+    modelGroup.add(head);
 
     // Hair
     const hairGeometry = new THREE.ConeGeometry(0.4, 0.8, 16, 1, true);
@@ -41,7 +41,7 @@ export class Lina extends THREE.Object3D {
     hair.position.y = 2.0;
     hair.rotation.x = Math.PI;
     hair.castShadow = true;
-    bodyGroup.add(hair);
+    modelGroup.add(hair);
 
     // Arms
     const armGeometry = new THREE.BoxGeometry(0.2, 0.7, 0.2);
@@ -55,13 +55,13 @@ export class Lina extends THREE.Object3D {
     const leftArm = new THREE.Mesh(armGeometry, armMaterial);
     leftArm.position.set(-0.5, 1.2, 0);
     leftArm.castShadow = true;
-    bodyGroup.add(leftArm);
+    modelGroup.add(leftArm);
 
     // Right arm
     const rightArm = new THREE.Mesh(armGeometry, armMaterial);
     rightArm.position.set(0.5, 1.2, 0);
     rightArm.castShadow = true;
-    bodyGroup.add(rightArm);
+    modelGroup.add(rightArm);
 
     // Legs
     const legGeometry = new THREE.BoxGeometry(0.25, 0.8, 0.25);
@@ -75,13 +75,13 @@ export class Lina extends THREE.Object3D {
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
     leftLeg.position.set(-0.25, 0.4, 0);
     leftLeg.castShadow = true;
-    bodyGroup.add(leftLeg);
+    modelGroup.add(leftLeg);
 
     // Right leg
     const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
     rightLeg.position.set(0.25, 0.4, 0);
     rightLeg.castShadow = true;
-    bodyGroup.add(rightLeg);
+    modelGroup.add(rightLeg);
 
     // Fire staff
     const staffGroup = new THREE.Group();
@@ -114,7 +114,7 @@ export class Lina extends THREE.Object3D {
     // Position staff in right hand
     staffGroup.position.set(0.7, 0.9, 0.2);
     staffGroup.rotation.z = Math.PI / 12;
-    bodyGroup.add(staffGroup);
+    modelGroup.add(staffGroup);
 
     // Fire particles
     const fireGroup = new THREE.Group();
@@ -147,6 +147,6 @@ export class Lina extends THREE.Object3D {
     }
     staffGroup.add(fireGroup);
 
-    return bodyGroup;
+    return modelGroup;
   }
 }

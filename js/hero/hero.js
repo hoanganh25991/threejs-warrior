@@ -92,8 +92,7 @@ export class Hero {
     
     createWings() {
         // Create wings using the Wings class
-        const wings = new Wings(this.scene);
-        this.wings = wings.getGroup();
+        this.wings = new Wings();
         this.group.add(this.wings);
     }
     

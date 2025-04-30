@@ -3,7 +3,7 @@ import * as THREE from "three";
 export default class CrystalMaiden {
   constructor() {
     // Create a more complex Crystal Maiden model
-    const bodyGroup = new THREE.Group();
+    const modelGroup = new THREE.Group();
 
     // Body - slender and feminine
     const bodyGeometry = new THREE.BoxGeometry(0.8, 1.4, 0.6);
@@ -16,7 +16,7 @@ export default class CrystalMaiden {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.y = 0.9;
     body.castShadow = true;
-    bodyGroup.add(body);
+    modelGroup.add(body);
 
     // Head
     const headGeometry = new THREE.SphereGeometry(0.35, 16, 16);
@@ -28,7 +28,7 @@ export default class CrystalMaiden {
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.y = 1.8;
     head.castShadow = true;
-    bodyGroup.add(head);
+    modelGroup.add(head);
 
     // Hair/Hood
     const hoodGeometry = new THREE.ConeGeometry(0.4, 0.8, 16, 1, true);
@@ -42,7 +42,7 @@ export default class CrystalMaiden {
     hood.position.y = 2.0;
     hood.rotation.x = Math.PI;
     hood.castShadow = true;
-    bodyGroup.add(hood);
+    modelGroup.add(hood);
 
     // Cape
     const capeGeometry = new THREE.PlaneGeometry(1.2, 1.8);
@@ -55,7 +55,7 @@ export default class CrystalMaiden {
     const cape = new THREE.Mesh(capeGeometry, capeMaterial);
     cape.position.set(0, 1.2, -0.4);
     cape.castShadow = true;
-    bodyGroup.add(cape);
+    modelGroup.add(cape);
 
     // Arms - slender
     const armGeometry = new THREE.BoxGeometry(0.2, 0.7, 0.2);
@@ -69,13 +69,13 @@ export default class CrystalMaiden {
     const leftArm = new THREE.Mesh(armGeometry, armMaterial);
     leftArm.position.set(-0.5, 1.2, 0);
     leftArm.castShadow = true;
-    bodyGroup.add(leftArm);
+    modelGroup.add(leftArm);
 
     // Right arm
     const rightArm = new THREE.Mesh(armGeometry, armMaterial);
     rightArm.position.set(0.5, 1.2, 0);
     rightArm.castShadow = true;
-    bodyGroup.add(rightArm);
+    modelGroup.add(rightArm);
 
     // Legs
     const legGeometry = new THREE.BoxGeometry(0.25, 0.8, 0.25);
@@ -89,13 +89,13 @@ export default class CrystalMaiden {
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
     leftLeg.position.set(-0.25, 0.4, 0);
     leftLeg.castShadow = true;
-    bodyGroup.add(leftLeg);
+    modelGroup.add(leftLeg);
 
     // Right leg
     const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
     rightLeg.position.set(0.25, 0.4, 0);
     rightLeg.castShadow = true;
-    bodyGroup.add(rightLeg);
+    modelGroup.add(rightLeg);
 
     // Staff
     const staffGroup = new THREE.Group();
@@ -130,7 +130,7 @@ export default class CrystalMaiden {
     // Position staff in right hand
     staffGroup.position.set(0.7, 0.9, 0.2);
     staffGroup.rotation.z = Math.PI / 12;
-    bodyGroup.add(staffGroup);
+    modelGroup.add(staffGroup);
 
     // Ice particles
     const particlesGroup = new THREE.Group();
@@ -159,9 +159,9 @@ export default class CrystalMaiden {
     staffGroup.add(particlesGroup);
 
     // Add the complete body to the group
-    this.group.add(bodyGroup);
+    this.group.add(modelGroup);
     this.mesh = body; // Set the main body as the reference mesh
 
-    return bodyGroup;
+    return modelGroup;
   }
 }

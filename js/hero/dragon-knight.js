@@ -3,7 +3,7 @@ import * as THREE from "three";
 export class DragonKnight extends THREE.Object3D {
   constructor() {
     // Create a more complex Dragon Knight model
-    const bodyGroup = new THREE.Group();
+    const modelGroup = new THREE.Group();
 
     // Body - slightly larger and more armored
     const bodyGeometry = new THREE.BoxGeometry(1.2, 1.4, 0.8);
@@ -15,7 +15,7 @@ export class DragonKnight extends THREE.Object3D {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.y = 0.9;
     body.castShadow = true;
-    bodyGroup.add(body);
+    modelGroup.add(body);
 
     // Head with dragon-like features
     const headGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
@@ -27,7 +27,7 @@ export class DragonKnight extends THREE.Object3D {
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.y = 1.75;
     head.castShadow = true;
-    bodyGroup.add(head);
+    modelGroup.add(head);
 
     // Dragon horns
     const hornGeometry = new THREE.ConeGeometry(0.1, 0.4, 8);
@@ -42,14 +42,14 @@ export class DragonKnight extends THREE.Object3D {
     leftHorn.position.set(-0.25, 2.1, 0);
     leftHorn.rotation.z = Math.PI / 6;
     leftHorn.castShadow = true;
-    bodyGroup.add(leftHorn);
+    modelGroup.add(leftHorn);
 
     // Right horn
     const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
     rightHorn.position.set(0.25, 2.1, 0);
     rightHorn.rotation.z = -Math.PI / 6;
     rightHorn.castShadow = true;
-    bodyGroup.add(rightHorn);
+    modelGroup.add(rightHorn);
 
     // Armor plates
     const plateGeometry = new THREE.BoxGeometry(1.4, 0.3, 1);
@@ -63,7 +63,7 @@ export class DragonKnight extends THREE.Object3D {
     const shoulderPlate = new THREE.Mesh(plateGeometry, plateMaterial);
     shoulderPlate.position.y = 1.5;
     shoulderPlate.castShadow = true;
-    bodyGroup.add(shoulderPlate);
+    modelGroup.add(shoulderPlate);
 
     // Arms - more muscular
     const armGeometry = new THREE.BoxGeometry(0.3, 0.8, 0.3);
@@ -77,13 +77,13 @@ export class DragonKnight extends THREE.Object3D {
     const leftArm = new THREE.Mesh(armGeometry, armMaterial);
     leftArm.position.set(-0.75, 1.2, 0);
     leftArm.castShadow = true;
-    bodyGroup.add(leftArm);
+    modelGroup.add(leftArm);
 
     // Right arm
     const rightArm = new THREE.Mesh(armGeometry, armMaterial);
     rightArm.position.set(0.75, 1.2, 0);
     rightArm.castShadow = true;
-    bodyGroup.add(rightArm);
+    modelGroup.add(rightArm);
 
     // Legs
     const legGeometry = new THREE.BoxGeometry(0.3, 0.9, 0.3);
@@ -97,13 +97,13 @@ export class DragonKnight extends THREE.Object3D {
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
     leftLeg.position.set(-0.3, 0.45, 0);
     leftLeg.castShadow = true;
-    bodyGroup.add(leftLeg);
+    modelGroup.add(leftLeg);
 
     // Right leg
     const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
     rightLeg.position.set(0.3, 0.45, 0);
     rightLeg.castShadow = true;
-    bodyGroup.add(rightLeg);
+    modelGroup.add(rightLeg);
 
     // Sword
     const swordGroup = new THREE.Group();
@@ -135,7 +135,7 @@ export class DragonKnight extends THREE.Object3D {
     // Position sword in right hand
     swordGroup.position.set(1.1, 1.2, 0.2);
     swordGroup.rotation.z = Math.PI / 4;
-    bodyGroup.add(swordGroup);
+    modelGroup.add(swordGroup);
 
     // Shield
     const shieldGeometry = new THREE.BoxGeometry(0.1, 0.8, 0.6);
@@ -147,8 +147,8 @@ export class DragonKnight extends THREE.Object3D {
     const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
     shield.position.set(-1.0, 1.2, 0);
     shield.castShadow = true;
-    bodyGroup.add(shield);
+    modelGroup.add(shield);
 
-    return bodyGroup;
+    return modelGroup;
   }
 }
