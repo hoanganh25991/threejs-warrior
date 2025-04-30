@@ -347,8 +347,9 @@ class Game {
     if (this.skillManager) {
       this.skillManager.update(deltaTime);
     }
-    if (this.enemyManager) {
-      this.enemyManager.update(deltaTime);
+    if (this.enemyManager && this.hero) {
+      const heroPosition = this.hero.getPosition();
+      this.enemyManager.update(deltaTime, heroPosition);
     }
 
     // Update boss if present

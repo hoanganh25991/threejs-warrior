@@ -12,15 +12,14 @@ export default class Wings extends THREE.Object3D {
     const wingGeometry = new THREE.ShapeGeometry(wingShape, 32); // Higher segment count for smoother curves
 
     // Create a beautiful pure white wing material with enhanced glow
-    const wingMaterial = new THREE.MeshStandardMaterial({
+    const wingMaterial = new THREE.MeshPhongMaterial({
       color: 0xffffff, // Pure white
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.92, // More opaque
       emissive: 0xffffff, // Pure white glow
       emissiveIntensity: 0.5, // Stronger glow
-      metalness: 0.05, // Less metallic
-      roughness: 0.2, // Smoother
+      shininess: 100
     });
 
     // Create left wing

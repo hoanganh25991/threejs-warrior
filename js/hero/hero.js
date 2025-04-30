@@ -1414,12 +1414,13 @@ export default class Hero {
     for (let i = 0; i < 20; i++) {
       // Create a small glowing particle
       const particleGeometry = new THREE.SphereGeometry(0.03, 8, 8);
-      const particleMaterial = new THREE.MeshBasicMaterial({
+      const particleMaterial = new THREE.MeshPhongMaterial({
         color: 0xffffff,
         transparent: true,
         opacity: 0.7,
         emissive: 0xffffff,
         emissiveIntensity: 1.0,
+        shininess: 100
       });
 
       const particle = new THREE.Mesh(particleGeometry, particleMaterial);

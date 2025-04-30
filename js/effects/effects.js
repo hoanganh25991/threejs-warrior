@@ -268,11 +268,14 @@ class ExplosionEffect extends ParticleSystem {
 
     createShockwave(position) {
         const geometry = new THREE.RingGeometry(0.1, 0.2, 32);
-        const material = new THREE.MeshBasicMaterial({
+        const material = new THREE.MeshPhongMaterial({
             color: 0xff8800,
             transparent: true,
             opacity: 1,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            emissive: 0xff4400,
+            emissiveIntensity: 0.5,
+            shininess: 100
         });
 
         this.shockwave = new THREE.Mesh(geometry, material);
@@ -356,11 +359,14 @@ class WaterSplashEffect extends ParticleSystem {
     createRipple(position) {
         // Create a circular mesh for the ripple
         const geometry = new THREE.CircleGeometry(0.5, 32);
-        const material = new THREE.MeshBasicMaterial({
+        const material = new THREE.MeshPhongMaterial({
             color: 0x88ccff,
             transparent: true,
             opacity: 0.5,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            emissive: 0x4488ff,
+            emissiveIntensity: 0.3,
+            shininess: 100
         });
 
         this.ripple = new THREE.Mesh(geometry, material);

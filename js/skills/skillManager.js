@@ -51,46 +51,51 @@ export class SkillManager {
         switch(skill.name) {
             case 'Fireball':
                 geometry = new THREE.SphereGeometry(0.5, 16, 16);
-                material = new THREE.MeshBasicMaterial({ 
+                material = new THREE.MeshPhongMaterial({ 
                     color: 0xff4500,
                     emissive: 0xff0000,
-                    emissiveIntensity: 0.5
+                    emissiveIntensity: 0.5,
+                    shininess: 100
                 });
                 break;
             case 'Ice Spike':
                 geometry = new THREE.ConeGeometry(0.5, 2, 16);
-                material = new THREE.MeshBasicMaterial({ 
+                material = new THREE.MeshPhongMaterial({ 
                     color: 0x00ffff,
                     emissive: 0x0000ff,
-                    emissiveIntensity: 0.5
+                    emissiveIntensity: 0.5,
+                    shininess: 100
                 });
                 break;
             case 'Thunder Strike':
                 geometry = new THREE.CylinderGeometry(0, 0.5, 3, 16);
-                material = new THREE.MeshBasicMaterial({ 
+                material = new THREE.MeshPhongMaterial({ 
                     color: 0xffff00,
                     emissive: 0xffff00,
-                    emissiveIntensity: 0.5
+                    emissiveIntensity: 0.5,
+                    shininess: 100
                 });
                 break;
             case 'Heal':
                 geometry = new THREE.TorusGeometry(1, 0.2, 16, 32);
-                material = new THREE.MeshBasicMaterial({ 
+                material = new THREE.MeshPhongMaterial({ 
                     color: 0x00ff00,
                     emissive: 0x00ff00,
                     emissiveIntensity: 0.5,
                     transparent: true,
-                    opacity: 0.7
+                    opacity: 0.7,
+                    shininess: 100
                 });
                 break;
             case 'Shield':
                 geometry = new THREE.SphereGeometry(1.2, 16, 16);
-                material = new THREE.MeshBasicMaterial({ 
+                material = new THREE.MeshPhongMaterial({ 
                     color: 0x4169e1,
                     emissive: 0x0000ff,
                     emissiveIntensity: 0.3,
                     transparent: true,
-                    opacity: 0.5
+                    opacity: 0.5,
+                    shininess: 100
                 });
                 break;
             case 'Dash':

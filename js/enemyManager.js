@@ -13,6 +13,9 @@ export class EnemyManager {
     }
     
     update(deltaTime, playerPosition) {
+        // Skip update if no player position
+        if (!playerPosition) return;
+        
         // Update spawn timer
         this.spawnTimer += deltaTime;
         

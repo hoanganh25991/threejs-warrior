@@ -9,10 +9,9 @@ export default class GlowingCrystal extends THREE.Object3D {
     
     // Crystal
     const crystalGeometry = new THREE.ConeGeometry(0.5, 2, 5);
-    const crystalMaterial = new THREE.MeshStandardMaterial({ 
+    const crystalMaterial = new THREE.MeshPhongMaterial({ 
       color: 0x00FFFF, // Cyan
-      roughness: 0.2,
-      metalness: 0.8,
+      shininess: 100,
       emissive: 0x00FFFF,
       emissiveIntensity: 0.5
     });
