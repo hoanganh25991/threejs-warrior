@@ -776,9 +776,9 @@ export class Hero {
         wingGroup.add(leftWing);
         wingGroup.add(rightWing);
         
-        // Position wings on hero's back - moved to the back (negative Z)
+        // Position wings directly on hero's back
         // Since hero is facing into screen (negative Z), the back is positive Z
-        wingGroup.position.set(0, 1.5, 0.2);
+        wingGroup.position.set(0, 1.5, 0.4);
         
         // Add slight angle to wings
         wingGroup.rotation.x = 0.2;
@@ -1349,10 +1349,12 @@ export class Hero {
     }
     
     handleJumpAndFly(deltaTime, keys) {
-        // Apply gravity if not on ground
-        if (!this.onGround || this.isJumping) {
-            // Apply gravity to velocity
-            this.velocity.y -= config.player.gravity * deltaTime;
+        // Always apply gravity when not on ground - even when flying
+        // This ensures the hero falls when space is released
+        if (!this.onGround) {
+            // Apply gravity to velocity - reduced gravity when flying for better control
+            const gravityFactor = this.isFlying && keys[' '] ? 0.7 : 1.0;
+            this.velocity.y -= config.player.gravity * gravityFactor * deltaTime;
             
             // Update position based on velocity
             this.group.position.y += this.velocity.y * deltaTime;
@@ -1396,8 +1398,21 @@ export class Hero {
             else if (this.isJumping || this.isFlying) {
                 // Add continuous boost while space is held - increased boost for higher flying
                 // The higher we go, the more boost we get (with a minimum boost)
-                const heightFactor = Math.max(1, this.group.position.y / 10); // Scale boost with height
-                const boost = config.player.jumpForce * 0.05 * heightFactor;
+                const heightFactor = Math.max(1, this.group.position.y / 15); // Scale boost with height
+                
+                // Calculate boost based on current velocity
+                // If falling or slow, provide stronger boost to counteract gravity
+                // If already rising fast, provide less boost for better control
+                let boostMultiplier = 1.0;
+                if (this.velocity.y < 0) {
+                    // Stronger boost when falling to quickly recover
+                    boostMultiplier = 1.5 + Math.min(1.5, Math.abs(this.velocity.y) / 10);
+                } else if (this.velocity.y > 10) {
+                    // Reduced boost when already moving up quickly
+                    boostMultiplier = 0.8;
+                }
+                
+                const boost = config.player.jumpForce * 0.06 * heightFactor * boostMultiplier;
                 
                 // Add the boost to velocity
                 this.velocity.y += boost;
@@ -1422,16 +1437,20 @@ export class Hero {
                         'flying:', this.isFlying);
         }
         
-        // Show/hide wings based on height - FIXED to ensure wings show up
+        // Show/hide wings based on height and flying state
         if (this.wings) {
             // Debug logging for wings
-            console.log('Wings check - Height:', this.group.position.y, 
-                        'Flying height threshold:', config.player.flyingHeight,
-                        'Wings visible:', this.wingsVisible,
-                        'Wings object:', this.wings);
+            if (this.debug) {
+                console.log('Wings check - Height:', this.group.position.y.toFixed(2), 
+                            'Flying height threshold:', config.player.flyingHeight,
+                            'Wings visible:', this.wingsVisible,
+                            'Is flying:', this.isFlying);
+            }
             
-            // Force wings to be visible when above flying height
-            if (this.group.position.y > 3) { // Lower threshold to make wings appear sooner
+            // Show wings when flying or at sufficient height
+            const minWingHeight = 2; // Lower threshold to make wings appear sooner
+            
+            if ((this.isFlying || this.group.position.y > minWingHeight) && !this.onGround) {
                 if (!this.wingsVisible) {
                     console.log('SHOWING WINGS!');
                     this.wings.visible = true;
@@ -1442,10 +1461,11 @@ export class Hero {
                     this.animateWings();
                 }
                 
-                // Flap wings while flying
-                this.flapWings(deltaTime);
-            } else if (this.group.position.y <= 3 && this.wingsVisible) {
-                // Hide wings when below threshold
+                // Flap wings while flying - flap speed based on whether space is pressed
+                const flapIntensity = keys[' '] ? 1.0 : 0.7; // Slower flapping when gliding
+                this.flapWings(deltaTime, flapIntensity);
+            } else if ((this.group.position.y <= minWingHeight || this.onGround) && this.wingsVisible) {
+                // Hide wings when below threshold or on ground
                 console.log('HIDING WINGS!');
                 this.wings.visible = false;
                 this.wingsVisible = false;

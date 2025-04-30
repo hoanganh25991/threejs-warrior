@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.159.0/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: #2a2a2a;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .viewer {
+            flex: 1;
+            position: relative;
+        }
+        
+        #model-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        h1 {
+            margin-top: 0;
+            color: #4a9df0;
+            text-align: center;
+            padding: 15px;
+            background-color: #222;
+            margin-bottom: 20px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4a9df0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background-color: #3a8de0;
+        }
+        
+        .model-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 4px;
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>3D Model Viewer</h1>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Select Model</h2>
+            <select id="model-selector">
+                <option value="">-- Select a model --</option>
+            </select>
+            <button id="load-model-btn">Load Model</button>
+            <button id="reset-view-btn">Reset View</button>
+            <div class="model-info" id="model-info">
+                <h3>Model Information</h3>
+                <p>No model selected</p>
+            </div>
+        </div>
+        <div class="viewer">
+            <canvas id="model-canvas"></canvas>
+            <div class="controls-info">
+                <p>Left click + drag: Rotate view</p>
+                <p>Right click + drag: Pan view</p>
+                <p>Scroll: Zoom in/out</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        // World model imports
+        import { Castle } from './js/world/castle.js';
+        import { Bridge } from './js/world/bridge.js';
+        import { Skybox } from './js/world/skybox.js';
+        import { addGround } from './js/world/ground.js';
+        import { addWater } from './js/world/water.js';
+        import { addSky } from './js/world/sky.js';
+        import { addMountains } from './js/world/mountains.js';
+        import { addTrees } from './js/world/trees.js';
+        import { addRocks } from './js/world/rock.js';
+        import { addInteractiveObjects } from './js/world/interactive-objects.js';
+        import { addStairs } from './js/world/stairs.js';
+        
+        // Main variables
+        let scene, camera, renderer, controls;
+        let currentModel = null;
+        
+        // Model registry - maps file paths to constructor functions
+        const modelRegistry = {
+            'world/castle.js': {
+                name: 'Castle',
+                constructor: Castle,
+                description: 'A medieval castle with four towers and a main body.'
+            },
+            'world/bridge.js': {
+                name: 'Bridge',
+                constructor: Bridge,
+                description: 'A wooden bridge with railings and posts.'
+            },
+            'world/skybox.js': {
+                name: 'Skybox',
+                constructor: Skybox,
+                description: 'A skybox that surrounds the scene.'
+            },
+            'world/ground.js': {
+                name: 'Ground',
+                constructor: (scene) => addGround(scene),
+                description: 'The ground terrain of the world.'
+            },
+            'world/water.js': {
+                name: 'Water',
+                constructor: (scene) => addWater(scene),
+                description: 'Animated water surface.'
+            },
+            'world/sky.js': {
+                name: 'Sky',
+                constructor: (scene) => addSky(scene),
+                description: 'Atmospheric sky with gradient.'
+            },
+            'world/mountains.js': {
+                name: 'Mountains',
+                constructor: (scene) => addMountains(scene),
+                description: 'Mountain range in the distance.'
+            },
+            'world/trees.js': {
+                name: 'Trees',
+                constructor: (scene) => addTrees(scene),
+                description: 'Forest of trees scattered around the scene.'
+            },
+            'world/rock.js': {
+                name: 'Rocks',
+                constructor: (scene) => addRocks(scene),
+                description: 'Various rocks and boulders.'
+            },
+            'world/interactive-objects.js': {
+                name: 'Interactive Objects',
+                constructor: (scene) => addInteractiveObjects(scene),
+                description: 'Various interactive objects like chests and crystals.'
+            },
+            'world/stairs.js': {
+                name: 'Stairs',
+                constructor: (scene) => addStairs(scene),
+                description: 'Stone stairs leading up to structures.'
+            }
+        };
+        
+        // Initialize the scene
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb); // Sky blue background
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(50, 30, 50);
+            
+            // Create renderer
+            const canvas = document.getElementById('model-canvas');
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: true 
+            });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            
+            // Add controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Add lights
+            addLights();
+            
+            // Add grid helper
+            const gridHelper = new THREE.GridHelper(100, 20, 0x555555, 0x333333);
+            scene.add(gridHelper);
+            
+            // Add axes helper
+            const axesHelper = new THREE.AxesHelper(20);
+            scene.add(axesHelper);
+            
+            // Populate model selector
+            populateModelSelector();
+            
+            // Add event listeners
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('load-model-btn').addEventListener('click', loadSelectedModel);
+            document.getElementById('reset-view-btn').addEventListener('click', resetView);
+            
+            // Start animation loop
+            animate();
+        }
+        
+        // Add lights to the scene
+        function addLights() {
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            // Directional light (sun)
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(50, 100, 50);
+            directionalLight.castShadow = true;
+            
+            // Set up shadow properties
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            directionalLight.shadow.camera.left = -100;
+            directionalLight.shadow.camera.right = 100;
+            directionalLight.shadow.camera.top = 100;
+            directionalLight.shadow.camera.bottom = -100;
+            
+            scene.add(directionalLight);
+            
+            // Add a hemisphere light
+            const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x3a7e4f, 0.6);
+            scene.add(hemisphereLight);
+        }
+        
+        // Populate the model selector dropdown
+        function populateModelSelector() {
+            const selector = document.getElementById('model-selector');
+            
+            // Clear existing options except the first one
+            while (selector.options.length > 1) {
+                selector.remove(1);
+            }
+            
+            // Add options for each model in the registry
+            for (const [path, model] of Object.entries(modelRegistry)) {
+                const option = document.createElement('option');
+                option.value = path;
+                option.textContent = model.name;
+                selector.appendChild(option);
+            }
+        }
+        
+        // Load the selected model
+        function loadSelectedModel() {
+            const selector = document.getElementById('model-selector');
+            const selectedPath = selector.value;
+            
+            if (!selectedPath) {
+                alert('Please select a model to load');
+                return;
+            }
+            
+            // Clear previous model
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+            
+            // Get model info
+            const modelInfo = modelRegistry[selectedPath];
+            
+            try {
+                // Create new instance of the model
+                let model;
+                
+                model = new modelInfo.constructor();
+                
+                // If the model is an array (like some functions return), add the first item
+                if (Array.isArray(model)) {
+                    model = model[0];
+                }
+                
+                // Add to scene
+                if (model) {
+                    scene.add(model);
+                    currentModel = model;
+                    
+                    // Reset camera to view the model
+                    resetView();
+                    
+                    // Update model info display
+                    updateModelInfo(selectedPath, modelInfo);
+                    
+                    console.log(`Loaded model: ${modelInfo.name}`);
+                } else {
+                    console.error('Failed to create model instance');
+                }
+            } catch (error) {
+                console.error('Error loading model:', error);
+                alert(`Error loading model: ${error.message}`);
+            }
+        }
+        
+        // Update the model information display
+        function updateModelInfo(path, modelInfo) {
+            const infoElement = document.getElementById('model-info');
+            infoElement.innerHTML = `
+                <h3>Model Information</h3>
+                <p><strong>Name:</strong> ${modelInfo.name}</p>
+                <p><strong>File:</strong> ${path}</p>
+                <p><strong>Description:</strong> ${modelInfo.description}</p>
+            `;
+        }
+        
+        // Reset the camera view to focus on the current model
+        function resetView() {
+            if (currentModel) {
+                // Get the bounding box of the model
+                const box = new THREE.Box3().setFromObject(currentModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                // Calculate the distance based on the size of the model
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let distance = maxDim / (2 * Math.tan(fov / 2));
+                
+                // Set a minimum distance
+                distance = Math.max(distance, 10);
+                
+                // Position the camera
+                camera.position.set(
+                    center.x + distance,
+                    center.y + distance / 2,
+                    center.z + distance
+                );
+                
+                // Look at the center of the model
+                camera.lookAt(center);
+                
+                // Update the controls target
+                controls.target.copy(center);
+                controls.update();
+            } else {
+                // Default position if no model is loaded
+                camera.position.set(50, 30, 50);
+                camera.lookAt(0, 0, 0);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
+        }
+        
+        // Handle window resize
+        function onWindowResize() {
+            const canvas = document.getElementById('model-canvas');
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update controls
+            controls.update();
+            
+            // Update any animated models
+            if (currentModel && currentModel.update) {
+                currentModel.update(0.016); // Approximate for 60fps
+            }
+            
+            // Render the scene
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
