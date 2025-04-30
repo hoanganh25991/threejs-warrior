@@ -15,6 +15,10 @@
         }
     </script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -67,7 +71,35 @@
             border-radius: 4px;
         }
 
-        /* Custom Select Styling */
+        .search-container {
+            padding: 10px;
+            position: sticky;
+            top: 0;
+            background: #2a2a2a;
+            z-index: 11;
+            border-bottom: 1px solid #444;
+        }
+
+        .search-input-embedded {
+            width: 100%;
+            padding: 8px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-input-embedded::placeholder {
+            color: #888;
+        }
+
+
+
+        .search-input::placeholder {
+            color: #888;
+        }
+
         .custom-select-wrapper {
             position: relative;
             width: 100%;
@@ -110,13 +142,16 @@
             top: 100%;
             left: 0;
             right: 0;
-            max-height: 300px;
-            overflow-y: auto;
             background-color: #2a2a2a;
             border: 1px solid #444;
             border-top: 0;
             border-radius: 0 0 4px 4px;
             z-index: 10;
+        }
+
+        .options-container {
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         .custom-select.opened .custom-options {
@@ -197,8 +232,13 @@
                 <div class="custom-select" id="custom-model-selector">
                     <div class="custom-select-trigger">-- Select a model --</div>
                     <div class="custom-options">
-                        <div class="custom-option" data-value="">-- Select a model --</div>
+                        <div class="search-container">
+                            <input type="text" id="model-search" placeholder="Search models..." class="search-input-embedded">
+                        </div>
+                        <div class="options-container">
+                            <div class="custom-option" data-value="">-- Select a model --</div>
                         <!-- Options will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
                 <select id="model-selector" style="display: none;">
@@ -226,6 +266,7 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // Main variables
+        let allModelOptions = []; // Store all model options
         let scene, camera, renderer, controls;
         let currentModel = null;
         let netBox = null; // Visual representation of the "net" area
@@ -345,6 +386,9 @@
             // Populate model selector
             populateModelSelector();
 
+            // Initialize search functionality
+            initializeSearch();
+
             // Add event listeners
             window.addEventListener('resize', onWindowResize);
             document.getElementById('reset-view-btn').addEventListener('click', resetView);
@@ -384,7 +428,7 @@
         // Populate the model selector dropdown
         function populateModelSelector() {
             const selector = document.getElementById('model-selector');
-            const customOptions = document.querySelector('.custom-options');
+            const optionsContainer = document.querySelector('.options-container');
             const customTrigger = document.querySelector('.custom-select-trigger');
 
             // Clear existing options except the first one
@@ -393,9 +437,9 @@
             }
 
             // Clear custom options except the first one
-            const customOptionElements = customOptions.querySelectorAll('.custom-option');
+            const customOptionElements = optionsContainer.querySelectorAll('.custom-option');
             for (let i = 1; i < customOptionElements.length; i++) {
-                customOptions.removeChild(customOptionElements[i]);
+                optionsContainer.removeChild(customOptionElements[i]);
             }
 
             // Add options for each model in the registry
@@ -427,7 +471,7 @@
                 }
 
                 customOption.innerHTML = optionHTML;
-                customOptions.appendChild(customOption);
+                optionsContainer.appendChild(customOption);
 
                 // Add click event to custom option
                 customOption.addEventListener('click', function () {
@@ -455,7 +499,12 @@
 
             // Add click event to custom select trigger
             document.querySelector('.custom-select-trigger').addEventListener('click', function () {
-                document.querySelector('.custom-select').classList.toggle('opened');
+                const select = document.querySelector('.custom-select');
+                select.classList.toggle('opened');
+                if (select.classList.contains('opened')) {
+                    // Focus the search input when dropdown opens
+                    document.getElementById('model-search').focus();
+                }
             });
 
             // Close custom select when clicking outside
@@ -464,6 +513,11 @@
                 if (!select.contains(e.target)) {
                     select.classList.remove('opened');
                 }
+            });
+
+            // Prevent dropdown from closing when clicking in search input
+            document.getElementById('model-search').addEventListener('click', function(e) {
+                e.stopPropagation();
             });
         }
 
@@ -589,6 +643,36 @@
         }
 
         // Update the model information display
+        // Filter model options based on search input
+        function filterModelOptions(searchText) {
+            const optionsContainer = document.querySelector('.options-container');
+            const options = Array.from(optionsContainer.children);
+            
+            options.forEach(option => {
+                const optionName = option.querySelector('.custom-option-name')?.textContent.toLowerCase() || '';
+                const optionPath = option.querySelector('.custom-option-path')?.textContent.toLowerCase() || '';
+                const optionDesc = option.querySelector('.custom-option-description')?.textContent.toLowerCase() || '';
+                const searchLower = searchText.toLowerCase();
+                
+                if (searchText === '' || 
+                    optionName.includes(searchLower) || 
+                    optionPath.includes(searchLower) || 
+                    optionDesc.includes(searchLower)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize search functionality
+        function initializeSearch() {
+            const searchInput = document.getElementById('model-search');
+            searchInput.addEventListener('input', (e) => {
+                filterModelOptions(e.target.value);
+            });
+        }
+
         function updateModelInfo(path, modelInfo, userData) {
             const infoElement = document.getElementById('model-info');
 
@@ -755,6 +839,7 @@
 
         // Initialize the application
         init();
+        initializeSearch();
     </script>
 </body>
 
