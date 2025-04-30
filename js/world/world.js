@@ -11,7 +11,7 @@ import { addInteractiveObjects } from "./interactive-objects/interactive-objects
 import Stairs from "./stairs.js";
 import Bridge from "./bridge.js";
 
-export class World {
+export default class World {
   constructor(scene) {
     this.scene = scene;
     this.init(scene);
@@ -112,5 +112,3 @@ export class World {
     }
   }
 }
-
-export default World;

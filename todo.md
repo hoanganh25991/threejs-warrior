@@ -10,14 +10,14 @@
 - [x] Add a hero model, it's just a cube now, but later will be replaced by a more complex modelr on the back, 
 - [x] Add model for hero, each character must be different and must be complex close dota 1 appearance
 - [ ] Add collision check, hero can jump on the rock, hero can stand on roof, hero can walk, jump on brige, stair, add stair on castle to test that we can walk on stair
-- [ ] Press go forward + go left: auto go forward and look direction change left
-- [ ] Press go forward + go right: auto go forward and look direction change right
-- [ ] Press go backward + go left: auto go backward and look direction change left
-- [ ] Press go backward + go right: auto go backward and look direction change right
-- [ ] Press go up + go left: auto go up and look direction change left
-- [ ] Press go down + go left: auto go down and look direction change left
-- [ ] Press go up + go right: auto go up and look direction change right
-- [ ] Press go down + go right: auto go down and look direction change right
+- [x] Press go forward + go left: auto go forward and look direction change left
+- [x] Press go forward + go right: auto go forward and look direction change right
+- [x] Press go backward + go left: auto go backward and look direction change left
+- [x] Press go backward + go right: auto go backward and look direction change right
+- [x] Press go up + go left: auto go up and look direction change left
+- [x] Press go down + go left: auto go down and look direction change left
+- [x] Press go up + go right: auto go up and look direction change right
+- [x] Press go down + go right: auto go down and look direction change right
 - [ ] Add a HUD to show current status of game, like time, score, etc.
 - [ ] Add a skill system, like attack, defend, cast spell, etc.
 - [ ] Add unique skills for each hero
