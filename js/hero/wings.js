@@ -25,13 +25,13 @@ export default class Wings extends THREE.Object3D {
 
     // Create left wing
     const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-    leftWing.position.set(-0.15, 0.3, 0); // Closer to body
-    leftWing.scale.set(0.4, 0.4, 0.4); // Smaller size (reduced from 0.6)
+    leftWing.position.set(-0.75, 0.3, 0); // Wider stance for much larger wings
+    leftWing.scale.set(1.8, 1.8, 1.8); // Triple the size (0.6 * 3)
 
     // Create right wing (mirror of left wing)
     const rightWing = leftWing.clone();
-    rightWing.position.set(0.15, 0.3, 0); // Closer to body
-    rightWing.scale.set(-0.4, 0.4, 0.4); // Mirror by scaling X negatively, smaller size
+    rightWing.position.set(0.75, 0.3, 0); // Wider stance for much larger wings
+    rightWing.scale.set(-1.8, 1.8, 1.8); // Triple the size, mirror X
 
     // Add feather details to make wings more beautiful
     this.addFeatherDetails(leftWing, -1);
@@ -41,19 +41,15 @@ export default class Wings extends THREE.Object3D {
     modelGroup.add(leftWing);
     modelGroup.add(rightWing);
 
-    // Position wings on hero's back - higher up and further back
-    modelGroup.position.set(0, 1.3, 0.35);
+    // Position wings on hero's back - centered and further back for first-person view
+    modelGroup.position.set(0, 1.0, 1.0); // Moved further back to accommodate larger wings
 
-    // Add slight angle to wings
-    modelGroup.rotation.x = 0.1;
+    // Adjust wing angle for better visibility in first-person view
+    modelGroup.rotation.x = 0.2; // Increased angle to show more wing surface
 
     modelGroup.visible = true;
-
-    modelGroup.setVisible = (visible) => {
-      modelGroup.visible = visible;
-    };
-
-    modelGroup.isVisible = () => modelGroup.visible;
+    modelGroup.setVisible = this.setVisible.bind(modelGroup);
+    modelGroup.isVisible = this.isVisible.bind(modelGroup);
 
     return modelGroup;
   }
@@ -181,5 +177,13 @@ export default class Wings extends THREE.Object3D {
 
     // Add feather group to wing
     wing.add(featherGroup);
+  }
+
+  setVisible(visible){
+    this.visible = visible;
+  }
+
+  isVisible(){
+    return this.visible
   }
 }

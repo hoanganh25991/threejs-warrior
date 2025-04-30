@@ -83,6 +83,7 @@ export default class Hero {
   createWings() {
     // Create wings using the Wings class
     this.wings = new Wings();
+    this.wings.setVisible(false);
     this.group.add(this.wings);
     this.setupWingAnimations();
   }
