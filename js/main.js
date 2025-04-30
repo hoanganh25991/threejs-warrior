@@ -9,7 +9,7 @@ import { Hero } from './hero.js';
 import { EnemyManager } from './enemyManager.js';
 import { SkillManager } from './skills/skillManager.js';
 import { InputHandler } from './input.js';
-import { World } from './world/index.js';
+import { World } from './world/world.js';
 import { SoundManager } from './soundManager.js';
 
 // Game class
