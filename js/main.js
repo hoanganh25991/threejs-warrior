@@ -5,12 +5,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Import game modules
 import { config } from './config/config.js';
-import { Hero } from './characters/hero.js';
-import { EnemyManager } from './characters/enemyManager.js';
+import { Hero } from './hero.js';
+import { EnemyManager } from './enemyManager.js';
 import { SkillManager } from './skills/skillManager.js';
-import { InputHandler } from './utils/input.js';
-import { World } from './utils/world/index.js';
-import { SoundManager } from './utils/soundManager.js';
+import { InputHandler } from './input.js';
+import { World } from './world/index.js';
+import { SoundManager } from './soundManager.js';
 
 // Game class
 class Game {

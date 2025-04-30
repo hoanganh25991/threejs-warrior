@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { config } from '../config/config.js';
+import { config } from './config/config.js';
 
 export class Enemy {
     constructor(scene, type, position) {
