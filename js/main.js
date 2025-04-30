@@ -132,26 +132,99 @@ class Game {
     }
     
     addLights() {
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(ambientLight);
+        // Store lights in an array for easy access
+        this.lights = {
+            ambient: null,
+            directional: null,
+            hemisphere: null,
+            point: [],
+            spot: []
+        };
         
-        // Directional light (sun)
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
+        // 1. Ambient light - provides base illumination
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4); // Darker ambient light
+        this.scene.add(ambientLight);
+        this.lights.ambient = ambientLight;
+        
+        // 2. Hemisphere light - sky and ground colors
+        const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x3a7e4f, 0.6); // Sky blue and grass green
+        this.scene.add(hemisphereLight);
+        this.lights.hemisphere = hemisphereLight;
+        
+        // 3. Directional light (sun)
+        const directionalLight = new THREE.DirectionalLight(0xFDB813, 1); // Golden sunlight
+        directionalLight.position.set(50, 100, 75);
         directionalLight.castShadow = true;
         
         // Set up shadow properties
         directionalLight.shadow.mapSize.width = 2048;
         directionalLight.shadow.mapSize.height = 2048;
         directionalLight.shadow.camera.near = 0.5;
-        directionalLight.shadow.camera.far = 50;
-        directionalLight.shadow.camera.left = -20;
-        directionalLight.shadow.camera.right = 20;
-        directionalLight.shadow.camera.top = 20;
-        directionalLight.shadow.camera.bottom = -20;
+        directionalLight.shadow.camera.far = 500;
+        directionalLight.shadow.camera.left = -100;
+        directionalLight.shadow.camera.right = 100;
+        directionalLight.shadow.camera.top = 100;
+        directionalLight.shadow.camera.bottom = -100;
         
         this.scene.add(directionalLight);
+        this.lights.directional = directionalLight;
+        
+        // 4. Add point lights around the scene
+        const pointLightColors = [
+            0xFF5555, // Red
+            0x55FF55, // Green
+            0x5555FF, // Blue
+            0xFFFF55  // Yellow
+        ];
+        
+        // Add point lights at different positions
+        for (let i = 0; i < 4; i++) {
+            const pointLight = new THREE.PointLight(pointLightColors[i], 1, 50);
+            const angle = (i / 4) * Math.PI * 2;
+            const distance = 30;
+            
+            pointLight.position.set(
+                Math.cos(angle) * distance,
+                5,
+                Math.sin(angle) * distance
+            );
+            
+            pointLight.castShadow = true;
+            pointLight.shadow.mapSize.width = 512;
+            pointLight.shadow.mapSize.height = 512;
+            
+            // Add a visible sphere to represent the light
+            const pointLightHelper = new THREE.Mesh(
+                new THREE.SphereGeometry(0.5, 16, 16),
+                new THREE.MeshBasicMaterial({ color: pointLightColors[i] })
+            );
+            pointLightHelper.position.copy(pointLight.position);
+            
+            this.scene.add(pointLight);
+            this.scene.add(pointLightHelper);
+            this.lights.point.push(pointLight);
+        }
+        
+        // 5. Add spotlights for dramatic effect
+        const spotLight = new THREE.SpotLight(0xFFFFFF, 1);
+        spotLight.position.set(0, 30, -50);
+        spotLight.angle = Math.PI / 8;
+        spotLight.penumbra = 0.2;
+        spotLight.decay = 1;
+        spotLight.distance = 200;
+        
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        
+        this.scene.add(spotLight);
+        this.lights.spot.push(spotLight);
+        
+        // Add a target for the spotlight
+        const spotLightTarget = new THREE.Object3D();
+        spotLightTarget.position.set(0, 0, -100);
+        this.scene.add(spotLightTarget);
+        spotLight.target = spotLightTarget;
     }
     
     startGame() {
@@ -205,6 +278,9 @@ class Game {
         if (this.world) {
             this.world.update(deltaTime, this.camera);
         }
+        
+        // Update lights
+        this.updateLights(deltaTime);
         
         // Update hero
         if (this.hero && this.inputHandler) {
@@ -286,6 +362,52 @@ class Game {
         // Update animations
         if (this.mixers.length > 0) {
             this.mixers.forEach(mixer => mixer.update(deltaTime));
+        }
+    }
+    
+    updateLights(deltaTime) {
+        // Skip if lights aren't initialized
+        if (!this.lights) return;
+        
+        // Update point lights
+        if (this.lights.point.length > 0) {
+            for (let i = 0; i < this.lights.point.length; i++) {
+                const light = this.lights.point[i];
+                
+                // Make the light pulse
+                const intensity = 0.7 + Math.sin(Date.now() * 0.002 + i) * 0.3;
+                light.intensity = intensity;
+                
+                // Optionally make the light move
+                const angle = (Date.now() * 0.0005 + i * Math.PI / 2);
+                const distance = 30 + Math.sin(Date.now() * 0.001 + i) * 5;
+                
+                light.position.x = Math.cos(angle) * distance;
+                light.position.z = Math.sin(angle) * distance;
+                
+                // Update the helper sphere position
+                if (light.userData.helper) {
+                    light.userData.helper.position.copy(light.position);
+                }
+            }
+        }
+        
+        // Update spotlight
+        if (this.lights.spot.length > 0) {
+            const spotLight = this.lights.spot[0];
+            
+            // Make the spotlight move
+            const angle = Date.now() * 0.0002;
+            const distance = 50;
+            
+            spotLight.position.x = Math.cos(angle) * distance;
+            spotLight.position.z = Math.sin(angle) * distance;
+            
+            // Update the target to always point toward the center
+            if (spotLight.target) {
+                spotLight.target.position.x = 0;
+                spotLight.target.position.z = 0;
+            }
         }
     }
     

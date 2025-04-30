@@ -25,24 +25,54 @@ export class SoundManager {
     loadSounds() {
         // Define sound effects to load
         const soundsToLoad = [
-            { name: 'fireball', path: 'assets/sounds/fireball.mp3' },
-            { name: 'iceSpike', path: 'assets/sounds/ice-spike.mp3' },
-            { name: 'thunderStrike', path: 'assets/sounds/thunder-strike.mp3' },
-            { name: 'heal', path: 'assets/sounds/heal.mp3' },
-            { name: 'shield', path: 'assets/sounds/shield.mp3' },
-            { name: 'dash', path: 'assets/sounds/dash.mp3' },
-            { name: 'jump', path: 'assets/sounds/jump.mp3' },
-            { name: 'land', path: 'assets/sounds/land.mp3' },
-            { name: 'hit', path: 'assets/sounds/hit.mp3' },
-            { name: 'enemyDeath', path: 'assets/sounds/enemy-death.mp3' },
-            { name: 'playerDeath', path: 'assets/sounds/player-death.mp3' },
-            { name: 'levelUp', path: 'assets/sounds/level-up.mp3' }
+            // Skill sounds
+            { name: 'fireball', path: 'assets/sounds/fireball.mp3', volume: 0.8 },
+            { name: 'iceSpike', path: 'assets/sounds/ice-spike.mp3', volume: 0.8 },
+            { name: 'thunderStrike', path: 'assets/sounds/thunder-strike.mp3', volume: 0.8 },
+            { name: 'heal', path: 'assets/sounds/heal.mp3', volume: 0.7 },
+            { name: 'shield', path: 'assets/sounds/shield.mp3', volume: 0.7 },
+            { name: 'dash', path: 'assets/sounds/dash.mp3', volume: 0.7 },
+            
+            // Movement sounds
+            { name: 'jump', path: 'assets/sounds/jump.mp3', volume: 0.6 },
+            { name: 'land', path: 'assets/sounds/land.mp3', volume: 0.6 },
+            { name: 'takeoff', path: 'assets/sounds/takeoff.mp3', volume: 0.7 },
+            { name: 'flight', path: 'assets/sounds/flight_loop.mp3', volume: 0.5, loop: true },
+            { name: 'landing', path: 'assets/sounds/landing.mp3', volume: 0.6 },
+            
+            // Combat sounds
+            { name: 'hit', path: 'assets/sounds/hit.mp3', volume: 0.7 },
+            { name: 'attack', path: 'assets/sounds/attack.mp3', volume: 0.8 },
+            { name: 'enemyDeath', path: 'assets/sounds/enemy-death.mp3', volume: 0.8 },
+            { name: 'playerDeath', path: 'assets/sounds/player-death.mp3', volume: 0.9 },
+            
+            // UI sounds
+            { name: 'click', path: 'assets/sounds/click.mp3', volume: 0.5 },
+            { name: 'hover', path: 'assets/sounds/hover.mp3', volume: 0.3 },
+            { name: 'levelUp', path: 'assets/sounds/level-up.mp3', volume: 1.0 },
+            { name: 'error', path: 'assets/sounds/error.mp3', volume: 0.6 },
+            
+            // Environment sounds
+            { name: 'blow', path: 'assets/sounds/blow.mp3', volume: 0.4, loop: true },
+            { name: 'pop', path: 'assets/sounds/pop.mp3', volume: 0.6 },
+            
+            // Add chest sound (using pop sound as a placeholder)
+            { name: 'chest', path: 'assets/sounds/pop.mp3', volume: 0.7 },
+            
+            // Add crystal sound (using skill sound as a placeholder)
+            { name: 'crystal', path: 'assets/sounds/skill.mp3', volume: 0.7 }
         ];
         
         // Load each sound
         for (const sound of soundsToLoad) {
-            this.loadSound(sound.name, sound.path);
+            this.loadSound(sound.name, sound.path, sound.volume, sound.loop);
         }
+        
+        // Create ambient sound mixer for background environmental sounds
+        this.ambientSounds = {
+            wind: { sound: this.sounds.blow, playing: false, volume: 0.2 },
+            water: { sound: this.sounds.submarine, playing: false, volume: 0.1 }
+        };
     }
     
     loadSound(name, path) {
