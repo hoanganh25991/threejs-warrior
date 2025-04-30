@@ -182,8 +182,4 @@ export default class Wings extends THREE.Object3D {
     // Add feather group to wing
     wing.add(featherGroup);
   }
-
-  setupAnimations() {
-    // Animation could be added here in the future
-  }
 }

@@ -84,6 +84,7 @@ export default class Hero {
     // Create wings using the Wings class
     this.wings = new Wings();
     this.group.add(this.wings);
+    this.setupWingAnimations();
   }
 
   setupWingAnimations() {
@@ -341,7 +342,7 @@ export default class Hero {
       );
     }
   }
-
+  
   animateBreathing(deltaTime) {
     // Add subtle breathing animation to the hero's body
     const bodyGroup = this.group.children[0];
