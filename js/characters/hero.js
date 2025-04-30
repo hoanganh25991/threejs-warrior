@@ -697,39 +697,46 @@ export class Hero {
         // Create beautiful angel wings for the hero
         const wingGroup = new THREE.Group();
         
-        // Create a more beautiful wing shape with curves
+        // Create a more beautiful wing shape with enhanced curves
         const createWingShape = () => {
             const shape = new THREE.Shape();
             
             // Starting point at the base
             shape.moveTo(0, 0);
             
-            // Top curve - elegant arc upward
+            // Top curve - more elegant arc upward with sharper curve
             shape.bezierCurveTo(
-                -0.3, 0.4,  // control point 1
-                -0.6, 0.8,  // control point 2
-                -0.8, 1.2   // end point - wing tip
+                -0.2, 0.3,  // control point 1 - closer to base for sharper curve
+                -0.5, 0.7,  // control point 2
+                -0.7, 1.3   // end point - wing tip, slightly longer
             );
             
-            // Middle feathers curve
+            // Middle feathers curve - more pronounced
             shape.bezierCurveTo(
-                -0.7, 0.9,  // control point 1
-                -0.9, 0.6,  // control point 2
-                -1.0, 0.4   // end point - middle feather
+                -0.65, 1.0,  // control point 1
+                -0.8, 0.7,   // control point 2
+                -0.9, 0.5    // end point - middle feather
             );
             
-            // Lower feathers curve
+            // Lower middle feathers - adding more detail
             shape.bezierCurveTo(
-                -0.8, 0.2,  // control point 1
-                -0.6, 0.0,  // control point 2
-                -0.4, -0.2  // end point - lower feather
+                -0.85, 0.4,  // control point 1
+                -0.8, 0.3,   // control point 2
+                -0.7, 0.2    // end point
+            );
+            
+            // Lower feathers curve - more detailed
+            shape.bezierCurveTo(
+                -0.6, 0.1,   // control point 1
+                -0.5, 0.0,   // control point 2
+                -0.3, -0.1   // end point - lower feather
             );
             
             // Return to base with a gentle curve
             shape.bezierCurveTo(
-                -0.3, -0.1, // control point 1
-                -0.1, 0.0,  // control point 2
-                0, 0        // end point - back to base
+                -0.2, -0.05, // control point 1
+                -0.1, 0.0,   // control point 2
+                0, 0         // end point - back to base
             );
             
             return shape;
@@ -737,29 +744,29 @@ export class Hero {
         
         // Create wing geometry from the shape
         const wingShape = createWingShape();
-        const wingGeometry = new THREE.ShapeGeometry(wingShape, 24); // Higher segment count for smoother curves
+        const wingGeometry = new THREE.ShapeGeometry(wingShape, 32); // Higher segment count for smoother curves
         
-        // Create a beautiful white wing material with subtle glow
+        // Create a beautiful pure white wing material with enhanced glow
         const wingMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff,          // Pure white
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.9,             // More opaque
-            emissive: 0xf0f8ff,       // Alice blue - subtle glow
-            emissiveIntensity: 0.4,   // Subtle glow
-            metalness: 0.1,           // Less metallic
-            roughness: 0.3            // Smoother
+            opacity: 0.92,            // More opaque
+            emissive: 0xffffff,       // Pure white glow
+            emissiveIntensity: 0.5,   // Stronger glow
+            metalness: 0.05,          // Less metallic
+            roughness: 0.2            // Smoother
         });
         
         // Create left wing
         const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-        leftWing.position.set(-0.2, 0.3, 0);
-        leftWing.scale.set(0.6, 0.6, 0.6); // Smaller size
+        leftWing.position.set(-0.15, 0.3, 0); // Closer to body
+        leftWing.scale.set(0.4, 0.4, 0.4);    // Smaller size (reduced from 0.6)
         
         // Create right wing (mirror of left wing)
         const rightWing = leftWing.clone();
-        rightWing.position.set(0.2, 0.3, 0);
-        rightWing.scale.set(-0.6, 0.6, 0.6); // Mirror by scaling X negatively
+        rightWing.position.set(0.15, 0.3, 0);  // Closer to body
+        rightWing.scale.set(-0.4, 0.4, 0.4);   // Mirror by scaling X negatively, smaller size
         
         // Add feather details to make wings more beautiful
         this.addFeatherDetails(leftWing, -1);
@@ -769,8 +776,11 @@ export class Hero {
         wingGroup.add(leftWing);
         wingGroup.add(rightWing);
         
-        // Position wings on hero's back
-        wingGroup.position.set(0, 1.2, 0.3);
+        // Position wings on hero's back - higher up and further back
+        wingGroup.position.set(0, 1.3, 0.35);
+        
+        // Add slight angle to wings
+        wingGroup.rotation.x = 0.1;
         
         // Hide wings initially
         wingGroup.visible = false;
@@ -780,11 +790,14 @@ export class Hero {
         
         // Add wings to hero group
         this.group.add(this.wings);
+        
+        // Add wing animation mixer for more complex animations
+        this.setupWingAnimations();
     }
     
     addFeatherDetails(wing, side) {
         // Add beautiful feather details to the wings
-        const featherCount = 5;
+        const featherCount = 7; // Increased feather count for more detail
         const featherGroup = new THREE.Group();
         
         // Create several individual feathers
@@ -794,39 +807,40 @@ export class Hero {
             
             // Base of feather
             const baseX = 0;
-            const baseY = i * 0.15; // Stagger feathers vertically
+            const baseY = i * 0.12; // Stagger feathers vertically, closer together
             
             featherShape.moveTo(baseX, baseY);
             
-            // Feather curve - each one slightly different
-            const length = 0.4 + i * 0.08; // Longer feathers as we go down
-            const width = 0.08 - i * 0.01; // Slightly thinner feathers as we go down
+            // Feather curve - each one slightly different with more curve
+            const length = 0.3 + i * 0.07; // Slightly shorter feathers (was 0.4)
+            const width = 0.06 - i * 0.005; // Thinner feathers (was 0.08)
             
+            // More curved feather shape
             featherShape.bezierCurveTo(
-                baseX + (side * length * 0.3), baseY + width,
-                baseX + (side * length * 0.6), baseY + width * 2,
-                baseX + (side * length), baseY + width
+                baseX + (side * length * 0.2), baseY + width * 1.2,
+                baseX + (side * length * 0.5), baseY + width * 2.5,
+                baseX + (side * length), baseY + width * 1.5
             );
             
-            // Return to base with a curve
+            // Return to base with a more elegant curve
             featherShape.bezierCurveTo(
-                baseX + (side * length * 0.7), baseY - width,
-                baseX + (side * length * 0.3), baseY - width * 2,
+                baseX + (side * length * 0.8), baseY - width * 0.5,
+                baseX + (side * length * 0.4), baseY - width * 1.5,
                 baseX, baseY
             );
             
             // Create geometry from shape
-            const featherGeometry = new THREE.ShapeGeometry(featherShape, 12);
+            const featherGeometry = new THREE.ShapeGeometry(featherShape, 16); // More segments
             
-            // Create material with slight variation for each feather
-            const whiteness = 0.95 + (i * 0.01); // Slight variation in white
+            // Create material with slight variation for each feather - pure white
+            const whiteness = 0.98 + (i * 0.005); // Less variation, more consistently white
             const featherMaterial = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(whiteness, whiteness, whiteness),
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.85 - (i * 0.05), // More transparent at the edges
-                emissive: 0xf0f8ff,
-                emissiveIntensity: 0.3 - (i * 0.03)
+                opacity: 0.9 - (i * 0.03), // Less transparent overall
+                emissive: 0xffffff, // Pure white glow
+                emissiveIntensity: 0.4 - (i * 0.02) // Stronger glow
             });
             
             // Create feather mesh
@@ -837,12 +851,59 @@ export class Hero {
             featherGroup.add(feather);
         }
         
-        // Position the feather group
-        featherGroup.position.set(side * -0.1, 0.1, 0.01);
-        featherGroup.rotation.z = side * 0.2; // Slight angle to feathers
+        // Position the feather group - closer to wing base
+        featherGroup.position.set(side * -0.08, 0.08, 0.01);
+        featherGroup.rotation.z = side * 0.15; // Slight angle to feathers
         
         // Add feathers to wing
         wing.add(featherGroup);
+    }
+    
+    setupWingAnimations() {
+        // Setup more complex wing animations
+        if (!this.wings) return;
+        
+        // Store animation parameters
+        this.wingAnimations = {
+            flapSpeed: 0,
+            flapDirection: 1,
+            flapAmplitude: 0.15,
+            shimmerIntensity: 0.4,
+            shimmerSpeed: 2,
+            featherPhase: 0,
+            idleTime: 0
+        };
+        
+        // Create animation clips for different wing states
+        this.wingStates = {
+            idle: {
+                flapSpeed: 1.5,
+                flapAmplitude: 0.08,
+                shimmerIntensity: 0.3,
+                shimmerSpeed: 1
+            },
+            flying: {
+                flapSpeed: 4,
+                flapAmplitude: 0.25,
+                shimmerIntensity: 0.6,
+                shimmerSpeed: 3
+            },
+            gliding: {
+                flapSpeed: 0.8,
+                flapAmplitude: 0.12,
+                shimmerIntensity: 0.5,
+                shimmerSpeed: 1.5
+            },
+            hovering: {
+                flapSpeed: 6,
+                flapAmplitude: 0.18,
+                shimmerIntensity: 0.7,
+                shimmerSpeed: 4
+            }
+        };
+        
+        // Set initial state
+        this.setWingState('idle');
     }
     
     initSkills() {
@@ -884,17 +945,306 @@ export class Hero {
         // Update direction vector based on current rotation
         this.updateDirection();
         
-        // Animate wings if visible
-        if (this.wings && this.wings.visible) {
-            // Make wings flap gently
-            const wingFlapSpeed = 5;
-            const wingFlapAmount = 0.1;
-            this.wings.rotation.z = Math.sin(Date.now() * 0.005 * wingFlapSpeed) * wingFlapAmount;
-        }
+        // Update hero animations
+        this.updateAnimations(deltaTime, keys);
         
         // Update debug display if debug mode is enabled
         if (this.debug) {
             this.updateDebugDisplay();
+        }
+    }
+    
+    updateAnimations(deltaTime, keys) {
+        // Central method for all hero animations
+        
+        // 1. Animate wings if visible
+        if (this.wings && this.wings.visible) {
+            this.flapWings(deltaTime);
+        }
+        
+        // 2. Animate body parts based on movement state
+        this.animateBodyParts(deltaTime, keys);
+        
+        // 3. Add breathing animation
+        this.animateBreathing(deltaTime);
+        
+        // 4. Add head tracking animation
+        this.animateHeadTracking(deltaTime);
+        
+        // 5. Animate weapon if applicable
+        this.animateWeapon(deltaTime, keys);
+    }
+    
+    animateBodyParts(deltaTime, keys) {
+        // Animate body parts based on movement state
+        const isMoving = keys['w'] || keys['a'] || keys['s'] || keys['d'];
+        const isJumping = this.isJumping;
+        const isFlying = this.isFlying;
+        
+        // Find body parts to animate
+        const bodyGroup = this.group.children[0]; // First child should be the body group
+        if (!bodyGroup) return;
+        
+        // Find arms and legs
+        let leftArm, rightArm, leftLeg, rightLeg, head;
+        
+        // Search for body parts by position
+        bodyGroup.children.forEach(part => {
+            // Check position to identify parts
+            const pos = part.position;
+            
+            // Left arm is usually positioned to the left (negative X) and at mid-height
+            if (pos.x < -0.5 && pos.y > 0.8 && pos.y < 1.6) leftArm = part;
+            
+            // Right arm is usually positioned to the right (positive X) and at mid-height
+            if (pos.x > 0.5 && pos.y > 0.8 && pos.y < 1.6) rightArm = part;
+            
+            // Left leg is usually positioned to the left (negative X) and at low height
+            if (pos.x < 0 && pos.y < 0.8) leftLeg = part;
+            
+            // Right leg is usually positioned to the right (positive X) and at low height
+            if (pos.x > 0 && pos.y < 0.8) rightLeg = part;
+            
+            // Head is usually positioned at the top
+            if (pos.y > 1.6) head = part;
+        });
+        
+        // Animation parameters
+        const walkSpeed = 5;
+        const walkTime = (this.walkTime || 0) + (isMoving ? deltaTime : 0);
+        this.walkTime = walkTime;
+        
+        // Animate legs when walking
+        if (leftLeg && rightLeg && isMoving && !isFlying) {
+            // Walking animation - alternating leg movement
+            const legSwing = Math.sin(walkTime * walkSpeed) * 0.3;
+            
+            leftLeg.rotation.x = legSwing;
+            rightLeg.rotation.x = -legSwing;
+        } else if (leftLeg && rightLeg) {
+            // Reset legs when not walking
+            leftLeg.rotation.x = this.lerpValue(leftLeg.rotation.x, 0, deltaTime * 5);
+            rightLeg.rotation.x = this.lerpValue(rightLeg.rotation.x, 0, deltaTime * 5);
+        }
+        
+        // Animate arms
+        if (leftArm && rightArm) {
+            if (isMoving && !isFlying) {
+                // Walking arm swing - opposite to legs
+                const armSwing = Math.sin(walkTime * walkSpeed) * 0.2;
+                
+                leftArm.rotation.x = -armSwing;
+                rightArm.rotation.x = armSwing;
+            } else if (isFlying) {
+                // Flying pose - arms slightly back
+                leftArm.rotation.x = this.lerpValue(leftArm.rotation.x, -0.3, deltaTime * 3);
+                rightArm.rotation.x = this.lerpValue(rightArm.rotation.x, -0.3, deltaTime * 3);
+            } else {
+                // Idle arm position
+                leftArm.rotation.x = this.lerpValue(leftArm.rotation.x, 0, deltaTime * 5);
+                rightArm.rotation.x = this.lerpValue(rightArm.rotation.x, 0, deltaTime * 5);
+            }
+        }
+        
+        // Animate head for looking around
+        if (head) {
+            // Head follows look direction slightly
+            const lookX = this.rotation.y * 0.2;
+            const lookY = this.rotation.x * 0.2;
+            
+            head.rotation.y = this.lerpValue(head.rotation.y, lookX, deltaTime * 3);
+            head.rotation.x = this.lerpValue(head.rotation.x, lookY, deltaTime * 3);
+        }
+        
+        // Animate body tilt based on movement
+        if (isMoving && !isFlying) {
+            // Slight forward tilt when walking
+            bodyGroup.rotation.x = this.lerpValue(bodyGroup.rotation.x, 0.1, deltaTime * 2);
+        } else if (isFlying) {
+            // Forward tilt when flying
+            bodyGroup.rotation.x = this.lerpValue(bodyGroup.rotation.x, 0.2, deltaTime * 2);
+        } else {
+            // Reset tilt when idle
+            bodyGroup.rotation.x = this.lerpValue(bodyGroup.rotation.x, 0, deltaTime * 2);
+        }
+    }
+    
+    animateBreathing(deltaTime) {
+        // Add subtle breathing animation to the hero's body
+        const bodyGroup = this.group.children[0];
+        if (!bodyGroup) return;
+        
+        // Find the body (usually the largest part)
+        let body;
+        let maxSize = 0;
+        
+        bodyGroup.children.forEach(part => {
+            // Find the body by looking for the largest part at mid-height
+            if (part.geometry && part.position.y > 0.5 && part.position.y < 1.5) {
+                const size = part.geometry.parameters.width * part.geometry.parameters.height;
+                if (size > maxSize) {
+                    maxSize = size;
+                    body = part;
+                }
+            }
+        });
+        
+        if (body) {
+            // Breathing animation - subtle scale changes
+            const breathingTime = (this.breathingTime || 0) + deltaTime;
+            this.breathingTime = breathingTime;
+            
+            const breathingSpeed = 0.5; // Slow breathing
+            const breathingAmount = 0.02; // Subtle effect
+            
+            const breathScale = 1 + Math.sin(breathingTime * breathingSpeed) * breathingAmount;
+            
+            // Apply breathing to chest area only
+            const originalScale = body.userData.originalScale || new THREE.Vector3(1, 1, 1);
+            
+            // Store original scale if not already stored
+            if (!body.userData.originalScale) {
+                body.userData.originalScale = body.scale.clone();
+            }
+            
+            // Apply breathing scale
+            body.scale.set(
+                originalScale.x * breathScale,
+                originalScale.y,
+                originalScale.z * breathScale
+            );
+        }
+    }
+    
+    animateHeadTracking(deltaTime) {
+        // Add head tracking animation
+        const bodyGroup = this.group.children[0];
+        if (!bodyGroup) return;
+        
+        // Find the head
+        let head;
+        bodyGroup.children.forEach(part => {
+            if (part.position.y > 1.6) {
+                head = part;
+            }
+        });
+        
+        if (head) {
+            // Occasional random head movements
+            const randomMovementTime = (this.randomMovementTime || 0) + deltaTime;
+            this.randomMovementTime = randomMovementTime;
+            
+            // Every few seconds, add a random head movement
+            if (Math.sin(randomMovementTime * 0.2) > 0.95) {
+                this.targetHeadRotation = {
+                    x: (Math.random() - 0.5) * 0.2,
+                    y: (Math.random() - 0.5) * 0.3
+                };
+            }
+            
+            // Smoothly move head to target rotation
+            if (this.targetHeadRotation) {
+                head.rotation.x = this.lerpValue(head.rotation.x, this.targetHeadRotation.x, deltaTime * 2);
+                head.rotation.y = this.lerpValue(head.rotation.y, this.targetHeadRotation.y, deltaTime * 2);
+            }
+        }
+    }
+    
+    animateWeapon(deltaTime, keys) {
+        // Animate weapon if present
+        const bodyGroup = this.group.children[0];
+        if (!bodyGroup) return;
+        
+        // Find weapon (sword, axe, staff, etc.)
+        let weapon;
+        bodyGroup.children.forEach(part => {
+            // Check if this part has children that might be a weapon
+            if (part.children && part.children.length > 0) {
+                part.children.forEach(child => {
+                    // Weapons are usually longer in one dimension
+                    if (child.geometry && 
+                        (child.geometry.parameters.height > 1 || 
+                         child.geometry.parameters.width > 1 ||
+                         child.geometry.parameters.depth > 1)) {
+                        weapon = child;
+                    }
+                });
+            }
+        });
+        
+        if (weapon) {
+            // Idle weapon animation - subtle movement
+            const idleTime = (this.weaponIdleTime || 0) + deltaTime;
+            this.weaponIdleTime = idleTime;
+            
+            // Subtle weapon sway
+            const swayAmount = 0.03;
+            const swaySpeed = 0.7;
+            
+            // Apply sway
+            weapon.rotation.z = Math.sin(idleTime * swaySpeed) * swayAmount;
+            
+            // Attack animation when mouse is clicked
+            if (keys['attack'] || (this.inputHandler && this.inputHandler.isMouseButtonPressed(0))) {
+                // Start attack animation
+                this.startWeaponAttackAnimation(weapon);
+            }
+            
+            // Update ongoing attack animation if active
+            if (this.attackAnimationActive) {
+                this.updateWeaponAttackAnimation(deltaTime, weapon);
+            }
+        }
+    }
+    
+    startWeaponAttackAnimation(weapon) {
+        // Only start if not already attacking
+        if (this.attackAnimationActive) return;
+        
+        // Set attack animation state
+        this.attackAnimationActive = true;
+        this.attackAnimationTime = 0;
+        this.attackAnimationDuration = 0.5; // Half second attack
+        
+        // Store original weapon rotation
+        this.originalWeaponRotation = {
+            x: weapon.rotation.x,
+            y: weapon.rotation.y,
+            z: weapon.rotation.z
+        };
+        
+        // Play attack sound
+        if (window.soundManager) {
+            window.soundManager.playSound('attack');
+        }
+    }
+    
+    updateWeaponAttackAnimation(deltaTime, weapon) {
+        // Update attack animation time
+        this.attackAnimationTime += deltaTime;
+        
+        // Calculate animation progress (0 to 1)
+        const progress = Math.min(this.attackAnimationTime / this.attackAnimationDuration, 1);
+        
+        // Attack animation phases
+        if (progress < 0.3) {
+            // Wind up phase - pull back
+            const windupProgress = progress / 0.3;
+            weapon.rotation.z = this.originalWeaponRotation.z - (windupProgress * Math.PI / 4);
+        } else if (progress < 0.6) {
+            // Strike phase - swing forward
+            const strikeProgress = (progress - 0.3) / 0.3;
+            weapon.rotation.z = this.originalWeaponRotation.z - (Math.PI / 4) + (strikeProgress * Math.PI / 2);
+        } else {
+            // Return phase - return to original position
+            const returnProgress = (progress - 0.6) / 0.4;
+            weapon.rotation.z = this.originalWeaponRotation.z + (Math.PI / 4) - (returnProgress * Math.PI / 4);
+        }
+        
+        // End animation when complete
+        if (progress >= 1) {
+            this.attackAnimationActive = false;
+            weapon.rotation.z = this.originalWeaponRotation.z;
         }
     }
     
@@ -1099,59 +1449,135 @@ export class Hero {
         }
     }
     
+    setWingState(state) {
+        // Set wing animation state
+        if (!this.wingAnimations || !this.wingStates || !this.wingStates[state]) return;
+        
+        // Get state parameters
+        const stateParams = this.wingStates[state];
+        
+        // Smoothly transition to new state
+        this.targetWingState = stateParams;
+        
+        // Log state change
+        console.log(`Wing state changed to: ${state}`);
+    }
+    
     flapWings(deltaTime) {
-        // Add elegant wing flapping animation
-        if (this.wings && this.wings.visible) {
-            // Gentle flapping motion
-            const flapSpeed = 3; // Slower, more graceful flapping
-            const flapAmount = 0.15; // Smaller movement for subtlety
-            this.wingFlapTime = (this.wingFlapTime || 0) + deltaTime * flapSpeed;
+        // Add elegant wing flapping animation with improved state-based system
+        if (!this.wings || !this.wings.visible || !this.wingAnimations) return;
+        
+        // Update animation parameters
+        const anim = this.wingAnimations;
+        const target = this.targetWingState || this.wingStates.idle;
+        
+        // Smoothly transition between states
+        anim.flapSpeed = this.lerpValue(anim.flapSpeed, target.flapSpeed, deltaTime * 2);
+        anim.flapAmplitude = this.lerpValue(anim.flapAmplitude, target.flapAmplitude, deltaTime * 2);
+        anim.shimmerIntensity = this.lerpValue(anim.shimmerIntensity, target.shimmerIntensity, deltaTime * 2);
+        anim.shimmerSpeed = this.lerpValue(anim.shimmerSpeed, target.shimmerSpeed, deltaTime * 2);
+        
+        // Update animation timers
+        anim.featherPhase += deltaTime * anim.flapSpeed * 0.5;
+        anim.idleTime += deltaTime;
+        
+        // Calculate flap position with improved natural motion
+        // Use combination of sine waves for more natural motion
+        const flapTime = anim.idleTime * anim.flapSpeed;
+        const flapPosition = Math.sin(flapTime) * anim.flapAmplitude;
+        
+        // Add slight asymmetry for more natural look
+        const asymmetry = Math.sin(flapTime * 0.5) * 0.05;
+        
+        // Add slight randomness for natural variation
+        const randomness = Math.sin(flapTime * 0.3) * 0.02;
+        
+        // Apply rotation to wings
+        if (this.wings.children.length >= 2) {
+            // Left wing - enhanced rotation with natural motion
+            this.wings.children[0].rotation.z = flapPosition + 0.1 + asymmetry + randomness;
+            this.wings.children[0].rotation.x = Math.sin(flapTime * 0.7) * (anim.flapAmplitude * 0.3);
+            this.wings.children[0].rotation.y = Math.sin(flapTime * 0.4) * 0.05;
             
-            // Sine wave for smooth flapping with slight asymmetry for natural look
-            const flapPosition = Math.sin(this.wingFlapTime) * flapAmount;
-            const flapPositionOffset = Math.sin(this.wingFlapTime + 0.2) * (flapAmount * 0.3);
+            // Right wing - enhanced rotation (mirrored)
+            this.wings.children[1].rotation.z = -flapPosition - 0.1 - asymmetry - randomness;
+            this.wings.children[1].rotation.x = Math.sin(flapTime * 0.7) * (anim.flapAmplitude * 0.3);
+            this.wings.children[1].rotation.y = -Math.sin(flapTime * 0.4) * 0.05;
             
-            // Apply rotation to wings
-            if (this.wings.children.length >= 2) {
-                // Left wing - gentle rotation
-                this.wings.children[0].rotation.z = flapPosition + 0.1;
-                this.wings.children[0].rotation.x = flapPositionOffset * 0.5;
+            // Add enhanced up/down movement to the entire wing group
+            const baseY = 1.3; // Base Y position
+            this.wings.position.y = baseY + (Math.sin(flapTime * 0.5) * 0.05);
+            
+            // Add enhanced forward/backward movement
+            const baseZ = 0.35; // Base Z position
+            this.wings.position.z = baseZ + (Math.sin(flapTime * 0.7) * 0.03);
+            
+            // Add subtle side-to-side movement
+            this.wings.position.x = Math.sin(flapTime * 0.3) * 0.02;
+            
+            // Add subtle rotation to entire wing group
+            this.wings.rotation.x = 0.1 + Math.sin(flapTime * 0.2) * 0.05;
+            this.wings.rotation.y = Math.sin(flapTime * 0.15) * 0.03;
+            
+            // Add enhanced feather animation if feathers exist
+            if (this.wings.children[0].children.length > 0) {
+                const leftFeathers = this.wings.children[0].children[0];
+                const rightFeathers = this.wings.children[1].children[0];
                 
-                // Right wing - gentle rotation (mirrored)
-                this.wings.children[1].rotation.z = -flapPosition - 0.1;
-                this.wings.children[1].rotation.x = flapPositionOffset * 0.5;
-                
-                // Add subtle up/down movement to the entire wing group
-                this.wings.position.y = 1.2 + (Math.sin(this.wingFlapTime * 0.5) * 0.05);
-                
-                // Add subtle forward/backward movement
-                this.wings.position.z = 0.3 + (Math.sin(this.wingFlapTime * 0.7) * 0.02);
-                
-                // Add subtle feather animation if feathers exist
-                if (this.wings.children[0].children.length > 0) {
-                    const leftFeathers = this.wings.children[0].children[0];
-                    const rightFeathers = this.wings.children[1].children[0];
+                // Animate each feather with improved ripple effect
+                for (let i = 0; i < leftFeathers.children.length; i++) {
+                    // Create a ripple effect with phase offset
+                    const delay = i * 0.15;
+                    const featherPhase = anim.featherPhase - delay;
                     
-                    // Animate each feather with slight delay for ripple effect
-                    for (let i = 0; i < leftFeathers.children.length; i++) {
-                        const delay = i * 0.2;
-                        const featherFlapPosition = Math.sin(this.wingFlapTime - delay) * (0.05 - (i * 0.005));
-                        
+                    // More complex feather motion
+                    const featherFlapPosition = Math.sin(featherPhase) * (0.08 - (i * 0.01));
+                    const featherTwist = Math.cos(featherPhase * 0.7) * (0.03 - (i * 0.005));
+                    
+                    // Apply rotations
+                    if (leftFeathers.children[i]) {
                         leftFeathers.children[i].rotation.z = featherFlapPosition;
-                        if (rightFeathers && rightFeathers.children[i]) {
-                            rightFeathers.children[i].rotation.z = -featherFlapPosition;
-                        }
+                        leftFeathers.children[i].rotation.x = featherTwist;
+                    }
+                    
+                    if (rightFeathers && rightFeathers.children[i]) {
+                        rightFeathers.children[i].rotation.z = -featherFlapPosition;
+                        rightFeathers.children[i].rotation.x = featherTwist;
                     }
                 }
             }
-            
-            // Add subtle shimmer/glow effect by varying emissive intensity
-            const shimmerIntensity = 0.3 + Math.sin(this.wingFlapTime * 2) * 0.1;
-            if (this.wings.children[0].material) {
-                this.wings.children[0].material.emissiveIntensity = shimmerIntensity;
-                this.wings.children[1].material.emissiveIntensity = shimmerIntensity;
-            }
         }
+        
+        // Add enhanced shimmer/glow effect by varying emissive intensity
+        const shimmerTime = anim.idleTime * anim.shimmerSpeed;
+        const baseShimmer = anim.shimmerIntensity;
+        const shimmerVariation = 0.15;
+        
+        // Complex shimmer pattern using multiple sine waves
+        const shimmerIntensity = baseShimmer + 
+            (Math.sin(shimmerTime) * 0.7 + Math.sin(shimmerTime * 1.3) * 0.3) * shimmerVariation;
+        
+        // Apply shimmer to wing materials
+        if (this.wings.children[0].material) {
+            this.wings.children[0].material.emissiveIntensity = shimmerIntensity;
+            this.wings.children[1].material.emissiveIntensity = shimmerIntensity;
+        }
+        
+        // Determine wing state based on velocity and position
+        if (this.velocity.y > 10) {
+            this.setWingState('hovering');
+        } else if (this.velocity.y > 5) {
+            this.setWingState('flying');
+        } else if (this.isFlying) {
+            this.setWingState('gliding');
+        } else {
+            this.setWingState('idle');
+        }
+    }
+    
+    // Helper function for smooth transitions
+    lerpValue(current, target, factor) {
+        return current + (target - current) * Math.min(factor, 1);
     }
     animateWings() {
         // Create a beautiful wing appearance animation

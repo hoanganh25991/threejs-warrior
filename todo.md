@@ -1,14 +1,14 @@
 - [x] Base on the `docs/requirement.md`, Implemented Features, only use simple setup: index.html, script tag type module, three.js
 - [x] Add mouse capture for look direction control and E/Q keys for simple left/right looking
-- [ ] Add a skybox
-- [ ] Add a ground plane
-- [ ] Add some objects to interact with
-- [ ] Add some lights
-- [ ] Add some sounds
-- [ ] Add some animations
-- [ ] Update wing, wing should be smaller than body, wing in white, wing with curve
-- [ ] Add a hero model, it's just a cube now, but later will be replaced by a more complex modelr on the back, 
-- [ ] Add model for hero, each character must be different and must be complex close dota 1 appearance
+- [x] Add a skybox
+- [x] Add a ground plane
+- [x] Add some objects to interact with
+- [x] Add some lights
+- [x] Add some sounds
+- [x] Add some animations
+- [x] Update wing, wing should be smaller than body, wing in white, wing with curve
+- [x] Add a hero model, it's just a cube now, but later will be replaced by a more complex modelr on the back, 
+- [x] Add model for hero, each character must be different and must be complex close dota 1 appearance
 - [ ] Add collision check, hero can jump on the rock, hero can stand on roof, hero can walk, jump on brige, stair, add stair on castle to test that we can walk on stair
 - [ ] Press go forward + go left: auto go forward and look direction change left
 - [ ] Press go forward + go right: auto go forward and look direction change right
