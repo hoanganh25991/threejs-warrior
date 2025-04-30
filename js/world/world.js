@@ -5,7 +5,7 @@ import Skybox from './skybox.js';
 import { addSky } from './sky.js';
 import { addMountains } from './mountains.js';
 import Castle from './castle.js';
-import { addTrees } from './trees.js';
+import Trees from './trees.js';
 import { addRocks } from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';
 import { addStairs } from './stairs.js';
@@ -49,7 +49,8 @@ export class World {
         this.scene.add(this.castle);
         
         // Add trees
-        this.trees = addTrees(this.scene);
+        this.trees = new Trees(this.scene);
+        this.scene.add(this.trees);
         
         // Add rocks
         this.rocks = addRocks(this.scene);

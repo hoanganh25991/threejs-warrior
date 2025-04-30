@@ -932,6 +932,20 @@ export class Hero {
             this.handleRotation(inputHandler);
         }
         
+        // Apply horizontal velocity from jumping if any
+        if (!this.onGround && (this.velocity.x !== 0 || this.velocity.z !== 0)) {
+            this.group.position.x += this.velocity.x * deltaTime;
+            this.group.position.z += this.velocity.z * deltaTime;
+            
+            // Gradually reduce horizontal velocity (air resistance)
+            this.velocity.x *= 0.98;
+            this.velocity.z *= 0.98;
+            
+            // If velocity is very small, set to zero
+            if (Math.abs(this.velocity.x) < 0.01) this.velocity.x = 0;
+            if (Math.abs(this.velocity.z) < 0.01) this.velocity.z = 0;
+        }
+        
         // Handle movement
         this.handleMovement(deltaTime, keys);
         
@@ -1270,6 +1284,30 @@ export class Hero {
             document.body.appendChild(debugDisplay);
         }
         
+        // Get collision info if available
+        let collisionInfo = 'Not initialized';
+        if (window.collisionDetector) {
+            const currentPosition = this.group.position.clone();
+            const collisionResult = window.collisionDetector.checkCollision(
+                currentPosition,
+                new THREE.Vector3(0, 0, 0),
+                0
+            );
+            collisionInfo = collisionResult.canMove ? 'No collision' : 'Collision detected';
+        }
+        
+        // Get nearby jumpable objects if available
+        let jumpableInfo = 'Not checked';
+        if (window.collisionDetector && this.onGround) {
+            const jumpResult = window.collisionDetector.checkJumpCollision(
+                this.group.position,
+                config.player.jumpHeight
+            );
+            jumpableInfo = jumpResult.canJump ? 
+                `Jumpable object at (${jumpResult.jumpTarget.x.toFixed(2)}, ${jumpResult.jumpTarget.y.toFixed(2)}, ${jumpResult.jumpTarget.z.toFixed(2)})` : 
+                'No jumpable objects nearby';
+        }
+        
         // Update debug info
         debugDisplay.innerHTML = `
             <h3>Hero Debug Info</h3>
@@ -1282,6 +1320,12 @@ export class Hero {
             <p>Max Flying Height: ${config.player.maxFlyingHeight}</p>
             <p>Current Height %: ${((this.group.position.y / config.player.maxFlyingHeight) * 100).toFixed(1)}%</p>
             <p>Space key pressed: ${window.inputHandler ? window.inputHandler.isKeyPressed(' ') : 'N/A'}</p>
+            <p>Collision status: ${collisionInfo}</p>
+            <p>Jumpable objects: ${jumpableInfo}</p>
+            <p>Movement keys: W=${window.inputHandler?.isKeyPressed('w')}, 
+                              A=${window.inputHandler?.isKeyPressed('a')}, 
+                              S=${window.inputHandler?.isKeyPressed('s')}, 
+                              D=${window.inputHandler?.isKeyPressed('d')}</p>
         `;
     }
     
@@ -1316,18 +1360,83 @@ export class Hero {
         // Calculate movement direction relative to facing direction
         let moveX = 0;
         let moveZ = 0;
+        let lookDirectionChange = 0;
+        let isMoving = false;
         
+        // Handle all movement combinations
+        
+        // Forward movement (W)
         if (keys.w) {
             moveZ -= 1; // Forward
+            isMoving = true;
+            
+            // Combined forward + left/right movement changes look direction
+            if (keys.a) {
+                lookDirectionChange = -1; // Look left while moving forward
+            } else if (keys.d) {
+                lookDirectionChange = 1; // Look right while moving forward
+            }
         }
+        
+        // Backward movement (S)
         if (keys.s) {
             moveZ += 1; // Backward
+            isMoving = true;
+            
+            // Combined backward + left/right movement changes look direction
+            if (keys.a) {
+                lookDirectionChange = -1; // Look left while moving backward
+            } else if (keys.d) {
+                lookDirectionChange = 1; // Look right while moving backward
+            }
         }
-        if (keys.a) {
-            moveX -= 1; // Left
+        
+        // Handle vertical movement (flying up/down) with combined look direction changes
+        if (this.isFlying) {
+            // Up movement
+            if (keys[' ']) { // Space key for up
+                // Combined up + left/right movement changes look direction
+                if (keys.a) {
+                    lookDirectionChange = -1; // Look left while moving up
+                } else if (keys.d) {
+                    lookDirectionChange = 1; // Look right while moving up
+                }
+            }
+            
+            // Down movement (when not pressing space while flying)
+            if (!keys[' '] && this.velocity.y < 0) {
+                // Combined down + left/right movement changes look direction
+                if (keys.a) {
+                    lookDirectionChange = -1; // Look left while moving down
+                } else if (keys.d) {
+                    lookDirectionChange = 1; // Look right while moving down
+                }
+            }
         }
-        if (keys.d) {
-            moveX += 1; // Right
+        
+        // Handle left/right movement without forward/backward
+        if (!keys.w && !keys.s) {
+            if (keys.a) {
+                moveX -= 1; // Left
+                isMoving = true;
+            }
+            if (keys.d) {
+                moveX += 1; // Right
+                isMoving = true;
+            }
+        }
+        
+        // Apply look direction change if needed
+        if (lookDirectionChange !== 0) {
+            // Rotate the hero based on the combined movement
+            const rotationSpeed = 0.03; // Base rotation speed
+            
+            // Adjust rotation speed based on movement type
+            let adjustedRotationSpeed = rotationSpeed;
+            
+            // Apply the rotation
+            this.rotation.y -= lookDirectionChange * adjustedRotationSpeed;
+            this.group.rotation.y = this.rotation.y;
         }
         
         // Normalize if moving diagonally
@@ -1338,16 +1447,37 @@ export class Hero {
         }
         
         // Apply movement relative to facing direction
-        if (moveX !== 0 || moveZ !== 0) {
+        if (isMoving && (moveX !== 0 || moveZ !== 0)) {
             // Create movement vector
             const movement = new THREE.Vector3(moveX, 0, moveZ);
             
             // Rotate movement vector by hero's Y rotation
             movement.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
             
-            // Apply movement
-            this.group.position.x += movement.x * moveSpeed;
-            this.group.position.z += movement.z * moveSpeed;
+            // Calculate new position
+            const newPosition = new THREE.Vector3(
+                this.group.position.x + movement.x * moveSpeed,
+                this.group.position.y,
+                this.group.position.z + movement.z * moveSpeed
+            );
+            
+            // Check for collisions if collision detector is available
+            if (window.collisionDetector) {
+                const collisionResult = window.collisionDetector.checkCollision(
+                    this.group.position,
+                    movement,
+                    moveSpeed
+                );
+                
+                if (collisionResult.canMove) {
+                    // Update position with collision-adjusted position
+                    this.group.position.copy(collisionResult.newPosition);
+                }
+            } else {
+                // No collision detection, just move
+                this.group.position.x = newPosition.x;
+                this.group.position.z = newPosition.z;
+            }
         }
     }
     
@@ -1362,15 +1492,79 @@ export class Hero {
             // Update position based on velocity
             this.group.position.y += this.velocity.y * deltaTime;
             
-            // Check if we've landed
+            // Check for collisions with objects while in the air
+            if (window.collisionDetector) {
+                // Get current position
+                const currentPosition = this.group.position.clone();
+                
+                // Check if we're colliding with any objects at our current position
+                const collisionResult = window.collisionDetector.checkCollision(
+                    currentPosition,
+                    new THREE.Vector3(0, 0, 0), // No movement direction
+                    0 // No movement distance
+                );
+                
+                // If we can't move, we've hit something
+                if (!collisionResult.canMove) {
+                    // Adjust position based on collision
+                    this.group.position.copy(collisionResult.newPosition);
+                    
+                    // If we hit something from above, stop upward velocity
+                    if (this.velocity.y > 0) {
+                        this.velocity.y = 0;
+                    }
+                }
+            }
+            
+            // Check if we've landed on something
+            let landingHeight = 0;
+            let hasLanded = false;
+            
+            // Check if we've landed on the ground
             if (this.group.position.y <= 0) {
+                landingHeight = 0;
+                hasLanded = true;
+            } 
+            // Check if we've landed on an object
+            else if (this.velocity.y < 0 && window.collisionDetector) {
+                // Cast a ray downward to check for objects below
+                const rayStart = this.group.position.clone();
+                const rayDirection = new THREE.Vector3(0, -1, 0);
+                const rayLength = 0.5; // Check 0.5 units below the hero
+                
+                // Create a raycaster
+                const raycaster = new THREE.Raycaster(rayStart, rayDirection, 0, rayLength);
+                
+                // Get all collidable objects
+                const collidableObjects = window.collisionDetector.collisionObjects
+                    .filter(obj => obj.isCollidable && obj.mesh)
+                    .map(obj => obj.mesh);
+                
+                // Check for intersections
+                const intersects = raycaster.intersectObjects(collidableObjects, true);
+                
+                // If we hit something, we've landed
+                if (intersects.length > 0) {
+                    landingHeight = intersects[0].point.y;
+                    hasLanded = true;
+                    
+                    if (this.debug) {
+                        console.log(`Landed on object at height ${landingHeight}`);
+                    }
+                }
+            }
+            
+            // Handle landing
+            if (hasLanded) {
                 // Only play landing sound if we were falling with significant velocity
                 if (this.velocity.y < -5 && window.soundManager) {
                     window.soundManager.playSound('land');
                 }
                 
-                this.group.position.y = 0;
+                this.group.position.y = landingHeight;
                 this.velocity.y = 0;
+                this.velocity.x = 0; // Stop horizontal movement on landing
+                this.velocity.z = 0;
                 this.onGround = true;
                 this.isJumping = false;
                 this.isFlying = false;
@@ -1388,9 +1582,52 @@ export class Hero {
             // If on ground, initiate jump
             if (this.onGround) {
                 console.log('Jump initiated from ground!');
+                
+                // Check if we can jump onto nearby objects
+                let jumpTarget = null;
+                
+                if (window.collisionDetector) {
+                    const jumpResult = window.collisionDetector.checkJumpCollision(
+                        this.group.position,
+                        config.player.jumpHeight
+                    );
+                    
+                    if (jumpResult.canJump) {
+                        jumpTarget = jumpResult.jumpTarget;
+                        console.log('Jump target found:', jumpTarget);
+                    }
+                }
+                
+                // Apply jump force
                 this.velocity.y = config.player.jumpForce;
                 this.isJumping = true;
                 this.onGround = false;
+                
+                // If we have a jump target, adjust velocity to reach it
+                if (jumpTarget) {
+                    // Calculate horizontal distance to target
+                    const horizontalDist = new THREE.Vector2(
+                        jumpTarget.x - this.group.position.x,
+                        jumpTarget.z - this.group.position.z
+                    ).length();
+                    
+                    // Calculate time to reach peak of jump
+                    const timeToApex = this.velocity.y / config.player.gravity;
+                    
+                    // Calculate horizontal velocity needed to reach target
+                    const horizontalVelocity = horizontalDist / (timeToApex * 2);
+                    
+                    // Create direction vector to target
+                    const direction = new THREE.Vector3(
+                        jumpTarget.x - this.group.position.x,
+                        0,
+                        jumpTarget.z - this.group.position.z
+                    ).normalize();
+                    
+                    // Apply horizontal velocity in direction of target
+                    this.velocity.x = direction.x * horizontalVelocity;
+                    this.velocity.z = direction.z * horizontalVelocity;
+                }
                 
                 // Play jump sound
                 if (window.soundManager) {

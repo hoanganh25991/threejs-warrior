@@ -18,19 +18,13 @@
 - [ ] Press go down + go left: auto go down and look direction change left
 - [ ] Press go up + go right: auto go up and look direction change right
 - [ ] Press go down + go right: auto go down and look direction change right
-- [ ] Add a camera follow hero
-- [ ] Add a UI panel to show current status of hero, like health bar, mana bar, etc.
 - [ ] Add a HUD to show current status of game, like time, score, etc.
-- [ ] Add health bar above head of hero
-- [ ] Add mana bar on hero
-- [ ] Add stamina bar on hero
 - [ ] Add a skill system, like attack, defend, cast spell, etc.
-- [ ] Add skills for each hero
-- [ ] Add basic attach for hero, some hero attach melee, some hero attach range
-- [ ] Add attach animation for hero
-- [ ] Add attach sound for hero
-- [ ] Add attach effect for hero
-- [ ] Reduce e,q change looks direction slower
+- [ ] Add unique skills for each hero
+- [ ] Add basic attack for hero, some hero attack melee, some hero attack range
+- [ ] Add attack animation for hero
+- [ ] Add attack sound for hero
+- [ ] Add attack effect for hero
 - [ ] Update enemy model, make different kinds of hero, make enemy model much complex and beauty
 - [ ] Everything must be in 3d, wing 3d, hero model is 3d, enemy is 3d, ground is 3d, skybox is 3d, everything must be in 3d
 - [ ] Add a boss fight scene
@@ -43,13 +37,10 @@
 - [ ] Add a boss battle background video/audio/music looping
 - [ ] Add another aspect of ARPG game, like dungeon crawler, tower defense, etc.
 - [ ] Add a dungeon crawler map
-- [ ] Allow to move from map to map to map
-- [ ] Add a tower defense map
-- [ ] Allow to move from map to map
+- [ ] Add teleport from place to place, navigate map to map
 - [ ] Add a RPG game mode, allow player to choose class, level up, buy items, etc.
-- [ ] Add teleport from place to place
-- [ ] Add a shop where players can buy items, sell items, etc.
-- [ ] Add a crafting system where players can craft items, weapons, armor, etc.
+- [ ] Add a shop where player can buy items, sell items, etc.
+- [ ] Add a crafting system where player can craft items, weapons, armor, etc.
 - [ ] Add effect animation when hero attacks or defends
 - [ ] Add effect animation when hero casts spells
 - [ ] Add effect animation when hero takes damage

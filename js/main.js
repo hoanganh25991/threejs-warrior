@@ -1,7 +1,6 @@
 // Import Three.js
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Import game modules
 import { config } from './config/config.js';
@@ -11,6 +10,7 @@ import { SkillManager } from './skills/skillManager.js';
 import { InputHandler } from './input.js';
 import { World } from './world/world.js';
 import { SoundManager } from './soundManager.js';
+import { CollisionDetector } from './collisionDetector.js';
 
 // Game class
 class Game {
@@ -28,6 +28,7 @@ class Game {
         this.inputHandler = null;
         this.world = null;
         this.soundManager = null;
+        this.collisionDetector = null;
         this.isGameStarted = false;
         this.selectedHero = null;
         this.isLoading = true;
@@ -246,16 +247,34 @@ class Game {
         // Initialize enemy manager
         this.enemyManager = new EnemyManager(this.scene);
         
+        // Initialize collision detector
+        this.collisionDetector = new CollisionDetector(this.world);
+        
+        // Make collision detector globally accessible
+        window.collisionDetector = this.collisionDetector;
+        
         // Create hero
         this.hero = new Hero(this.scene, this.selectedHero);
         
         // Start background music
         this.soundManager.playMusic();
         
-        // Jump button removed
-        
-        // We don't need this specific space key handler anymore
-        // The continuous jumping is now handled directly in the hero's handleJumpAndFly method
+        // Add debug info for collision detection if debug mode is enabled
+        if (config.game.debug) {
+            const collisionDebug = document.createElement('div');
+            collisionDebug.id = 'collision-debug';
+            collisionDebug.style.position = 'absolute';
+            collisionDebug.style.top = '100px';
+            collisionDebug.style.left = '20px';
+            collisionDebug.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            collisionDebug.style.color = 'white';
+            collisionDebug.style.padding = '10px';
+            collisionDebug.style.borderRadius = '5px';
+            collisionDebug.style.fontFamily = 'Arial, sans-serif';
+            collisionDebug.style.zIndex = '1000';
+            collisionDebug.textContent = 'Collision Detection: Active';
+            document.body.appendChild(collisionDebug);
+        }
         
         // Set game as started
         this.isGameStarted = true;
@@ -313,6 +332,11 @@ class Game {
             const targetPosition = heroPosition.clone();
             targetPosition.y += cameraInfo.targetHeight; // Look at a point above the hero
             this.camera.lookAt(targetPosition);
+        }
+        
+        // Update collision detector
+        if (this.collisionDetector && this.camera) {
+            this.collisionDetector.update(this.camera);
         }
         
         // Update enemies
