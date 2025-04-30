@@ -31,9 +31,6 @@ export default class ParticleSystem {
         });
 
         this.points = new THREE.Points(geometry, material);
-        this.points.frustumCulled = false;
-        this.points.castShadow = false;
-        this.points.receiveShadow = false;
         this.scene.add(this.points);
     }
 

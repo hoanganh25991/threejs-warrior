@@ -80,8 +80,12 @@ class Game {
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // Setup shadow map
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.autoUpdate = false;
+    this.renderer.shadowMap.needsUpdate = true;
 
     // Add lights
     this.addLights();
@@ -281,14 +285,9 @@ class Game {
 
     // Initialize UI
     this.hud = new HUD();
-
-    // Initialize boss if in boss area
-    if (this.world.isInBossArea()) {
-      this.boss = new Boss(this.scene);
-      this.soundManager.playBossMusic();
-    } else {
-      this.soundManager.playBackgroundMusic();
-    }
+    
+    // Play background music
+    this.soundManager.playBackgroundMusic();
 
     // Create hero with all systems connected
     this.hero = new Hero(this.scene, this.selectedHero, {
@@ -545,6 +544,19 @@ class Game {
 
     // Update game
     this.update(deltaTime);
+
+    // Update shadows only for non-particle objects
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Points) {
+        obj.castShadow = false;
+        obj.receiveShadow = false;
+      }
+    });
+
+    // Update shadow map
+    if (this.renderer.shadowMap.needsUpdate) {
+      this.renderer.shadowMap.needsUpdate = false;
+    }
 
     // Render scene
     this.renderer.render(this.scene, this.camera);
