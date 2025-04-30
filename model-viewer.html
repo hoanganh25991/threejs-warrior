@@ -128,78 +128,54 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         
-        // World model imports
-        import { Castle } from './js/world/castle.js';
-        import { Bridge } from './js/world/bridge.js';
-        import { Skybox } from './js/world/skybox.js';
-        import { addGround } from './js/world/ground.js';
-        import { addWater } from './js/world/water.js';
-        import { addSky } from './js/world/sky.js';
-        import { addMountains } from './js/world/mountains.js';
-        import { addTrees } from './js/world/trees.js';
-        import { addRocks } from './js/world/rock.js';
-        import { addInteractiveObjects } from './js/world/interactive-objects.js';
-        import { addStairs } from './js/world/stairs.js';
-        
         // Main variables
         let scene, camera, renderer, controls;
         let currentModel = null;
         
-        // Model registry - maps file paths to constructor functions
+        // Model registry - maps file paths to model information
         const modelRegistry = {
-            'world/castle.js': {
+            'js/world/castle.js': {
                 name: 'Castle',
-                constructor: Castle,
                 description: 'A medieval castle with four towers and a main body.'
             },
-            'world/bridge.js': {
+            'js/world/bridge.js': {
                 name: 'Bridge',
-                constructor: Bridge,
                 description: 'A wooden bridge with railings and posts.'
             },
-            'world/skybox.js': {
+            'js/world/skybox.js': {
                 name: 'Skybox',
-                constructor: Skybox,
                 description: 'A skybox that surrounds the scene.'
             },
-            'world/ground.js': {
+            'js/world/ground.js': {
                 name: 'Ground',
-                constructor: (scene) => addGround(scene),
                 description: 'The ground terrain of the world.'
             },
-            'world/water.js': {
+            'js/world/water.js': {
                 name: 'Water',
-                constructor: (scene) => addWater(scene),
                 description: 'Animated water surface.'
             },
-            'world/sky.js': {
+            'js/world/sky.js': {
                 name: 'Sky',
-                constructor: (scene) => addSky(scene),
                 description: 'Atmospheric sky with gradient.'
             },
-            'world/mountains.js': {
+            'js/world/mountains.js': {
                 name: 'Mountains',
-                constructor: (scene) => addMountains(scene),
                 description: 'Mountain range in the distance.'
             },
-            'world/trees.js': {
+            'js/world/trees.js': {
                 name: 'Trees',
-                constructor: (scene) => addTrees(scene),
                 description: 'Forest of trees scattered around the scene.'
             },
-            'world/rock.js': {
+            'js/world/rock.js': {
                 name: 'Rocks',
-                constructor: (scene) => addRocks(scene),
                 description: 'Various rocks and boulders.'
             },
-            'world/interactive-objects.js': {
+            'js/world/interactive-objects.js': {
                 name: 'Interactive Objects',
-                constructor: (scene) => addInteractiveObjects(scene),
                 description: 'Various interactive objects like chests and crystals.'
             },
-            'world/stairs.js': {
+            'js/world/stairs.js': {
                 name: 'Stairs',
-                constructor: (scene) => addStairs(scene),
                 description: 'Stone stairs leading up to structures.'
             }
         };
@@ -304,7 +280,7 @@
         }
         
         // Load the selected model
-        function loadSelectedModel() {
+        async function loadSelectedModel() {
             const selector = document.getElementById('model-selector');
             const selectedPath = selector.value;
             
@@ -323,12 +299,17 @@
             const modelInfo = modelRegistry[selectedPath];
             
             try {
+                // Dynamically import the model module
+                const modulePath = `./${selectedPath}`;
+                const modelModule = await import(modulePath);
+                const ModelConstructor = modelModule.default;
+                
                 // Create new instance of the model
                 let model;
                 
-                model = new modelInfo.constructor();
+                model = new ModelConstructor(scene);
                 
-                // If the model is an array (like some functions return), add the first item
+                // If the model is an array (like some functions might return), add the first item
                 if (Array.isArray(model)) {
                     model = model[0];
                 }
