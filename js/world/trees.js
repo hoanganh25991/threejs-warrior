@@ -5,13 +5,16 @@ import * as THREE from "three";
  * @param {THREE.Scene} scene - The scene to add trees to
  * @returns {Array} - Array of tree groups added to the scene
  */
-export default class Tree {
+export default class Trees {
   constructor(scene) {
-    const trees = [];
+    this.trees = [];
 
     // Add trees around the scene
     for (let i = 0; i < 50; i++) {
       const treeGroup = new THREE.Group();
+      
+      // Add a type property to identify this as a tree for collision detection
+      treeGroup.userData = { type: 'tree' };
 
       // Tree trunk
       const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.7, 5, 8);
@@ -45,9 +48,9 @@ export default class Tree {
       treeGroup.receiveShadow = true;
 
       scene.add(treeGroup);
-      trees.push(treeGroup);
+      this.trees.push(treeGroup);
     }
-
-    return trees;
+    
+    return this.trees;
   }
 }

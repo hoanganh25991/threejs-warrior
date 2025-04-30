@@ -50,7 +50,7 @@ export class World {
         
         // Add trees
         this.trees = new Trees(this.scene);
-        this.scene.add(this.trees);
+        // Trees are already added to the scene in the Trees constructor
         
         // Add rocks
         this.rocks = addRocks(this.scene);

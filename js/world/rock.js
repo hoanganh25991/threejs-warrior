@@ -18,6 +18,14 @@ export function addRocks(scene) {
         });
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
         
+        // Add a type property to identify this as a rock for collision detection
+        rock.userData = { type: 'rock' };
+        
+        // Set properties for collision detection
+        rock.type = 'rock';
+        rock.isCollidable = true;
+        rock.isWalkable = true;
+        
         // Position rocks randomly
         const angle = Math.random() * Math.PI * 2;
         const distance = 10 + Math.random() * 90;

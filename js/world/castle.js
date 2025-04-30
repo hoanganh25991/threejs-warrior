@@ -10,6 +10,14 @@ export default class Castle {
   constructor(scene) {
     // Create a simple castle in the distance
     const castleGroup = new THREE.Group();
+    
+    // Add a type property to identify this as a castle for collision detection
+    castleGroup.userData = { type: 'castle' };
+    
+    // Set properties for collision detection
+    castleGroup.type = 'castle';
+    castleGroup.isCollidable = true;
+    castleGroup.isWalkable = true;
 
     // Main castle body
     const castleBodyGeometry = new THREE.BoxGeometry(30, 40, 30);

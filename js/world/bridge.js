@@ -7,9 +7,11 @@ import * as THREE from "three";
  */
 
 export class Bridge {
-    bridgeGroup = null;
   constructor() {
     const bridgeGroup = new THREE.Group();
+    
+    // Add a type property to identify this as a bridge for collision detection
+    bridgeGroup.userData = { type: 'bridge' };
 
     // Bridge base
     const baseGeometry = new THREE.BoxGeometry(8, 1, 30);
@@ -65,7 +67,12 @@ export class Bridge {
     // Position bridge
     bridgeGroup.position.set(30, 0, -30);
     bridgeGroup.rotation.y = Math.PI / 4;
+    
+    // Set properties for collision detection
+    bridgeGroup.type = 'bridge';
+    bridgeGroup.isCollidable = true;
+    bridgeGroup.isWalkable = true;
 
-    return bridgeGroup
+    return bridgeGroup;
   }
 }

@@ -44,6 +44,7 @@ export function addStairs(scene) {
     return {
         mesh: stairsGroup,
         type: 'stairs',
-        isCollidable: true
+        isCollidable: true,
+        isWalkable: true  // Explicitly mark stairs as walkable
     };
 }

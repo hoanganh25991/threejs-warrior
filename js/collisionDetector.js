@@ -60,7 +60,8 @@ export class CollisionDetector {
                 this.collisionObjects.push({
                     mesh: rock,
                     type: 'rock',
-                    isCollidable: true
+                    isCollidable: true,
+                    isWalkable: true  // Make rocks walkable
                 });
             });
         }
@@ -70,7 +71,8 @@ export class CollisionDetector {
             this.collisionObjects.push({
                 mesh: this.world.castle,
                 type: 'castle',
-                isCollidable: true
+                isCollidable: true,
+                isWalkable: true  // Make castle walkable
             });
         }
         
@@ -79,7 +81,20 @@ export class CollisionDetector {
             this.collisionObjects.push({
                 mesh: this.world.bridge,
                 type: 'bridge',
-                isCollidable: true
+                isCollidable: true,
+                isWalkable: true  // Make bridge walkable
+            });
+        }
+        
+        // Add trees
+        if (this.world && this.world.trees && this.world.trees.trees) {
+            this.world.trees.trees.forEach(tree => {
+                this.collisionObjects.push({
+                    mesh: tree,
+                    type: 'tree',
+                    isCollidable: true,
+                    isWalkable: false  // Trees are not walkable
+                });
             });
         }
         
@@ -121,10 +136,8 @@ export class CollisionDetector {
                     console.log(`Collision detected with ${obj.type}`);
                 }
                 
-                // Special case for walkable objects (stairs, bridge, rocks, castle)
-                const walkableObjects = ['stairs', 'bridge', 'rock', 'castle'];
-                
-                if (walkableObjects.includes(obj.type)) {
+                // Check if the object is marked as walkable
+                if (obj.isWalkable) {
                     // Calculate the height of the object at this position
                     const objHeight = this.getObjectHeightAtPosition(obj, newPosition);
                     
@@ -239,12 +252,24 @@ export class CollisionDetector {
                 if (calculatedHeight >= 0 && calculatedHeight <= 20) {
                     objectHeight = calculatedHeight;
                 }
+                
+                if (this.debug) {
+                    console.log(`Stairs: stair index ${stairIndex}, height ${objectHeight.toFixed(2)}`);
+                }
             } else if (obj.type === 'bridge') {
                 // For bridge, add a small offset to ensure the hero stands on top
                 objectHeight += 0.1;
+                
+                if (this.debug) {
+                    console.log(`Bridge: height ${objectHeight.toFixed(2)}`);
+                }
             } else if (obj.type === 'rock') {
                 // For rocks, add a small offset
                 objectHeight += 0.1;
+                
+                if (this.debug) {
+                    console.log(`Rock: height ${objectHeight.toFixed(2)}`);
+                }
             } else if (obj.type === 'castle') {
                 // For castle, add a small offset
                 objectHeight += 0.1;
@@ -252,6 +277,18 @@ export class CollisionDetector {
                 // If we're on the castle roof, make sure we can walk on it
                 if (objectHeight > 10) {
                     objectHeight = Math.floor(objectHeight) + 0.1;
+                }
+                
+                if (this.debug) {
+                    console.log(`Castle: height ${objectHeight.toFixed(2)}`);
+                }
+            } else if (obj.type === 'tree') {
+                // Trees are not walkable, but we still need to calculate their height
+                // for proper collision detection
+                objectHeight += 0.1;
+                
+                if (this.debug) {
+                    console.log(`Tree: height ${objectHeight.toFixed(2)}`);
                 }
             }
         }
