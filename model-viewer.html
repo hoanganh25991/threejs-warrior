@@ -504,15 +504,35 @@
                     }
                     
                     // Center the model at origin (middle of the net)
+                    // First, check if the model already has a position set in its file
+                    const originalPosition = {
+                        x: model.position.x,
+                        y: model.position.y,
+                        z: model.position.z
+                    };
+                    
+                    // Reset position to zero before calculating center
+                    model.position.set(0, 0, 0);
+                    
+                    // Recalculate bounding box after resetting position
+                    boundingBox.setFromObject(model);
+                    boundingBox.getCenter(center);
+                    
+                    // Center the model at origin (middle of the net)
                     model.position.x = -center.x;
                     model.position.y = -center.y;
                     model.position.z = -center.z;
+                    
+                    // Log the centering process
+                    console.log(`Original model position: X: ${originalPosition.x}, Y: ${originalPosition.y}, Z: ${originalPosition.z}`);
+                    console.log(`Center offset: X: ${center.x}, Y: ${center.y}, Z: ${center.z}`);
+                    console.log(`New position: X: ${model.position.x}, Y: ${model.position.y}, Z: ${model.position.z}`);
                     
                     // Ensure model is positioned at the center of the net
                     // This is especially important for models that might have an offset center
                     const netCenter = new THREE.Vector3(0, 0, 0);
                     
-                    // Store size and scale information with the model
+                    // Store size, scale, and position information with the model
                     model.userData.originalSize = { 
                         x: size.x / scale, 
                         y: size.y / scale, 
@@ -520,6 +540,7 @@
                     };
                     model.userData.currentSize = { x: size.x, y: size.y, z: size.z };
                     model.userData.scale = scale;
+                    model.userData.originalPosition = originalPosition;
                     
                     scene.add(model);
                     currentModel = model;
@@ -579,7 +600,7 @@
                     <p><strong>Scale Applied:</strong> ${formatNum(scale)}${scale !== 1 ? ' (resized to fit)' : ' (original size)'}</p>
                 `;
                 
-                // Get current position
+                // Get position information
                 if (currentModel) {
                     positionInfo = `
                         <h4>Position</h4>
@@ -589,6 +610,18 @@
                             Z: ${formatNum(currentModel.position.z)}
                         </p>
                     `;
+                    
+                    // Add original position if available
+                    if (currentModel.userData.originalPosition) {
+                        const origPos = currentModel.userData.originalPosition;
+                        positionInfo += `
+                            <p><strong>Original Position:</strong> 
+                                X: ${formatNum(origPos.x)}, 
+                                Y: ${formatNum(origPos.y)}, 
+                                Z: ${formatNum(origPos.z)}
+                            </p>
+                        `;
+                    }
                 }
             }
             

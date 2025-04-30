@@ -879,28 +879,28 @@ export class Hero {
         // Create animation clips for different wing states
         this.wingStates = {
             idle: {
-                flapSpeed: 1.2,
-                flapAmplitude: 0.1,
-                shimmerIntensity: 0.4,
-                shimmerSpeed: 1.2
+                flapSpeed: 2.5,         // Increased for more continuous movement
+                flapAmplitude: 0.15,    // Increased for more visible flapping
+                shimmerIntensity: 0.5,
+                shimmerSpeed: 1.5
             },
             flying: {
-                flapSpeed: 4.5,
-                flapAmplitude: 0.3,     // More dramatic flapping for flying
-                shimmerIntensity: 0.7,
-                shimmerSpeed: 3.5
+                flapSpeed: 6.0,         // Increased for more continuous flapping
+                flapAmplitude: 0.4,     // More dramatic flapping for flying
+                shimmerIntensity: 0.8,
+                shimmerSpeed: 4.0
             },
             gliding: {
-                flapSpeed: 0.7,
-                flapAmplitude: 0.15,
+                flapSpeed: 1.8,         // Increased for more continuous movement
+                flapAmplitude: 0.2,     // Increased for more visible flapping
                 shimmerIntensity: 0.6,
-                shimmerSpeed: 1.8
+                shimmerSpeed: 2.0
             },
             hovering: {
-                flapSpeed: 7,           // Faster flapping for hovering
-                flapAmplitude: 0.25,
-                shimmerIntensity: 0.8,
-                shimmerSpeed: 5
+                flapSpeed: 8.5,         // Faster flapping for hovering
+                flapAmplitude: 0.35,    // Increased for more visible flapping
+                shimmerIntensity: 0.9,
+                shimmerSpeed: 6.0
             }
         };
         
@@ -1412,23 +1412,23 @@ export class Hero {
                     
                     // Calculate boost based on current velocity
                     // If falling or slow, provide stronger boost to counteract gravity
-                    let boostMultiplier = 1.0;
+                    let boostMultiplier = 1.5; // Increased base multiplier for better height gain
                     if (this.velocity.y < 0) {
                         // Stronger boost when falling to quickly recover
-                        boostMultiplier = 1.5 + Math.min(1.5, Math.abs(this.velocity.y) / 10);
+                        boostMultiplier = 2.0 + Math.min(2.0, Math.abs(this.velocity.y) / 8);
                     } else if (this.velocity.y > 10) {
                         // Reduced boost when already moving up quickly
-                        boostMultiplier = 0.8;
+                        boostMultiplier = 1.0;
                     }
                     
-                    boost = config.player.jumpForce * 0.06 * heightFactor * boostMultiplier;
+                    boost = config.player.jumpForce * 0.08 * heightFactor * boostMultiplier; // Increased base boost
                 } else {
-                    // At max height, only provide minimal boost to maintain but not increase height
-                    boost = config.player.gravity * 0.3 * deltaTime;
+                    // At max height, provide enough boost to maintain and potentially increase height
+                    boost = config.player.gravity * 0.5 * deltaTime;
                     
-                    // Cap the height to prevent going higher
-                    if (this.group.position.y > maxFlyingHeight + 5) {
-                        this.group.position.y = maxFlyingHeight + 5;
+                    // Only cap the height if significantly above the max height
+                    if (this.group.position.y > maxFlyingHeight + 10) {
+                        this.group.position.y = maxFlyingHeight + 10;
                         this.velocity.y = Math.min(0, this.velocity.y);
                     }
                 }
@@ -1479,8 +1479,17 @@ export class Hero {
                 }
                 
                 // Flap wings while flying - flap speed based on whether space is pressed
-                const flapIntensity = keys[' '] ? 1.0 : 0.7; // Slower flapping when gliding
+                const flapIntensity = keys[' '] ? 1.2 : 0.9; // Increased intensity for more continuous flapping
                 this.flapWings(deltaTime, flapIntensity);
+                
+                // Set appropriate wing state based on movement
+                if (keys[' '] && Math.abs(this.velocity.y) > 5) {
+                    this.setWingState('flying'); // Active flying with space pressed
+                } else if (keys[' ']) {
+                    this.setWingState('hovering'); // Hovering in place
+                } else {
+                    this.setWingState('gliding'); // Gliding when space not pressed
+                }
             } else if ((this.group.position.y <= minWingHeight || this.onGround) && this.wingsVisible) {
                 // Hide wings when below threshold or on ground
                 console.log('HIDING WINGS!');
@@ -1504,34 +1513,35 @@ export class Hero {
         console.log(`Wing state changed to: ${state}`);
     }
     
-    flapWings(deltaTime) {
+    flapWings(deltaTime, intensity = 1.0) {
         // Add elegant wing flapping animation with improved state-based system
         if (!this.wings || !this.wings.visible || !this.wingAnimations) return;
         
         // Update animation parameters
         const anim = this.wingAnimations;
-        const target = this.targetWingState || this.wingStates.idle;
+        const target = this.targetWingState || this.wingStates.flying; // Default to flying state for more active flapping
         
-        // Smoothly transition between states
-        anim.flapSpeed = this.lerpValue(anim.flapSpeed, target.flapSpeed, deltaTime * 2);
-        anim.flapAmplitude = this.lerpValue(anim.flapAmplitude, target.flapAmplitude, deltaTime * 2);
+        // Smoothly transition between states - faster transition for more responsive flapping
+        anim.flapSpeed = this.lerpValue(anim.flapSpeed, target.flapSpeed * intensity, deltaTime * 3);
+        anim.flapAmplitude = this.lerpValue(anim.flapAmplitude, target.flapAmplitude * intensity, deltaTime * 3);
         anim.shimmerIntensity = this.lerpValue(anim.shimmerIntensity, target.shimmerIntensity, deltaTime * 2);
         anim.shimmerSpeed = this.lerpValue(anim.shimmerSpeed, target.shimmerSpeed, deltaTime * 2);
         
-        // Update animation timers
-        anim.featherPhase += deltaTime * anim.flapSpeed * 0.5;
+        // Update animation timers - increased speed for more continuous flapping
+        anim.featherPhase += deltaTime * anim.flapSpeed * 0.8;
         anim.idleTime += deltaTime;
         
         // Calculate flap position with improved natural motion
         // Use combination of sine waves for more natural motion
         const flapTime = anim.idleTime * anim.flapSpeed;
-        const flapPosition = Math.sin(flapTime) * anim.flapAmplitude;
+        // Use absolute sine value to ensure wings are always flapping (never completely still)
+        const flapPosition = (Math.abs(Math.sin(flapTime)) * 0.7 + Math.sin(flapTime) * 0.3) * anim.flapAmplitude;
         
         // Add slight asymmetry for more natural look
-        const asymmetry = Math.sin(flapTime * 0.5) * 0.05;
+        const asymmetry = Math.sin(flapTime * 0.5) * 0.08;
         
         // Add slight randomness for natural variation
-        const randomness = Math.sin(flapTime * 0.3) * 0.02;
+        const randomness = Math.sin(flapTime * 0.3) * 0.04;
         
         // Apply rotation to wings
         if (this.wings.children.length >= 2) {
