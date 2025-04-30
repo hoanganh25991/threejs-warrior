@@ -5,6 +5,7 @@ import * as THREE from "three";
  */
 export default class Moutain extends THREE.Object3D {
   constructor() {
+    super();
     const mountainGeometry = new THREE.ConeGeometry(
       20 + Math.random() * 30,
       50 + Math.random() * 50,

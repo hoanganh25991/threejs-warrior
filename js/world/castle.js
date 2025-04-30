@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 export default class Castle extends THREE.Object3D {
   constructor() {
+    super();
     // Create a simple castle in the distance
     const castleGroup = new THREE.Group();
     

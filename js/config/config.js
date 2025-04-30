@@ -22,7 +22,7 @@ export const config = {
         jumpForce: 15,         // Initial upward force
         gravity: 25,           // Gravity force
         flyingHeight: 7,       // Height at which wings appear (same as tree height)
-        maxFlyingHeight: 200,  // Maximum height the player can fly to
+        maxFlyingHeight: 100,  // Maximum height the player can fly to
         maxStepHeight: 1.0,    // Maximum height the player can step up without jumping (increased for better stair climbing)
         health: 100,
         mana: 100,
@@ -131,7 +131,7 @@ export const config = {
         },
         mouse: {
             look: true,
-            sensitivity: 0.5,
+            sensitivity: 0.8, // Increased sensitivity for better responsiveness
             attack: 0 // left mouse button
         }
     },

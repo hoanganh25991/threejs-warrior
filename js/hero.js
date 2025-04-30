@@ -1339,11 +1339,19 @@ export class Hero {
         
         // Vertical rotation (around X axis) - limit to avoid flipping
         this.rotation.x -= lookDir.y * 0.01;
+        
         // Clamp vertical rotation to prevent flipping over
-        this.rotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, this.rotation.x));
+        // Allow looking up at the sky (-PI/2) and down at the ground (PI/2)
+        // But leave a small margin to prevent complete flipping
+        const verticalLimit = Math.PI / 2 - 0.05;
+        this.rotation.x = Math.max(-verticalLimit, Math.min(verticalLimit, this.rotation.x));
         
         // Apply rotation to the group - only Y rotation affects the character model
         this.group.rotation.y = this.rotation.y;
+        
+        // Update the direction vector based on both horizontal and vertical rotation
+        // This ensures the direction vector points where the player is looking
+        this.direction.set(0, 0, -1).applyEuler(this.rotation);
         
         // Reset input handler movement to avoid continuous rotation
         inputHandler.resetMovement();

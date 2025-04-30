@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 export default class Bridge extends THREE.Object3D {
   constructor() {
+    super();
     const bridgeGroup = new THREE.Group();
     
     // Add a type property to identify this as a bridge for collision detection

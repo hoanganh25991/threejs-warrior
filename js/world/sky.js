@@ -6,6 +6,7 @@ import { Sky as ThreeSky } from "three/addons/objects/Sky.js";
  */
 export default class Sky extends THREE.Object3D {
   constructor() {
+    super();
     // Create sky
     const sky = new ThreeSky();
     sky.scale.setScalar(10000);

@@ -5,6 +5,7 @@ import * as THREE from "three";
  */
 export default class Tree extends THREE.Object3D {
   constructor() {
+    super();
     // Add trees around the scene
     const treeGroup = new THREE.Group();
 

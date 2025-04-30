@@ -5,6 +5,7 @@ import * as THREE from 'three';
  */
 export default class Skybox extends THREE.Object3D {
    constructor() {
+    super();
      // Use placeholder colors for the skybox faces
      const materialArray = [];
      const faceColors = [0x0077ff, 0x00aaff, 0x55aaff, 0x55aaff, 0x0088ff, 0x0088ff]; // Different blue shades

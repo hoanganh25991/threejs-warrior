@@ -325,12 +325,27 @@ class Game {
             
             // Calculate camera position behind the hero
             const cameraOffset = lookDirection.clone().multiplyScalar(-cameraInfo.distance);
-            this.camera.position.copy(heroPosition).add(cameraOffset);
-            this.camera.position.y = heroPosition.y + cameraInfo.height;
             
-            // Make the camera look at the hero (slightly above the hero's position)
+            // Apply horizontal direction only for camera positioning
+            const horizontalDirection = new THREE.Vector3(lookDirection.x, 0, lookDirection.z).normalize();
+            const horizontalOffset = horizontalDirection.multiplyScalar(-cameraInfo.distance);
+            
+            // Position camera behind player (horizontally)
+            this.camera.position.copy(heroPosition).add(horizontalOffset);
+            
+            // Apply vertical offset based on player's vertical look direction
+            // Calculate a height offset that decreases as player looks up, increases as player looks down
+            const verticalLookFactor = Math.sin(this.hero.rotation.x);
+            const heightAdjustment = -verticalLookFactor * 2; // Adjust multiplier as needed
+            
+            // Set camera height with adjustment
+            this.camera.position.y = heroPosition.y + cameraInfo.height + heightAdjustment;
+            
+            // Calculate target position based on hero position and look direction
             const targetPosition = heroPosition.clone();
-            targetPosition.y += cameraInfo.targetHeight; // Look at a point above the hero
+            targetPosition.add(lookDirection.clone().multiplyScalar(10)); // Look 10 units ahead in the direction
+            
+            // Make the camera look where the player is looking
             this.camera.lookAt(targetPosition);
         }
         
