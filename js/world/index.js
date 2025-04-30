@@ -9,7 +9,7 @@ import { addTrees } from './trees.js';
 import { addRocks } from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';
 import { addStairs } from './stairs.js';
-import { addBridge } from './bridge.js';
+import { Bridge } from './bridge.js';
 
 export class World {
     constructor(scene) {
@@ -61,7 +61,8 @@ export class World {
         this.interactiveObjects.push(stairs);
         
         // Add bridge
-        const bridge = addBridge(this.scene);
+        const bridge = new Bridge();
+        this.scene.add(bridge);
         this.interactiveObjects.push(bridge);
     }
     
