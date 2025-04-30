@@ -46,6 +46,7 @@ export class World {
         
         // Add castle
         this.castle = new Castle();
+        this.scene.add(this.castle);
         
         // Add trees
         this.trees = addTrees(this.scene);
