@@ -9,7 +9,7 @@ import { Hero } from './characters/hero.js';
 import { EnemyManager } from './characters/enemyManager.js';
 import { SkillManager } from './skills/skillManager.js';
 import { InputHandler } from './utils/input.js';
-import { World } from './utils/world.js';
+import { World } from './utils/world/index.js';
 import { SoundManager } from './utils/soundManager.js';
 
 // Game class
@@ -297,19 +297,22 @@ class Game {
             // Get the hero's position and rotation
             const heroRotation = this.hero.rotation;
             
-            // Set the camera position to match the hero's position (first-person view)
-            // Position the camera at the hero's eye level
-            const eyeHeight = 1.7; // Approximate eye height
-            this.camera.position.copy(heroPosition);
-            this.camera.position.y += eyeHeight;
-            
-            // Set the camera's rotation to match the hero's rotation
-            this.camera.rotation.set(heroRotation.x, heroRotation.y, 0, 'YXZ');
-            
-            // Update the camera's direction to match the hero's look direction
+            // Set the camera position to a third-person view behind the hero
+            // Get the hero's direction vector
             const lookDirection = this.hero.getDirection();
-            const lookTarget = new THREE.Vector3().copy(this.camera.position).add(lookDirection);
-            this.camera.lookAt(lookTarget);
+            
+            // Get camera positioning information based on hero state
+            const cameraInfo = this.hero.getCameraPositionInfo();
+            
+            // Calculate camera position behind the hero
+            const cameraOffset = lookDirection.clone().multiplyScalar(-cameraInfo.distance);
+            this.camera.position.copy(heroPosition).add(cameraOffset);
+            this.camera.position.y = heroPosition.y + cameraInfo.height;
+            
+            // Make the camera look at the hero (slightly above the hero's position)
+            const targetPosition = heroPosition.clone();
+            targetPosition.y += cameraInfo.targetHeight; // Look at a point above the hero
+            this.camera.lookAt(targetPosition);
         }
         
         // Update enemies

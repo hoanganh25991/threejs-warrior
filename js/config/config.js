@@ -12,7 +12,7 @@ export const config = {
         fov: 75,
         near: 0.1,
         far: 1000,
-        initialPosition: { x: 0, y: 5, z: 10 }
+        initialPosition: { x: 0, y: 5, z: 15 } // Increased initial distance
     },
     
     // Player settings

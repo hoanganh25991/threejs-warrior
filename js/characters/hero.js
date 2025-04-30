@@ -1847,6 +1847,32 @@ export class Hero {
         return this.direction.clone();
     }
     
+    getCameraPositionInfo() {
+        // Return camera positioning information based on hero state
+        let cameraDistance = 5;  // Default distance behind hero
+        let cameraHeight = 3;    // Default height above hero
+        let targetHeight = 1.5;  // Default target height (where camera looks)
+        
+        // Adjust camera based on hero state
+        if (this.isFlying) {
+            // When flying, position camera further back and higher
+            cameraDistance = 7;
+            cameraHeight = 4;
+            targetHeight = 2;
+        } else if (this.isJumping) {
+            // When jumping, position camera slightly higher
+            cameraDistance = 6;
+            cameraHeight = 3.5;
+            targetHeight = 1.8;
+        }
+        
+        return {
+            distance: cameraDistance,
+            height: cameraHeight,
+            targetHeight: targetHeight
+        };
+    }
+    
     takeDamage(amount) {
         this.health = Math.max(0, this.health - amount);
         this.updateUI();
