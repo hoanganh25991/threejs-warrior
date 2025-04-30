@@ -5,7 +5,7 @@ import * as THREE from "three";
  */
 export default class Rock extends THREE.Object3D {
   constructor() {
-    super();
+
     const rockGeometry = new THREE.DodecahedronGeometry(
       1 + Math.random() * 2,
       0

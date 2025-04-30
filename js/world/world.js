@@ -7,7 +7,7 @@ import Moutain from "./mountain.js";
 import Castle from "./castle.js";
 import Tree from "./tree.js";
 import Rock from "./rock.js";
-import { addInteractiveObjects } from "./interactive-objects.js";
+import { addInteractiveObjects } from "./interactive-objects/interactive-objects.js";
 import Stairs from "./stairs.js";
 import Bridge from "./bridge.js";
 

@@ -5,8 +5,6 @@ import * as THREE from 'three';
  */
 export default class GlowingCrystal extends THREE.Object3D {
   constructor() {
-    super();
-    
     const crystalGroup = new THREE.Group();
     
     // Crystal
@@ -57,11 +55,11 @@ export default class GlowingCrystal extends THREE.Object3D {
     crystalGroup.positionRandomly = () => {
       const angle = Math.random() * Math.PI * 2;
       const distance = 30 + Math.random() * 70;
-      this.position.x = Math.cos(angle) * distance;
-      this.position.z = Math.sin(angle) * distance;
-      this.position.y = 0;
+      crystalGroup.position.x = Math.cos(angle) * distance;
+      crystalGroup.position.z = Math.sin(angle) * distance;
+      crystalGroup.position.y = 0;
       
-      return this;
+      return crystalGroup;
     }
 
     return crystalGroup;

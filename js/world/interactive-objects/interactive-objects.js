@@ -1,6 +1,6 @@
-import TreasureChest from './interactive-objects/TreasureChest.js';
-import GlowingCrystal from './interactive-objects/GlowingCrystal.js';
-import TrainingDummy from './interactive-objects/TrainingDummy.js';
+import TreasureChest from './treasure-chest.js';
+import GlowingCrystal from './glowing-crystal.js';
+import TrainingDummy from './training-dummy.js';
 
 /**
  * Creates and adds interactive objects to the scene

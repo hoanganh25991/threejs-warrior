@@ -5,8 +5,6 @@ import * as THREE from 'three';
  */
 export default class TreasureChest extends THREE.Object3D {
   constructor() {
-    super();
-    
     const chestGroup = new THREE.Group();
     
     // Chest base
@@ -50,13 +48,10 @@ export default class TreasureChest extends THREE.Object3D {
     // Set properties for interaction
     chestGroup.userData = { type: 'chest' };
     
-    // Add the group to this object
-    this.add(chestGroup);
-    
     // Set interaction properties
-    this.type = 'chest';
-    this.interactionRadius = 2;
-    this.onInteract = () => {
+    chestGroup.type = 'chest';
+    chestGroup.interactionRadius = 2;
+    chestGroup.onInteract = () => {
       // Open chest animation would go here
       console.log('Chest opened!');
       // Play sound
@@ -64,19 +59,20 @@ export default class TreasureChest extends THREE.Object3D {
         window.soundManager.playSound('chest');
       }
     };
-  }
-  
-  // Method to position the chest randomly
-  positionRandomly() {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 20 + Math.random() * 60;
-    this.position.x = Math.cos(angle) * distance;
-    this.position.z = Math.sin(angle) * distance;
-    this.position.y = 0;
-    
-    // Random rotation
-    this.rotation.y = Math.random() * Math.PI * 2;
-    
-    return this;
+
+    chestGroup.positionRandomly = () => {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 20 + Math.random() * 60;
+      chestGroup.position.x = Math.cos(angle) * distance;
+      chestGroup.position.z = Math.sin(angle) * distance;
+      chestGroup.position.y = 0;
+      
+      // Random rotation
+      chestGroup.rotation.y = Math.random() * Math.PI * 2;
+      
+      return chestGroup;
+    }
+
+    return chestGroup;
   }
 }

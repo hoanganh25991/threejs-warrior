@@ -5,7 +5,7 @@ import * as THREE from "three";
  */
 export default class Stairs extends THREE.Object3D {
   constructor() {
-    super();
+
     // Add stairs to the castle
     const stairsGroup = new THREE.Group();
 
