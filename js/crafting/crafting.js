@@ -1,6 +1,6 @@
 import { Item } from '../shop/item.js';
 
-export class CraftingSystem {
+export default class CraftingSystem {
     constructor() {
         this.recipes = new Map();
         this.initializeRecipes();

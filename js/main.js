@@ -5,20 +5,20 @@ import { OrbitControls } from 'https://unpkg.com/three@0.157.0/examples/jsm/cont
 // Import game modules
 import { config } from "./config/config.js";
 import Hero from "./hero/hero.js";
-import { EnemyManager } from "./enemyManager.js";
-import { SkillManager } from "./skills/skillManager.js";
-import { InputHandler } from "./input.js";
+import EnemyManager from "./enemyManager.js";
+import SkillManager from "./skills/skillManager.js";
+import InputHandler from "./input.js";
 import World from "./world/world.js";
-import { SoundManager } from "./soundManager.js";
-import { CollisionDetector } from "./collisionDetector.js";
-import { ParticleSystem } from "./effects/particle-system.js";
-import { Effects } from "./effects/effects.js";
-import { Shop } from "./shop/shop.js";
-import { Crafting } from "./crafting/crafting.js";
-import { CharacterClass } from "./rpg/character-class.js";
-import { SkillTree } from "./rpg/skill-tree.js";
-import { HUD } from "./ui/hud.js";
-import { Boss } from "./enemies/boss.js";
+import SoundManager from "./soundManager.js";
+import CollisionDetector from "./collisionDetector.js";
+import ParticleSystem from "./effects/particle-system.js";
+import Effects from "./effects/effects.js";
+import Shop from "./shop/shop.js";
+import Crafting from "./crafting/crafting.js";
+import CharacterClass from "./rpg/character-class.js";
+import SkillTree from "./rpg/skill-tree.js";
+import HUD from "./ui/hud.js";
+import Boss from "./enemies/boss.js";
 
 // Game class
 class Game {

@@ -53,3 +53,8 @@
 - [x] Add a particle system for water splash, wave, foam, etc.
 - [x] Add more skills, skill tree system, skill point system, skill upgrade system, skill cooldown system, skill cost system, skill targetting system, skill area of effect system, skill projectile system, skill animation system, skill sound system, skill effect system, etc.
 - [x] Add more characters, each character has his own unique abilities, skills, stats, etc.
+- [ ] give me toggle button to open instruction, so that we know how to play the game:
+    - game play introduction
+    - button keys to control
+    - mouse keys to control
+    - ....

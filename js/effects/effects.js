@@ -1,7 +1,7 @@
-import * as THREE from 'three';
+import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
 import ParticleSystem from './particle-system.js';
 
-export class FireEffect extends ParticleSystem {
+class FireEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
         const texture = new THREE.TextureLoader().load('/assets/textures/particles/fire.png');
         
@@ -39,7 +39,7 @@ export class FireEffect extends ParticleSystem {
     }
 }
 
-export class SmokeEffect extends ParticleSystem {
+class SmokeEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
         const texture = new THREE.TextureLoader().load('/assets/textures/particles/smoke.png');
         
@@ -77,7 +77,7 @@ export class SmokeEffect extends ParticleSystem {
     }
 }
 
-export class BloodEffect extends ParticleSystem {
+class BloodEffect extends ParticleSystem {
     constructor(scene, position, direction, options = {}) {
         const texture = new THREE.TextureLoader().load('/assets/textures/particles/blood.png');
         
@@ -113,7 +113,7 @@ export class BloodEffect extends ParticleSystem {
     }
 }
 
-export class RainEffect extends ParticleSystem {
+class RainEffect extends ParticleSystem {
     constructor(scene, camera, options = {}) {
         const texture = new THREE.TextureLoader().load('/assets/textures/particles/raindrop.png');
         
@@ -153,7 +153,7 @@ export class RainEffect extends ParticleSystem {
     }
 }
 
-export class ExplosionEffect extends ParticleSystem {
+class ExplosionEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
         const texture = new THREE.TextureLoader().load('/assets/textures/particles/explosion.png');
         
@@ -200,36 +200,48 @@ export class ExplosionEffect extends ParticleSystem {
             side: THREE.DoubleSide
         });
 
-        const ring = new THREE.Mesh(geometry, material);
-        ring.position.copy(position);
-        ring.rotation.x = Math.PI / 2;
-        this.scene.add(ring);
+        this.shockwave = new THREE.Mesh(geometry, material);
+        this.shockwave.rotation.x = -Math.PI / 2;
+        this.shockwave.position.copy(position);
+        this.shockwave.position.y += 0.1;
 
-        // Animate shockwave
+        this.scene.add(this.shockwave);
+        this.animate();
+    }
+
+    animate() {
+        const duration = 0.5;
+        const startScale = 0.1;
+        const endScale = 5;
+        const startOpacity = 1;
+        const endOpacity = 0;
+
         const startTime = Date.now();
-        const duration = 500;
-        const maxScale = 10;
 
-        const animate = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = elapsed / duration;
+        const update = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const progress = Math.min(elapsed / duration, 1);
+
+            const scale = startScale + (endScale - startScale) * progress;
+            const opacity = startOpacity + (endOpacity - startOpacity) * progress;
+
+            this.shockwave.scale.set(scale, scale, 1);
+            this.shockwave.material.opacity = opacity;
 
             if (progress < 1) {
-                const scale = maxScale * progress;
-                ring.scale.set(scale, scale, scale);
-                material.opacity = 1 - progress;
-                requestAnimationFrame(animate);
+                requestAnimationFrame(update);
             } else {
-                this.scene.remove(ring);
-                ring.geometry.dispose();
-                ring.material.dispose();
+                this.scene.remove(this.shockwave);
+                this.shockwave.geometry.dispose();
+                this.shockwave.material.dispose();
             }
         };
-        animate();
+
+        update();
     }
 }
 
-export class WaterSplashEffect extends ParticleSystem {
+class WaterSplashEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
         const texture = new THREE.TextureLoader().load('/assets/textures/particles/water.png');
         
@@ -267,39 +279,61 @@ export class WaterSplashEffect extends ParticleSystem {
     }
 
     createRipple(position) {
-        const geometry = new THREE.RingGeometry(0.1, 0.2, 32);
+        // Create a circular mesh for the ripple
+        const geometry = new THREE.CircleGeometry(0.5, 32);
         const material = new THREE.MeshBasicMaterial({
-            color: 0x88aaff,
+            color: 0x88ccff,
             transparent: true,
             opacity: 0.5,
             side: THREE.DoubleSide
         });
 
-        const ring = new THREE.Mesh(geometry, material);
-        ring.position.copy(position);
-        ring.rotation.x = Math.PI / 2;
-        this.scene.add(ring);
+        this.ripple = new THREE.Mesh(geometry, material);
+        this.ripple.rotation.x = -Math.PI / 2;
+        this.ripple.position.copy(position);
+        this.ripple.position.y += 0.01; // Slightly above water surface
 
-        // Animate ripple
+        this.scene.add(this.ripple);
+        this.animate();
+    }
+
+    animate() {
+        const duration = 1; // Duration in seconds
+        const startScale = 0.5;
+        const endScale = 3;
+        const startOpacity = 0.5;
+        const endOpacity = 0;
+
         const startTime = Date.now();
-        const duration = 1000;
-        const maxScale = 5;
 
-        const animate = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = elapsed / duration;
+        const update = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const progress = Math.min(elapsed / duration, 1);
+
+            const scale = startScale + (endScale - startScale) * progress;
+            const opacity = startOpacity + (endOpacity - startOpacity) * progress;
+
+            this.ripple.scale.set(scale, scale, 1);
+            this.ripple.material.opacity = opacity;
 
             if (progress < 1) {
-                const scale = maxScale * progress;
-                ring.scale.set(scale, scale, scale);
-                material.opacity = 0.5 * (1 - progress);
-                requestAnimationFrame(animate);
+                requestAnimationFrame(update);
             } else {
-                this.scene.remove(ring);
-                ring.geometry.dispose();
-                ring.material.dispose();
+                this.scene.remove(this.ripple);
+                this.ripple.geometry.dispose();
+                this.ripple.material.dispose();
             }
         };
-        animate();
+
+        update();
     }
 }
+
+export default {
+    FireEffect,
+    SmokeEffect,
+    BloodEffect,
+    RainEffect,
+    ExplosionEffect,
+    WaterSplashEffect
+};

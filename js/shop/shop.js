@@ -1,7 +1,6 @@
-import * as THREE from 'three';
 import { Item } from './item.js';
 
-export class Shop {
+export default class Shop {
     constructor(scene) {
         this.scene = scene;
         this.inventory = new Map();

@@ -1,6 +1,4 @@
-import * as THREE from 'three';
-
-export class SkillTree {
+export default class SkillTree {
     constructor(characterClass) {
         this.characterClass = characterClass;
         this.skills = this.getSkillTreeData();

@@ -1,8 +1,6 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { SkillTree } from './skill-tree.js';
+import SkillTree from './skill-tree.js';
 
-export class CharacterClass {
+export default class CharacterClass {
     constructor(type) {
         this.type = type;
         this.stats = this.getBaseStats();
