@@ -11,7 +11,6 @@ export class Hero {
     constructor(scene, heroType) {
         this.scene = scene;
         this.heroType = heroType;
-        this.mesh = null;
         this.health = config.player.health;
         this.maxHealth = config.player.health;
         this.mana = config.player.mana;
@@ -87,9 +86,8 @@ export class Hero {
     
     createHeroModel(HeroClass) {
         // Create the hero model using the appropriate class
-        const heroModel = new HeroClass(this.scene);
-        this.group.add(heroModel.getGroup());
-        this.mesh = heroModel.getMesh();
+        const heroModel = new HeroClass();
+        this.group.add(heroModel);
     }
     
     createWings() {

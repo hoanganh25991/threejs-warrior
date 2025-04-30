@@ -19,13 +19,13 @@ export const config = {
     player: {
         moveSpeed: 5 * 2,
         jumpHeight: 5,         // Maximum height the player can jump onto objects
-        jumpForce: 15,         // Initial upward force
+        jumpForce: 5,         // Initial upward force
         gravity: 25,           // Gravity force
         flyingHeight: 7,       // Height at which wings appear (same as tree height)
-        maxFlyingHeight: 100,  // Maximum height the player can fly to
+        maxFlyingHeight: 200,  // Maximum height the player can fly to
         maxStepHeight: 1.0,    // Maximum height the player can step up without jumping (increased for better stair climbing)
-        health: 100,
-        mana: 100,
+        health: 100_000,
+        mana: 100_000,
         experience: {
             initial: 0,
             levelUpThreshold: 100,
