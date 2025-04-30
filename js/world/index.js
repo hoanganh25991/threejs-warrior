@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { addGround } from './ground.js';
 import { addWater } from './water.js';
-import { addSkybox } from './skybox.js';
+import { Skybox } from './skybox.js';
 import { addSky } from './sky.js';
 import { addMountains } from './mountains.js';
-import { addCastle } from './castle.js';
+import { Castle } from './castle.js';
 import { addTrees } from './trees.js';
 import { addRocks } from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';
@@ -29,7 +29,8 @@ export class World {
         this.interactiveObjects = [];
         
         // Add skybox (this should be first to be in the background)
-        this.skybox = addSkybox(this.scene);
+        this.skybox = new Skybox();
+        this.scene.add(this.skybox);
         
         // Add ground
         this.ground = addGround(this.scene);
@@ -44,7 +45,7 @@ export class World {
         this.mountains = addMountains(this.scene);
         
         // Add castle
-        this.castle = addCastle(this.scene);
+        this.castle = new Castle();
         
         // Add trees
         this.trees = addTrees(this.scene);

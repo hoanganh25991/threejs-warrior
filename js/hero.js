@@ -706,36 +706,36 @@ export class Hero {
             
             // Top curve - more elegant arc upward with sharper curve
             shape.bezierCurveTo(
-                -0.2, 0.3,  // control point 1 - closer to base for sharper curve
-                -0.5, 0.7,  // control point 2
-                -0.7, 1.3   // end point - wing tip, slightly longer
+                -0.3, 0.4,  // control point 1 - closer to base for sharper curve
+                -0.7, 0.9,  // control point 2
+                -1.0, 1.8   // end point - wing tip, longer for bigger wings
             );
             
             // Middle feathers curve - more pronounced
             shape.bezierCurveTo(
-                -0.65, 1.0,  // control point 1
-                -0.8, 0.7,   // control point 2
-                -0.9, 0.5    // end point - middle feather
+                -0.95, 1.4,  // control point 1
+                -1.1, 0.9,   // control point 2
+                -1.3, 0.7    // end point - middle feather
             );
             
             // Lower middle feathers - adding more detail
             shape.bezierCurveTo(
-                -0.85, 0.4,  // control point 1
-                -0.8, 0.3,   // control point 2
-                -0.7, 0.2    // end point
+                -1.2, 0.5,  // control point 1
+                -1.1, 0.4,   // control point 2
+                -1.0, 0.3    // end point
             );
             
             // Lower feathers curve - more detailed
             shape.bezierCurveTo(
-                -0.6, 0.1,   // control point 1
-                -0.5, 0.0,   // control point 2
-                -0.3, -0.1   // end point - lower feather
+                -0.8, 0.15,   // control point 1
+                -0.7, 0.0,   // control point 2
+                -0.4, -0.15   // end point - lower feather
             );
             
             // Return to base with a gentle curve
             shape.bezierCurveTo(
-                -0.2, -0.05, // control point 1
-                -0.1, 0.0,   // control point 2
+                -0.3, -0.08, // control point 1
+                -0.15, 0.0,   // control point 2
                 0, 0         // end point - back to base
             );
             
@@ -760,13 +760,13 @@ export class Hero {
         
         // Create left wing
         const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-        leftWing.position.set(-0.15, 0.3, 0); // Closer to body
-        leftWing.scale.set(0.4, 0.4, 0.4);    // Smaller size (reduced from 0.6)
+        leftWing.position.set(-0.3, 0.5, 0); // Positioned wider apart
+        leftWing.scale.set(0.6, 0.6, 0.6);    // Bigger size (increased from 0.4)
         
         // Create right wing (mirror of left wing)
         const rightWing = leftWing.clone();
-        rightWing.position.set(0.15, 0.3, 0);  // Closer to body
-        rightWing.scale.set(-0.4, 0.4, 0.4);   // Mirror by scaling X negatively, smaller size
+        rightWing.position.set(0.3, 0.5, 0);  // Positioned wider apart
+        rightWing.scale.set(-0.6, 0.6, 0.6);   // Mirror by scaling X negatively, bigger size
         
         // Add feather details to make wings more beautiful
         this.addFeatherDetails(leftWing, -1);
@@ -776,11 +776,12 @@ export class Hero {
         wingGroup.add(leftWing);
         wingGroup.add(rightWing);
         
-        // Position wings on hero's back - higher up and further back
-        wingGroup.position.set(0, 1.3, 0.35);
+        // Position wings on hero's back - moved to the back (negative Z)
+        // Since hero is facing into screen (negative Z), the back is positive Z
+        wingGroup.position.set(0, 1.5, 0.2);
         
         // Add slight angle to wings
-        wingGroup.rotation.x = 0.1;
+        wingGroup.rotation.x = 0.2;
         
         // Hide wings initially
         wingGroup.visible = false;
@@ -797,7 +798,7 @@ export class Hero {
     
     addFeatherDetails(wing, side) {
         // Add beautiful feather details to the wings
-        const featherCount = 7; // Increased feather count for more detail
+        const featherCount = 9; // Increased feather count for more detail on larger wings
         const featherGroup = new THREE.Group();
         
         // Create several individual feathers
@@ -807,30 +808,30 @@ export class Hero {
             
             // Base of feather
             const baseX = 0;
-            const baseY = i * 0.12; // Stagger feathers vertically, closer together
+            const baseY = i * 0.15; // Stagger feathers vertically, more spread out for larger wings
             
             featherShape.moveTo(baseX, baseY);
             
             // Feather curve - each one slightly different with more curve
-            const length = 0.3 + i * 0.07; // Slightly shorter feathers (was 0.4)
-            const width = 0.06 - i * 0.005; // Thinner feathers (was 0.08)
+            const length = 0.4 + i * 0.09; // Longer feathers for bigger wings
+            const width = 0.08 - i * 0.005; // Slightly thicker feathers
             
             // More curved feather shape
             featherShape.bezierCurveTo(
-                baseX + (side * length * 0.2), baseY + width * 1.2,
-                baseX + (side * length * 0.5), baseY + width * 2.5,
-                baseX + (side * length), baseY + width * 1.5
+                baseX + (side * length * 0.2), baseY + width * 1.5,
+                baseX + (side * length * 0.5), baseY + width * 3.0,
+                baseX + (side * length), baseY + width * 2.0
             );
             
             // Return to base with a more elegant curve
             featherShape.bezierCurveTo(
-                baseX + (side * length * 0.8), baseY - width * 0.5,
-                baseX + (side * length * 0.4), baseY - width * 1.5,
+                baseX + (side * length * 0.8), baseY - width * 0.7,
+                baseX + (side * length * 0.4), baseY - width * 1.8,
                 baseX, baseY
             );
             
             // Create geometry from shape
-            const featherGeometry = new THREE.ShapeGeometry(featherShape, 16); // More segments
+            const featherGeometry = new THREE.ShapeGeometry(featherShape, 20); // More segments for smoother curves
             
             // Create material with slight variation for each feather - pure white
             const whiteness = 0.98 + (i * 0.005); // Less variation, more consistently white
@@ -838,9 +839,9 @@ export class Hero {
                 color: new THREE.Color(whiteness, whiteness, whiteness),
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.9 - (i * 0.03), // Less transparent overall
+                opacity: 0.92 - (i * 0.02), // Less transparent overall
                 emissive: 0xffffff, // Pure white glow
-                emissiveIntensity: 0.4 - (i * 0.02) // Stronger glow
+                emissiveIntensity: 0.45 - (i * 0.02) // Stronger glow
             });
             
             // Create feather mesh
@@ -851,9 +852,9 @@ export class Hero {
             featherGroup.add(feather);
         }
         
-        // Position the feather group - closer to wing base
-        featherGroup.position.set(side * -0.08, 0.08, 0.01);
-        featherGroup.rotation.z = side * 0.15; // Slight angle to feathers
+        // Position the feather group - adjusted for larger wings
+        featherGroup.position.set(side * -0.12, 0.1, 0.01);
+        featherGroup.rotation.z = side * 0.18; // Slightly more angled feathers
         
         // Add feathers to wing
         wing.add(featherGroup);
@@ -867,9 +868,9 @@ export class Hero {
         this.wingAnimations = {
             flapSpeed: 0,
             flapDirection: 1,
-            flapAmplitude: 0.15,
-            shimmerIntensity: 0.4,
-            shimmerSpeed: 2,
+            flapAmplitude: 0.2,     // Increased amplitude for larger wings
+            shimmerIntensity: 0.5,  // Increased shimmer
+            shimmerSpeed: 2.5,      // Slightly faster shimmer
             featherPhase: 0,
             idleTime: 0
         };
@@ -877,28 +878,28 @@ export class Hero {
         // Create animation clips for different wing states
         this.wingStates = {
             idle: {
-                flapSpeed: 1.5,
-                flapAmplitude: 0.08,
-                shimmerIntensity: 0.3,
-                shimmerSpeed: 1
+                flapSpeed: 1.2,
+                flapAmplitude: 0.1,
+                shimmerIntensity: 0.4,
+                shimmerSpeed: 1.2
             },
             flying: {
-                flapSpeed: 4,
-                flapAmplitude: 0.25,
-                shimmerIntensity: 0.6,
-                shimmerSpeed: 3
+                flapSpeed: 4.5,
+                flapAmplitude: 0.3,     // More dramatic flapping for flying
+                shimmerIntensity: 0.7,
+                shimmerSpeed: 3.5
             },
             gliding: {
-                flapSpeed: 0.8,
-                flapAmplitude: 0.12,
-                shimmerIntensity: 0.5,
-                shimmerSpeed: 1.5
+                flapSpeed: 0.7,
+                flapAmplitude: 0.15,
+                shimmerIntensity: 0.6,
+                shimmerSpeed: 1.8
             },
             hovering: {
-                flapSpeed: 6,
-                flapAmplitude: 0.18,
-                shimmerIntensity: 0.7,
-                shimmerSpeed: 4
+                flapSpeed: 7,           // Faster flapping for hovering
+                flapAmplitude: 0.25,
+                shimmerIntensity: 0.8,
+                shimmerSpeed: 5
             }
         };
         
@@ -1393,13 +1394,16 @@ export class Hero {
             }
             // If already in the air, add continuous upward force
             else if (this.isJumping || this.isFlying) {
-                // Add continuous boost while space is held
-                this.velocity.y += config.player.jumpForce * 0.05; // Small continuous boost
+                // Add continuous boost while space is held - increased boost for higher flying
+                // The higher we go, the more boost we get (with a minimum boost)
+                const heightFactor = Math.max(1, this.group.position.y / 10); // Scale boost with height
+                const boost = config.player.jumpForce * 0.05 * heightFactor;
                 
-                // Cap upward velocity to prevent going too fast
-                if (this.velocity.y > config.player.jumpForce * 0.8) {
-                    this.velocity.y = config.player.jumpForce * 0.8;
-                }
+                // Add the boost to velocity
+                this.velocity.y += boost;
+                
+                // No cap on upward velocity - allow unlimited height
+                // This allows the player to fly higher and higher as they hold space
                 
                 // Enter flying mode if not already
                 if (!this.isFlying && this.group.position.y > 2) {
@@ -1563,13 +1567,25 @@ export class Hero {
             this.wings.children[1].material.emissiveIntensity = shimmerIntensity;
         }
         
-        // Determine wing state based on velocity and position
+        // Determine wing state based on velocity, position, and height
+        // Higher altitudes will have more dramatic wing animations
+        const height = this.group.position.y;
+        
         if (this.velocity.y > 10) {
+            // Hovering - faster at higher altitudes
             this.setWingState('hovering');
+            // Increase flap speed with height
+            this.wingAnimations.flapSpeed = this.wingStates.hovering.flapSpeed * Math.min(2, 1 + height/30);
         } else if (this.velocity.y > 5) {
+            // Flying - more dramatic at higher altitudes
             this.setWingState('flying');
+            // Increase amplitude with height
+            this.wingAnimations.flapAmplitude = this.wingStates.flying.flapAmplitude * Math.min(1.5, 1 + height/50);
         } else if (this.isFlying) {
+            // Gliding - more shimmer at higher altitudes
             this.setWingState('gliding');
+            // Increase shimmer with height
+            this.wingAnimations.shimmerIntensity = this.wingStates.gliding.shimmerIntensity * Math.min(1.8, 1 + height/40);
         } else {
             this.setWingState('idle');
         }
@@ -1591,9 +1607,9 @@ export class Hero {
             const leftWingOriginalPos = this.wings.children[0].position.clone();
             const rightWingOriginalPos = this.wings.children[1].position.clone();
             
-            // Start with wings close together
-            this.wings.children[0].position.x = -0.05;
-            this.wings.children[1].position.x = 0.05;
+            // Start with wings close together - adjusted for larger wings
+            this.wings.children[0].position.x = -0.08;
+            this.wings.children[1].position.x = 0.08;
             
             // Create a shimmer effect with particles
             this.createWingShimmerEffect();
