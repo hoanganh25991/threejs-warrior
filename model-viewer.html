@@ -225,6 +225,7 @@
         // Main variables
         let scene, camera, renderer, controls;
         let currentModel = null;
+        let netBox = null; // Visual representation of the "net" area
         
         // Model registry - maps file paths to model information
         const modelRegistry = {
@@ -314,6 +315,9 @@
             // Add axes helper
             const axesHelper = new THREE.AxesHelper(20);
             scene.add(axesHelper);
+            
+            // Add net box to visualize the area models should fit within
+            createNetBox();
             
             // Populate model selector
             populateModelSelector();
@@ -499,10 +503,14 @@
                         boundingBox.getCenter(center);
                     }
                     
-                    // Center the model at origin
+                    // Center the model at origin (middle of the net)
                     model.position.x = -center.x;
                     model.position.y = -center.y;
                     model.position.z = -center.z;
+                    
+                    // Ensure model is positioned at the center of the net
+                    // This is especially important for models that might have an offset center
+                    const netCenter = new THREE.Vector3(0, 0, 0);
                     
                     // Store size and scale information with the model
                     model.userData.originalSize = { 
@@ -536,14 +544,94 @@
         }
         
         // Update the model information display
-        function updateModelInfo(path, modelInfo) {
+        function updateModelInfo(path, modelInfo, userData) {
             const infoElement = document.getElementById('model-info');
+            
+            let sizeInfo = '';
+            let scaleInfo = '';
+            let positionInfo = '';
+            
+            if (userData) {
+                // Format size information
+                const originalSize = userData.originalSize;
+                const currentSize = userData.currentSize;
+                const scale = userData.scale;
+                
+                // Format numbers to 2 decimal places
+                const formatNum = (num) => Math.round(num * 100) / 100;
+                
+                sizeInfo = `
+                    <h4>Size Information</h4>
+                    <p><strong>Original Size:</strong> 
+                        X: ${formatNum(originalSize.x)}, 
+                        Y: ${formatNum(originalSize.y)}, 
+                        Z: ${formatNum(originalSize.z)}
+                    </p>
+                    <p><strong>Current Size:</strong> 
+                        X: ${formatNum(currentSize.x)}, 
+                        Y: ${formatNum(currentSize.y)}, 
+                        Z: ${formatNum(currentSize.z)}
+                    </p>
+                `;
+                
+                scaleInfo = `
+                    <h4>Scale Information</h4>
+                    <p><strong>Scale Applied:</strong> ${formatNum(scale)}${scale !== 1 ? ' (resized to fit)' : ' (original size)'}</p>
+                `;
+                
+                // Get current position
+                if (currentModel) {
+                    positionInfo = `
+                        <h4>Position</h4>
+                        <p><strong>Current Position:</strong> 
+                            X: ${formatNum(currentModel.position.x)}, 
+                            Y: ${formatNum(currentModel.position.y)}, 
+                            Z: ${formatNum(currentModel.position.z)}
+                        </p>
+                    `;
+                }
+            }
+            
             infoElement.innerHTML = `
                 <h3>Model Information</h3>
                 <p><strong>Name:</strong> ${modelInfo.name}</p>
                 <p><strong>File:</strong> ${path}</p>
                 <p><strong>Description:</strong> ${modelInfo.description}</p>
+                ${sizeInfo}
+                ${scaleInfo}
+                ${positionInfo}
             `;
+        }
+        
+        // Create a visual representation of the "net" area
+        function createNetBox() {
+            // Remove existing net box if it exists
+            if (netBox) {
+                scene.remove(netBox);
+            }
+            
+            // Define the net size - this should match the size in loadSelectedModel
+            const netSize = { x: 50, y: 50, z: 50 };
+            
+            // Create a wireframe box to represent the net
+            const geometry = new THREE.BoxGeometry(netSize.x, netSize.y, netSize.z);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const material = new THREE.LineBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
+            
+            netBox = new THREE.LineSegments(edges, material);
+            scene.add(netBox);
+            
+            // Add a semi-transparent box to better visualize the volume
+            const meshMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00ff00, 
+                transparent: true, 
+                opacity: 0.05,
+                side: THREE.DoubleSide
+            });
+            const meshBox = new THREE.Mesh(geometry, meshMaterial);
+            netBox.add(meshBox);
+            
+            return netBox;
         }
         
         // Reset the camera view to focus on the current model

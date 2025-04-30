@@ -1279,6 +1279,8 @@ export class Hero {
             <p>isJumping: ${this.isJumping}</p>
             <p>isFlying: ${this.isFlying}</p>
             <p>wingsVisible: ${this.wingsVisible}</p>
+            <p>Max Flying Height: ${config.player.maxFlyingHeight}</p>
+            <p>Current Height %: ${((this.group.position.y / config.player.maxFlyingHeight) * 100).toFixed(1)}%</p>
             <p>Space key pressed: ${window.inputHandler ? window.inputHandler.isKeyPressed(' ') : 'N/A'}</p>
         `;
     }
@@ -1397,8 +1399,8 @@ export class Hero {
             }
             // If already in the air, add continuous upward force
             else if (this.isJumping || this.isFlying) {
-                // Define maximum flying height
-                const maxFlyingHeight = 50;
+                // Get maximum flying height from config
+                const maxFlyingHeight = config.player.maxFlyingHeight;
                 
                 // Calculate boost based on current height and velocity
                 let boost = 0;
@@ -1457,6 +1459,7 @@ export class Hero {
             if (this.debug) {
                 console.log('Wings check - Height:', this.group.position.y.toFixed(2), 
                             'Flying height threshold:', config.player.flyingHeight,
+                            'Max flying height:', config.player.maxFlyingHeight,
                             'Wings visible:', this.wingsVisible,
                             'Is flying:', this.isFlying);
             }

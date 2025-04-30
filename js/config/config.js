@@ -22,6 +22,7 @@ export const config = {
         jumpForce: 15,         // Initial upward force
         gravity: 25,           // Gravity force
         flyingHeight: 7,       // Height at which wings appear (same as tree height)
+        maxFlyingHeight: 100,  // Maximum height the player can fly to
         health: 100,
         mana: 100,
         experience: {
