@@ -17,7 +17,7 @@ export const config = {
     
     // Player settings
     player: {
-        moveSpeed: 5,
+        moveSpeed: 5 * 2,
         jumpHeight: 5,         // Maximum height the player can jump onto objects
         jumpForce: 15,         // Initial upward force
         gravity: 25,           // Gravity force
