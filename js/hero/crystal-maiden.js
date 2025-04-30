@@ -158,10 +158,6 @@ export default class CrystalMaiden {
     }
     staffGroup.add(particlesGroup);
 
-    // Add the complete body to the group
-    this.group.add(modelGroup);
-    this.mesh = body; // Set the main body as the reference mesh
-
     return modelGroup;
   }
 }

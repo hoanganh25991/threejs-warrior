@@ -1,7 +1,8 @@
 import * as THREE from "three";
 
 export default class DefaultHero extends THREE.Object3D {
-  constructor(scene) {
+  constructor() {
+    super();
     // Create a simple default hero
     const modelGroup = new THREE.Group();
     const geometry = new THREE.BoxGeometry(1, 2, 1);
@@ -10,7 +11,7 @@ export default class DefaultHero extends THREE.Object3D {
     mesh.position.y = 1;
     mesh.castShadow = true;
 
-    modelGroup.add(this.mesh);
+    modelGroup.add(mesh);
     return modelGroup;
   }
 }

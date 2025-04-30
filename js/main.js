@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Import game modules
 import { config } from './config/config.js';
-import { Hero } from './hero.js';
+import { Hero } from './hero/hero.js';
 import { EnemyManager } from './enemyManager.js';
 import { SkillManager } from './skills/skillManager.js';
 import { InputHandler } from './input.js';

@@ -67,18 +67,8 @@ export class Hero {
         this.createHeroModel(DefaultHero);
     }
 
-    // Add a direction indicator (arrow) to show which way the hero is facing
-    const arrowGeometry = new THREE.ConeGeometry(0.2, 0.8, 8);
-    const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    this.arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
-    this.arrow.position.set(0, 1.5, -0.8); // Position above and in front of hero
-    this.arrow.rotation.x = Math.PI / 2; // Rotate to point forward
-
     // Create wings (initially hidden)
     this.createWings();
-
-    // Add arrow to group
-    this.group.add(this.arrow);
 
     // Initialize skills based on hero type
     this.initSkills();

@@ -139,6 +139,7 @@
 
         .custom-option-name {
             font-weight: bold;
+            text-transform: capitalize;
         }
 
         .custom-option-path {
@@ -418,6 +419,7 @@
 
                 // Create structured content with name, path, and description
                 let optionHTML = `<span class="custom-option-name">${name}</span>`;
+                optionHTML += `<br/>`;
                 optionHTML += `<span class="custom-option-path">${path}</span>`;
 
                 if (model.description) {

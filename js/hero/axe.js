@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export class Axe extends THREE.Object3D {
+export default class Axe extends THREE.Object3D {
   constructor() {
     // Create a more complex Axe model
     const bodyGroup = new THREE.Group();
