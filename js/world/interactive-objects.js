@@ -2,8 +2,6 @@ import * as THREE from 'three';
 
 /**
  * Creates and adds interactive objects to the scene
- * @param {THREE.Scene} scene - The scene to add interactive objects to
- * @returns {Array} - Array of interactive objects with their properties
  */
 export function addInteractiveObjects(scene) {
     const interactiveObjects = [];

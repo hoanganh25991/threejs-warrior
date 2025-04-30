@@ -8,7 +8,7 @@ import Castle from './castle.js';
 import Tree from './tree.js';
 import Rock from './rock.js';
 import { addInteractiveObjects } from './interactive-objects.js';
-import { addStairs } from './stairs.js';
+import Stairs from './stairs.js';
 import Bridge from './bridge.js';
 
 export class World {
@@ -65,11 +65,11 @@ export class World {
         this.interactiveObjects.push(...interactiveObjects);
         
         // Add stairs to castle
-        const stairs = addStairs(scene);
+        const stairs = new Stairs();
         this.interactiveObjects.push(stairs);
         
         // Add bridge
-        const bridge = new Bridge(scene);
+        const bridge = new Bridge();
         scene.add(bridge);
         this.interactiveObjects.push(bridge);
     }
