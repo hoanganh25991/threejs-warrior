@@ -56,7 +56,6 @@ export default class World {
     // Add trees
     for (let i = 0; i < 40; ++i) {
       const tree = new Tree();
-      this.trees.push(tree);
       scene.add(tree);
       this.interactiveObjects.push({
         mesh: tree,
@@ -69,7 +68,6 @@ export default class World {
     // Add rocks
     for (let i = 0; i < 30; ++i) {
       const rock = new Rock();
-      this.rocks.push(rock);
       scene.add(rock);
       this.interactiveObjects.push({
         mesh: rock,
@@ -79,10 +77,10 @@ export default class World {
       });
     }
 
-    // Add stairs to castle (positioned in front of castle)
+    // Add stairs to castle
     this.stairs = new Stairs();
-    this.stairs.position.z = -120; // Position in front of castle
-    this.stairs.position.y = 0; // Start at ground level
+    this.stairs.position.z = -120;
+    this.stairs.position.y = 0;
     scene.add(this.stairs);
     this.interactiveObjects.push({
       mesh: this.stairs,
@@ -91,10 +89,10 @@ export default class World {
       isWalkable: true
     });
 
-    // Add bridge (positioned between ground and castle)
+    // Add bridge
     this.bridge = new Bridge();
-    this.bridge.position.z = -150; // Position between ground and castle
-    this.bridge.position.y = 5; // Elevate bridge slightly
+    this.bridge.position.z = -150;
+    this.bridge.position.y = 5;
     scene.add(this.bridge);
     this.interactiveObjects.push({
       mesh: this.bridge,
@@ -103,8 +101,36 @@ export default class World {
       isWalkable: true
     });
 
+    // Add water collision
+    this.interactiveObjects.push({
+      mesh: this.water,
+      type: 'water',
+      isCollidable: true,
+      isWalkable: false
+    });
+
+    // Add ground collision
+    this.interactiveObjects.push({
+      mesh: this.ground,
+      type: 'ground',
+      isCollidable: true,
+      isWalkable: true
+    });
+
+    // Add castle collision
+    this.interactiveObjects.push({
+      mesh: this.castle,
+      type: 'castle',
+      isCollidable: true,
+      isWalkable: true
+    });
+
     // Add other interactive objects (chests, crystals, etc)
-    const otherObjects = addInteractiveObjects(scene);
+    const otherObjects = addInteractiveObjects(scene).map(obj => ({
+      ...obj,
+      isCollidable: true,
+      isWalkable: false
+    }));
     this.interactiveObjects.push(...otherObjects);
   }
 

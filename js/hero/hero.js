@@ -918,124 +918,77 @@ export default class Hero {
       }
     }
 
-    // Handle continuous jumping with space key
+    // Handle jumping and flying with space key
     if (keys[" "]) {
-      // If on ground, initiate jump
       if (this.onGround) {
-        console.log("Jump initiated from ground!");
-
-        // Check if we can jump onto nearby objects
-        let jumpTarget = null;
-
-        if (window.collisionDetector) {
-          const jumpResult = window.collisionDetector.checkJumpCollision(
-            this.group.position,
-            config.player.jumpHeight
-          );
-
-          if (jumpResult.canJump) {
-            jumpTarget = jumpResult.jumpTarget;
-            console.log("Jump target found:", jumpTarget);
-          }
-        }
-
-        // Apply jump force
+        // Normal jump from ground
         this.velocity.y = config.player.jumpForce;
         this.isJumping = true;
         this.onGround = false;
-        this.isFlying = false; // Reset flying state on new jump
-
-        // If we have a jump target, adjust velocity to reach it
-        if (jumpTarget) {
-          // Calculate horizontal distance to target
-          const horizontalDist = new THREE.Vector2(
-            jumpTarget.x - this.group.position.x,
-            jumpTarget.z - this.group.position.z
-          ).length();
-
-          // Calculate time to reach peak of jump
-          const timeToApex = this.velocity.y / config.player.gravity;
-
-          // Calculate horizontal velocity needed to reach target
-          const horizontalVelocity = horizontalDist / (timeToApex * 2);
-
-          // Create direction vector to target
-          const direction = new THREE.Vector3(
-            jumpTarget.x - this.group.position.x,
-            0,
-            jumpTarget.z - this.group.position.z
-          ).normalize();
-
-          // Apply horizontal velocity in direction of target
-          this.velocity.x = direction.x * horizontalVelocity;
-          this.velocity.z = direction.z * horizontalVelocity;
-        }
 
         // Play jump sound
         if (window.soundManager) {
           window.soundManager.playSound("jump");
         }
-      }
-      // If already in the air, handle flying
-      else if (this.isJumping || this.isFlying) {
-        // Get maximum flying height from config
+      } else {
+        // Flying when in air
         const maxFlyingHeight = config.player.maxFlyingHeight || 200;
 
-        // Enter flying mode immediately when holding space in air
-        if (!this.isFlying) {
-          this.isFlying = true;
-          if (window.soundManager) {
-            window.soundManager.playSound("dash");
-          }
+        // Enter flying mode
+        this.isFlying = true;
+        if (!this.wingsVisible && window.soundManager) {
+          window.soundManager.playSound("dash");
         }
 
-        // Calculate boost based on current height and velocity
-        let boost = 0;
+        // Calculate upward boost
+        let boost = config.player.jumpForce * 0.3;
 
-        if (this.isFlying) {
-          // Strong upward boost when flying
-          boost = config.player.jumpForce * 0.3;
-
-          // If below max height, allow strong boosting
-          if (this.group.position.y < maxFlyingHeight) {
-            // Reduce boost as we approach max height
-            const heightFactor = Math.max(
-              0.2,
-              1 - this.group.position.y / maxFlyingHeight
-            );
-            boost *= heightFactor;
-          } else {
-            // At max height, stop upward movement
-            if (this.velocity.y > 0) {
-              this.velocity.y = 0;
-            }
-            boost = 0;
-          }
-
-          // Apply gravity reduction while flying
-          this.velocity.y *= 0.8; // Reduce downward velocity
+        // Limit height
+        if (this.group.position.y >= maxFlyingHeight) {
+          boost = 0;
+          this.velocity.y = Math.min(0, this.velocity.y);
         } else {
-          // Normal jump physics
-          if (this.velocity.y < 0) {
-            boost = config.player.jumpForce * 0.1; // Small boost for better control
-          }
+          // Reduce boost as we approach max height
+          boost *= Math.max(0.2, 1 - this.group.position.y / maxFlyingHeight);
         }
 
-        // Add the boost to velocity
+        // Apply boost and reduce gravity
         this.velocity.y += boost;
+        this.velocity.y *= 0.85;
+      }
+    } else if (this.onGround) {
+      // Reset states when landing
+      this.isFlying = false;
+      this.isJumping = false;
+    }
 
-        // Check if we should exit flying mode
-        if (this.onGround || this.group.position.y <= 0.1) {
-            this.isFlying = false;
-            this.isJumping = false;
-            if (this.wings && this.wingsVisible) {
-                this.wings.visible = false;
-                this.wingsVisible = false;
-            }
-        }
+    // Show wings when flying
+    if (this.isFlying && !this.onGround) {
+      if (!this.wingsVisible) {
+        this.wings.visible = true;
+        this.wingsVisible = true;
+        this.wings.scale.set(0.5, 0.5, 0.5);
+        this.animateWings();
       }
 
-      // Debug logging
+      // Flap wings with varying intensity
+      const flapIntensity = keys[" "] ? 1.5 : 1.0;
+      this.flapWings(deltaTime, flapIntensity);
+
+      // Set wing state based on movement
+      if (keys[" "]) {
+        this.setWingState("flying");
+      } else if (Math.abs(this.velocity.y) > 5) {
+        this.setWingState("gliding");
+      } else {
+        this.setWingState("hovering");
+      }
+    } else if (this.wingsVisible || this.onGround) {
+      // Hide wings and reset flying state when landing
+      this.wings.visible = false;
+      this.wingsVisible = false;
+      this.isFlying = false;
+
       console.log(
         "Space pressed, y-pos:",
         this.group.position.y.toFixed(2),
@@ -1064,8 +1017,8 @@ export default class Hero {
         );
       }
 
-      // Show wings when flying or jumping
-      if ((this.isFlying || (this.isJumping && !this.onGround)) && !this.onGround) {
+      // Show wings when flying
+      if (this.isFlying && !this.onGround) {
         if (!this.wingsVisible) {
           this.wings.visible = true;
           this.wingsVisible = true;
@@ -1086,7 +1039,7 @@ export default class Hero {
           this.setWingState("hovering");
         }
       } else if (this.wingsVisible || this.onGround) {
-        // Hide wings when not flying/jumping or when on ground
+        // Hide wings and reset flying state when landing
         this.wings.visible = false;
         this.wingsVisible = false;
         this.isFlying = false;
