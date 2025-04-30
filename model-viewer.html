@@ -66,6 +66,92 @@
             border-radius: 4px;
         }
         
+        /* Custom Select Styling */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .custom-select {
+            position: relative;
+            width: 100%;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .custom-select-trigger {
+            position: relative;
+            display: block;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .custom-select-trigger:after {
+            content: '▼';
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+        
+        .custom-select.opened .custom-select-trigger:after {
+            transform: rotate(180deg);
+        }
+        
+        .custom-options {
+            position: absolute;
+            display: none;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-top: 0;
+            border-radius: 0 0 4px 4px;
+            z-index: 10;
+        }
+        
+        .custom-select.opened .custom-options {
+            display: block;
+        }
+        
+        .custom-option {
+            position: relative;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .custom-option:hover {
+            background-color: #3a3a3a;
+        }
+        
+        .custom-option.selected {
+            background-color: #4a9df0;
+        }
+        
+        .custom-option-name {
+            font-weight: bold;
+        }
+        
+        .custom-option-path {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .custom-option-description {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        
         button {
             width: 100%;
             padding: 10px;
@@ -104,9 +190,18 @@
     <div class="container">
         <div class="sidebar">
             <h2>Select Model</h2>
-            <select id="model-selector">
-                <option value="">-- Select a model --</option>
-            </select>
+            <div class="custom-select-wrapper">
+                <div class="custom-select" id="custom-model-selector">
+                    <div class="custom-select-trigger">-- Select a model --</div>
+                    <div class="custom-options">
+                        <div class="custom-option" data-value="">-- Select a model --</div>
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                </div>
+                <select id="model-selector" style="display: none;">
+                    <option value="">-- Select a model --</option>
+                </select>
+            </div>
             <button id="load-model-btn">Load Model</button>
             <button id="reset-view-btn">Reset View</button>
             <div class="model-info" id="model-info">
@@ -264,19 +359,81 @@
         // Populate the model selector dropdown
         function populateModelSelector() {
             const selector = document.getElementById('model-selector');
+            const customOptions = document.querySelector('.custom-options');
+            const customTrigger = document.querySelector('.custom-select-trigger');
             
             // Clear existing options except the first one
             while (selector.options.length > 1) {
                 selector.remove(1);
             }
             
+            // Clear custom options except the first one
+            const customOptionElements = customOptions.querySelectorAll('.custom-option');
+            for (let i = 1; i < customOptionElements.length; i++) {
+                customOptions.removeChild(customOptionElements[i]);
+            }
+            
             // Add options for each model in the registry
             for (const [path, model] of Object.entries(modelRegistry)) {
+                // Extract filename from path for fallback display
+                const filename = path.split('/').pop().replace('.js', '');
+                
+                // Get name or use filename as fallback
+                const name = model.name || filename;
+                
+                // Add to hidden select element
                 const option = document.createElement('option');
                 option.value = path;
-                option.textContent = model.name;
+                option.textContent = name;
                 selector.appendChild(option);
+                
+                // Add to custom select
+                const customOption = document.createElement('div');
+                customOption.className = 'custom-option';
+                customOption.setAttribute('data-value', path);
+                
+                // Create structured content with name, path, and description
+                let optionHTML = `<span class="custom-option-name">${name}</span>`;
+                optionHTML += `<span class="custom-option-path">${path}</span>`;
+                
+                if (model.description) {
+                    optionHTML += `<span class="custom-option-description">${model.description}</span>`;
+                }
+                
+                customOption.innerHTML = optionHTML;
+                customOptions.appendChild(customOption);
+                
+                // Add click event to custom option
+                customOption.addEventListener('click', function() {
+                    // Update the hidden select value
+                    selector.value = this.getAttribute('data-value');
+                    
+                    // Update the trigger text
+                    customTrigger.textContent = name;
+                    
+                    // Close the dropdown
+                    document.querySelector('.custom-select').classList.remove('opened');
+                    
+                    // Mark this option as selected
+                    document.querySelectorAll('.custom-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                });
             }
+            
+            // Add click event to custom select trigger
+            document.querySelector('.custom-select-trigger').addEventListener('click', function() {
+                document.querySelector('.custom-select').classList.toggle('opened');
+            });
+            
+            // Close custom select when clicking outside
+            document.addEventListener('click', function(e) {
+                const select = document.querySelector('.custom-select');
+                if (!select.contains(e.target)) {
+                    select.classList.remove('opened');
+                }
+            });
         }
         
         // Load the selected model
