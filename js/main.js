@@ -1,6 +1,6 @@
 // Import Three.js
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.157.0/examples/jsm/controls/OrbitControls.js';
 
 // Import game modules
 import { config } from "./config/config.js";
@@ -11,6 +11,14 @@ import { InputHandler } from "./input.js";
 import World from "./world/world.js";
 import { SoundManager } from "./soundManager.js";
 import { CollisionDetector } from "./collisionDetector.js";
+import { ParticleSystem } from "./effects/particle-system.js";
+import { Effects } from "./effects/effects.js";
+import { Shop } from "./shop/shop.js";
+import { Crafting } from "./crafting/crafting.js";
+import { CharacterClass } from "./rpg/character-class.js";
+import { SkillTree } from "./rpg/skill-tree.js";
+import { HUD } from "./ui/hud.js";
+import { Boss } from "./enemies/boss.js";
 
 // Game class
 class Game {
@@ -29,6 +37,14 @@ class Game {
     this.world = null;
     this.soundManager = null;
     this.collisionDetector = null;
+    this.particleSystem = null;
+    this.effects = null;
+    this.shop = null;
+    this.crafting = null;
+    this.characterClass = null;
+    this.skillTree = null;
+    this.hud = null;
+    this.boss = null;
     this.isGameStarted = false;
     this.selectedHero = null;
     this.isLoading = true;
@@ -237,27 +253,44 @@ class Game {
 
     // Initialize input handler
     this.inputHandler = new InputHandler();
-
-    // Make input handler globally accessible
     window.inputHandler = this.inputHandler;
 
-    // Initialize skill manager
+    // Initialize game systems
     this.skillManager = new SkillManager(this.scene);
-
-    // Initialize enemy manager
     this.enemyManager = new EnemyManager(this.scene);
-
-    // Initialize collision detector
     this.collisionDetector = new CollisionDetector(this.world);
-
-    // Make collision detector globally accessible
     window.collisionDetector = this.collisionDetector;
 
-    // Create hero
-    this.hero = new Hero(this.scene, this.selectedHero);
+    // Initialize particle and effect systems
+    this.particleSystem = new ParticleSystem(this.scene);
+    this.effects = new Effects(this.scene, this.particleSystem);
 
-    // Start background music
-    this.soundManager.playMusic();
+    // Initialize RPG systems
+    this.shop = new Shop(this.scene);
+    this.crafting = new Crafting(this.scene);
+    this.characterClass = new CharacterClass();
+    this.skillTree = new SkillTree();
+
+    // Initialize UI
+    this.hud = new HUD();
+
+    // Initialize boss if in boss area
+    if (this.world.isInBossArea()) {
+      this.boss = new Boss(this.scene);
+      this.soundManager.playBossMusic();
+    } else {
+      this.soundManager.playBackgroundMusic();
+    }
+
+    // Create hero with all systems connected
+    this.hero = new Hero(this.scene, this.selectedHero, {
+      skillManager: this.skillManager,
+      effects: this.effects,
+      characterClass: this.characterClass,
+      skillTree: this.skillTree,
+      shop: this.shop,
+      crafting: this.crafting
+    });
 
     // Add debug info for collision detection if debug mode is enabled
     if (config.game.debug) {
@@ -293,10 +326,32 @@ class Game {
     // Skip updates if game hasn't started
     if (!this.isGameStarted) return;
 
-    // Update world
+    // Update world and environment
     if (this.world) {
       this.world.update(deltaTime, this.camera);
     }
+
+    // Update game systems
+    this.particleSystem.update(deltaTime);
+    this.effects.update(deltaTime);
+    this.shop.update(deltaTime);
+    this.crafting.update(deltaTime);
+    this.skillManager.update(deltaTime);
+    this.enemyManager.update(deltaTime);
+
+    // Update boss if present
+    if (this.boss) {
+      this.boss.update(deltaTime);
+    }
+
+    // Update UI
+    this.hud.update({
+      hero: this.hero,
+      boss: this.boss,
+      skillManager: this.skillManager,
+      shop: this.shop,
+      crafting: this.crafting
+    });
 
     // Update lights
     this.updateLights(deltaTime);

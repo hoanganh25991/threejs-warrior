@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from "https://unpkg.com/three@0.157.0/build/three.module.js";
 import Groud from "./ground.js";
 import Water from "./water.js";
 import Skybox from "./skybox.js";

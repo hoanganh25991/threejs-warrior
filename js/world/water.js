@@ -1,5 +1,5 @@
-import * as THREE from "three";
-import { Water as ThreeWater } from "three/addons/objects/Water.js";
+import * as THREE from "https://unpkg.com/three@0.157.0/build/three.module.js";
+import { Water as ThreeWater } from "https://unpkg.com/three@0.157.0/examples/jsm/objects/Water.js";
 
 /**
  * Creates and adds water to the scene
