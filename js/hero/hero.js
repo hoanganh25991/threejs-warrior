@@ -4,6 +4,7 @@ import CrystalMaiden from "./crystal-maiden.js";
 import Lina from "./lina.js";
 import DefaultHero from "./default-hero.js";
 import Wings from "./wings.js";
+// Dragon Knight skills
 import DragonBreath from "../skills/dragon-knight/dragon-breath.js";
 import FlameStrike from "../skills/dragon-knight/flame-strike.js";
 import DragonTail from "../skills/dragon-knight/dragon-tail.js";
@@ -12,10 +13,21 @@ import FireShield from "../skills/dragon-knight/fire-shield.js";
 import Inferno from "../skills/dragon-knight/inferno.js";
 import DragonRush from "../skills/dragon-knight/dragon-rush.js";
 
+// Crystal Maiden skills
 import FrostNova from "../skills/crystal-maiden/frost-nova.js";
 import IceBlast from "../skills/crystal-maiden/ice-blast.js";
 import GlacialBarrier from "../skills/crystal-maiden/glacial-barrier.js";
 import Blizzard from "../skills/crystal-maiden/blizzard.js";
+import FrozenOrb from "../skills/crystal-maiden/frozen-orb.js";
+import IceShards from "../skills/crystal-maiden/ice-shards.js";
+
+// Axe skills
+import BerserkersCall from "../skills/axe/berserkers-call.js";
+import BattleHunger from "../skills/axe/battle-hunger.js";
+import CounterHelix from "../skills/axe/counter-helix.js";
+import CullingBlade from "../skills/axe/culling-blade.js";
+import BattleTrance from "../skills/axe/battle-trance.js";
+import BerserkersRage from "../skills/axe/berserkers-rage.js";
 
 import SoundManager from "../audio/sound-manager.js";
 import Attack from "../combat/attack.js";
@@ -125,6 +137,24 @@ export default class Hero {
         this.skills.set('H', new Blizzard(this));
         this.skills.set('J', new FrozenOrb(this));
         this.skills.set('K', new IceShards(this));
+        break;
+      case 'axe':
+        this.skills.set('Y', new BerserkersCall(this));
+        this.skills.set('U', new BattleHunger(this));
+        this.skills.set('I', new CounterHelix(this));
+        this.skills.set('H', new CullingBlade(this));
+        this.skills.set('J', new BattleTrance(this));
+        this.skills.set('K', new BerserkersRage(this));
+        break;
+      case 'lina':
+        // Placeholder for Lina skills - these would need to be implemented
+        // For now, we'll create generic skill objects
+        this.skills.set('Y', this.createGenericSkill('Dragon Slave', 40, 100, 'fire'));
+        this.skills.set('U', this.createGenericSkill('Light Strike Array', 60, 120, 'fire'));
+        this.skills.set('I', this.createGenericSkill('Fiery Soul', 50, 0, 'buff'));
+        this.skills.set('H', this.createGenericSkill('Laguna Blade', 100, 300, 'fire'));
+        this.skills.set('J', this.createGenericSkill('Flame Cloak', 70, 0, 'buff'));
+        this.skills.set('K', this.createGenericSkill('Inferno Wave', 80, 150, 'fire'));
         break;
       // Add more hero types and their skills here
     }
@@ -304,9 +334,8 @@ export default class Hero {
 
     // Create wings (initially hidden)
     this.createWings();
-
-    // Initialize skills based on hero type
-    this.initSkills();
+    
+    // Update UI
     this.updateUI();
   }
 
@@ -371,6 +400,66 @@ export default class Hero {
     this.setWingState("idle");
   }
 
+  createGenericSkill(name, manaCost, damage, damageType) {
+    return {
+      name: name,
+      manaCost: manaCost,
+      damage: damage,
+      damageType: damageType,
+      
+      // Skill methods
+      canUse: () => {
+        return this.mana >= manaCost && 
+               (!this.cooldowns.has(name) || this.cooldowns.get(name) <= 0);
+      },
+      
+      activate: () => {
+        if (this.mana >= manaCost) {
+          // Deduct mana
+          this.mana -= manaCost;
+          
+          // Set cooldown
+          this.cooldowns.set(name, 5.0); // Default 5 second cooldown
+          
+          console.log(`Using skill: ${name}, Damage: ${damage}`);
+          
+          // Play sound effect
+          if (this.soundManager) {
+            this.soundManager.playSound('skill-cast');
+          }
+          
+          // Create visual effect
+          if (this.effects) {
+            // Different effect based on damage type
+            const effectType = damageType === 'fire' ? 'fire' : 
+                              damageType === 'buff' ? 'buff' : 'physical';
+            const position = new THREE.Vector3().copy(this.group.position);
+            position.y += 1; // Adjust to be at character height
+            
+            this.effects.createEffect(effectType, position, {
+              direction: this.direction.clone(),
+              color: damageType === 'fire' ? 0xff4400 : 0xffffff
+            });
+          }
+          
+          return true;
+        }
+        return false;
+      },
+      
+      update: (delta) => {
+        // Nothing to update for generic skills
+      },
+      
+      getCooldownDuration: () => {
+        return 5.0; // Default cooldown of 5 seconds
+      }
+    };
+  }
+  
+  // This method is no longer needed as we're using initializeSkills instead
+  // Keeping it commented out for reference
+  /*
   initSkills() {
     // Assign skills based on hero type
     // In a full implementation, each hero would have unique skills
@@ -388,6 +477,7 @@ export default class Hero {
       this.cooldowns[key] = 0;
     }
   }
+  */
 
   update(deltaTime, keys, inputHandler) {
     // Handle rotation from mouse and Q/E keys
