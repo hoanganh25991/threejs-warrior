@@ -525,7 +525,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999;
+    pointer-events: auto;
 }
 
 .modal-content {
@@ -539,19 +540,30 @@ body {
     overflow-y: auto;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     color: #fff;
+    position: relative;
+    z-index: 10000;
+    pointer-events: auto;
 }
 
 .close-button {
     color: #aaa;
     float: right;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    padding: 5px 10px;
+    margin: -10px -5px 0 0;
+    position: relative;
+    z-index: 10001;
+    pointer-events: auto;
+    background-color: rgba(50, 50, 50, 0.3);
+    border-radius: 5px;
 }
 
 .close-button:hover {
     color: #f8d000;
+    background-color: rgba(50, 50, 50, 0.5);
 }
 
 /* Info Sections */

@@ -11,7 +11,7 @@ export class InputHandler {
             buttons: [false, false, false]
         };
         this.isPointerLocked = false;
-        this.isMouseCaptured = true; // Flag to enable/disable mouse capture
+        this.isMouseCaptured = false; // Flag to enable/disable mouse capture
         this.mouseSensitivity = config.controls.mouse.sensitivity; // Use sensitivity from config
         
         // Initialize key states
@@ -100,6 +100,7 @@ export class InputHandler {
             instructions.style.padding = '10px';
             instructions.style.zIndex = '100';
             instructions.style.fontFamily = 'Arial, sans-serif';
+            instructions.style.visibility = 'hidden';
             document.body.appendChild(instructions);
             
             // Hide instructions when pointer is locked
