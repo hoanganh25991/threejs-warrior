@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import Enemy from './enemy.js';
+import Boss from './boss.js';
 import { config } from '../config/config.js';
 
 export default class EnemyManager {
@@ -10,6 +11,7 @@ export default class EnemyManager {
         this.spawnInterval = config.enemies?.spawnRate || 5;
         this.maxEnemies = config.enemies?.maxEnemies || 10;
         this.spawnRadius = 20;
+        this.bossSpawned = false; // Track if a boss is currently active
     }
     
     update(deltaTime, playerPosition) {
@@ -32,6 +34,18 @@ export default class EnemyManager {
             
             // Remove dead enemies
             if (enemy.health <= 0) {
+                // Check if this is a boss
+                if (enemy instanceof Boss) {
+                    this.bossSpawned = false;
+                    
+                    // Clear the boss reference in the game instance
+                    if (window.game && window.game.boss === enemy) {
+                        window.game.boss = null;
+                    }
+                    
+                    console.log('Boss defeated!');
+                }
+                
                 this.enemies.splice(i, 1);
             }
         }
@@ -42,7 +56,10 @@ export default class EnemyManager {
         let enemyType = 'basic';
         const random = Math.random();
         
-        if (random > 0.95) {
+        // Check if we should spawn a boss
+        const shouldSpawnBoss = random > 0.95 && !this.bossSpawned;
+        
+        if (shouldSpawnBoss) {
             enemyType = 'boss';
         } else if (random > 0.8) {
             enemyType = 'mage';
@@ -63,8 +80,23 @@ export default class EnemyManager {
             playerPosition.z + Math.sin(angle) * radius
         );
         
-        // Create new enemy
-        const enemy = new Enemy(this.scene, spawnPosition, enemyType);
+        let enemy;
+        
+        // Create a Boss instance if it's a boss type, otherwise create a regular Enemy
+        if (enemyType === 'boss') {
+            enemy = new Boss(this.scene, spawnPosition);
+            this.bossSpawned = true;
+            
+            // Store a reference to the boss in the game instance if available
+            if (window.game) {
+                window.game.boss = enemy;
+            }
+            
+            console.log('Boss spawned!', enemy);
+        } else {
+            enemy = new Enemy(this.scene, spawnPosition, enemyType);
+        }
+        
         this.enemies.push(enemy);
         
         // Ensure the enemy is properly positioned on the ground
@@ -135,5 +167,28 @@ export default class EnemyManager {
             enemy.remove();
         }
         this.enemies = [];
+        this.bossSpawned = false;
+    }
+    
+    // Manually spawn a boss at a specific position
+    spawnBoss(position) {
+        // Don't spawn if there's already a boss
+        if (this.bossSpawned) {
+            console.log('A boss is already active!');
+            return null;
+        }
+        
+        // Create a new boss
+        const boss = new Boss(this.scene, position);
+        this.enemies.push(boss);
+        this.bossSpawned = true;
+        
+        // Store a reference to the boss in the game instance
+        if (window.game) {
+            window.game.boss = boss;
+        }
+        
+        console.log('Boss manually spawned!', boss);
+        return boss;
     }
 }

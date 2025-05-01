@@ -20,6 +20,7 @@ import SkillTree from "./rpg/skill-tree.js";
 import HUD from "./ui/hud.js";
 import CraftingUI from "./ui/craftingUI.js";
 import ShopUI from "./ui/shopUI.js";
+import ShopButton from "./ui/shopButton.js";
 import Boss from "./enemies/boss.js";
 import Attack from "./combat/attack.js";
 import Terrain from "./terrain/terrain.js";
@@ -51,6 +52,7 @@ class Game {
     this.hud = null;
     this.craftingUI = null;
     this.shopUI = null;
+    this.shopButton = null;
     this.boss = null;
     this.terrain = null;
     this.attack = null;
@@ -352,6 +354,9 @@ class Game {
     
     // Initialize shop UI
     this.shopUI = new ShopUI(this.hero, this.shop);
+    
+    // Initialize shop button
+    this.shopButton = new ShopButton(this.shopUI);
     
     // Log shop UI instance
     console.log('ShopUI initialized:', this.shopUI);
@@ -668,6 +673,9 @@ class Game {
 // Initialize the game when the DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   const game = new Game();
+  
+  // Make game instance globally accessible for other components
+  window.game = game;
 
   // Add global keyboard event listener for debugging
   document.addEventListener("keydown", (event) => {

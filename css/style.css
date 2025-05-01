@@ -538,20 +538,23 @@ body {
     max-width: 800px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    color: #fff;
-    position: relative;
-    z-index: 10000;
-    pointer-events: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
 .close-button {
     color: #aaa;
-    float: right;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
-    transition: color 0.3s;
+    transition: color 0.3s, background-color 0.3s;
+    padding: 0 10px;
+    border-radius: 5px;
 }
 
 .close-button:hover {

@@ -69,8 +69,10 @@ export default class ShopUI {
         // Create the modal content
         this.shopModal.innerHTML = `
             <div class="modal-content shop-modal-content">
-                <span class="close-button" title="Close">&times;</span>
-                <h2>Shop</h2>
+                <div class="modal-header">
+                    <h2>Shop</h2>
+                    <span class="close-button" title="Close">&times;</span>
+                </div>
                 
                 <div class="shop-header">
                     <div id="player-gold" class="gold-display">0 gold</div>
