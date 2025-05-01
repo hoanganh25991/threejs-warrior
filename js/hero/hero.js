@@ -443,7 +443,7 @@ export default class Hero {
     
     // Show a message
     if (typeof this.showMessage === 'function') {
-      this.showMessage(`Used ${name}!`);
+      // this.showMessage(`Used ${name}!`);
     } else {
       console.log(`Used ${name}!`);
     }
