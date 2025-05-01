@@ -144,74 +144,103 @@ export default class Terrain {
     }
 
     getHeightAt(x, z) {
-        if (!this.mesh) return 0;
+        if (!this.mesh || !this.mesh.geometry) return 0;
 
-        const raycaster = new THREE.Raycaster();
-        const position = new THREE.Vector3(x, 1000, z);
-        raycaster.ray.origin.copy(position);
-        raycaster.ray.direction.set(0, -1, 0);
+        try {
+            const raycaster = new THREE.Raycaster();
+            const position = new THREE.Vector3(x, 1000, z);
+            raycaster.ray.origin.copy(position);
+            raycaster.ray.direction.set(0, -1, 0);
 
-        const intersects = raycaster.intersectObject(this.mesh);
-        if (intersects.length > 0) {
-            return intersects[0].point.y;
+            const intersects = raycaster.intersectObject(this.mesh);
+            if (intersects && intersects.length > 0) {
+                return intersects[0].point.y;
+            }
+        } catch (error) {
+            console.warn("Error getting terrain height:", error);
         }
+        
         return 0;
     }
 
     getNormalAt(x, z) {
-        if (!this.mesh) return new THREE.Vector3(0, 1, 0);
+        if (!this.mesh || !this.mesh.geometry) return new THREE.Vector3(0, 1, 0);
 
-        const raycaster = new THREE.Raycaster();
-        const position = new THREE.Vector3(x, 1000, z);
-        raycaster.ray.origin.copy(position);
-        raycaster.ray.direction.set(0, -1, 0);
+        try {
+            const raycaster = new THREE.Raycaster();
+            const position = new THREE.Vector3(x, 1000, z);
+            raycaster.ray.origin.copy(position);
+            raycaster.ray.direction.set(0, -1, 0);
 
-        const intersects = raycaster.intersectObject(this.mesh);
-        if (intersects.length > 0) {
-            return intersects[0].face.normal;
+            const intersects = raycaster.intersectObject(this.mesh);
+            if (intersects && intersects.length > 0 && intersects[0].face) {
+                return intersects[0].face.normal;
+            }
+        } catch (error) {
+            console.warn("Error getting terrain normal:", error);
         }
+        
         return new THREE.Vector3(0, 1, 0);
     }
 
     modifyTerrain(position, radius, height, smoothing = true) {
-        const positions = this.geometry.attributes.position.array;
-        const vertices = positions.length / 3;
-
-        for (let i = 0; i < vertices; i++) {
-            const x = positions[i * 3];
-            const y = positions[i * 3 + 1];
-            const z = positions[i * 3 + 2];
-            const vertex = new THREE.Vector3(x, y, z);
-
-            const distance = vertex.distanceTo(position);
-            if (distance < radius) {
-                const influence = smoothing ? 
-                    1 - (distance / radius) * (distance / radius) :
-                    1 - distance / radius;
-                
-                positions[i * 3 + 1] += height * influence;
-            }
+        if (!this.geometry || !this.geometry.attributes || !this.geometry.attributes.position) {
+            console.warn("Cannot modify terrain: geometry not initialized");
+            return;
         }
+        
+        try {
+            const positions = this.geometry.attributes.position.array;
+            const vertices = positions.length / 3;
 
-        this.geometry.attributes.position.needsUpdate = true;
-        this.geometry.computeVertexNormals();
+            for (let i = 0; i < vertices; i++) {
+                const x = positions[i * 3];
+                const y = positions[i * 3 + 1];
+                const z = positions[i * 3 + 2];
+                const vertex = new THREE.Vector3(x, y, z);
+
+                const distance = vertex.distanceTo(position);
+                if (distance < radius) {
+                    const influence = smoothing ? 
+                        1 - (distance / radius) * (distance / radius) :
+                        1 - distance / radius;
+                    
+                    positions[i * 3 + 1] += height * influence;
+                }
+            }
+
+            this.geometry.attributes.position.needsUpdate = true;
+            this.geometry.computeVertexNormals();
+        } catch (error) {
+            console.warn("Error modifying terrain:", error);
+        }
     }
 
     update(delta) {
         // Update any animations or dynamic effects
-        if (this.material.displacementMap) {
+        if (this.material && this.material.displacementMap) {
             this.material.displacementMap.offset.x += 0.1 * delta;
             this.material.displacementMap.offset.y += 0.1 * delta;
         }
     }
 
     dispose() {
-        this.scene.remove(this.mesh);
-        this.geometry.dispose();
-        this.material.dispose();
+        if (this.mesh) {
+            this.scene.remove(this.mesh);
+        }
         
-        Object.values(this.options.textures).forEach(texture => {
-            if (texture) texture.dispose();
-        });
+        if (this.geometry) {
+            this.geometry.dispose();
+        }
+        
+        if (this.material) {
+            this.material.dispose();
+        }
+        
+        if (this.options && this.options.textures) {
+            Object.values(this.options.textures).forEach(texture => {
+                if (texture) texture.dispose();
+            });
+        }
     }
 }

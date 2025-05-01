@@ -51,25 +51,50 @@ export const config = {
     enemies: {
         spawnRate: 5, // seconds between spawns
         maxEnemies: 10,
-        types: {
-            basic: {
-                health: 50,
-                damage: 10,
-                moveSpeed: 2,
-                experienceValue: 20
-            },
-            elite: {
-                health: 100,
-                damage: 20,
-                moveSpeed: 1.5,
-                experienceValue: 50
-            },
-            boss: {
-                health: 500,
-                damage: 50,
-                moveSpeed: 1,
-                experienceValue: 200
-            }
+        basic: {
+            health: 50,
+            damage: 10,
+            speed: 2,
+            experience: 20,
+            attackRange: 2,
+            detectionRange: 10,
+            attackSpeed: 1
+        },
+        archer: {
+            health: 40,
+            damage: 15,
+            speed: 1.5,
+            experience: 30,
+            attackRange: 8,
+            detectionRange: 15,
+            attackSpeed: 0.8
+        },
+        mage: {
+            health: 30,
+            damage: 25,
+            speed: 1,
+            experience: 40,
+            attackRange: 10,
+            detectionRange: 20,
+            attackSpeed: 0.6
+        },
+        tank: {
+            health: 100,
+            damage: 8,
+            speed: 0.8,
+            experience: 50,
+            attackRange: 2,
+            detectionRange: 8,
+            attackSpeed: 0.5
+        },
+        boss: {
+            health: 500,
+            damage: 50,
+            speed: 1,
+            experience: 200,
+            attackRange: 3,
+            detectionRange: 25,
+            attackSpeed: 0.7
         }
     },
     

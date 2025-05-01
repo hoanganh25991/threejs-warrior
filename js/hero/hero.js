@@ -1595,6 +1595,16 @@ export default class Hero {
     return this.group.position.clone();
   }
 
+  setPosition(x, y, z) {
+    if (this.group) {
+      if (typeof x === 'number' && typeof y === 'number' && typeof z === 'number') {
+        this.group.position.set(x, y, z);
+      } else if (x instanceof THREE.Vector3) {
+        this.group.position.copy(x);
+      }
+    }
+  }
+
   getDirection() {
     return this.direction.clone();
   }

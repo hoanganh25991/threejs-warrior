@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // Import game modules
 import { config } from "./config/config.js";
 import Hero from "./hero/hero.js";
-import EnemyManager from "./enemies/enemy.js";
+import EnemyManager from "./enemies/enemyManager.js";
 import SkillManager from "./skills/skillManager.js";
 import InputHandler from "./input.js";
 import World from "./world/world.js";
@@ -283,19 +283,27 @@ class Game {
     });
 
     // Initialize terrain system
-    this.terrain = new Terrain(this.scene, {
-      width: 1000,
-      height: 1000,
-      segmentsW: 100,
-      segmentsH: 100,
-      maxHeight: 50,
-      minHeight: -50,
-      textures: {
-        diffuse: '/assets/textures/terrain/grass_diffuse.jpg',
-        normal: '/assets/textures/terrain/grass_normal.jpg',
-        displacement: '/assets/textures/terrain/grass_height.jpg'
-      }
-    });
+    try {
+      this.terrain = new Terrain(this.scene, {
+        width: 1000,
+        height: 1000,
+        segmentsW: 100,
+        segmentsH: 100,
+        maxHeight: 50,
+        minHeight: -50,
+        textures: {
+          diffuse: '/assets/textures/terrain/grass_diffuse.jpg',
+          normal: '/assets/textures/terrain/grass_normal.jpg'
+        },
+        materialOptions: {
+          wireframe: false,
+          flatShading: false
+        }
+      });
+    } catch (error) {
+      console.warn("Failed to initialize terrain:", error);
+      this.terrain = null;
+    }
 
     // Initialize RPG systems
     this.shop = new Shop(this.scene, this.effects);
@@ -364,8 +372,12 @@ class Game {
     }
 
     // Update terrain
-    if (this.terrain) {
-      this.terrain.update(deltaTime);
+    if (this.terrain && typeof this.terrain.update === 'function') {
+      try {
+        this.terrain.update(deltaTime);
+      } catch (error) {
+        console.warn("Error updating terrain:", error);
+      }
     }
 
     // Update game systems
@@ -474,10 +486,14 @@ class Game {
       this.camera.lookAt(targetPosition);
       
       // Check if hero is on terrain and adjust height if needed
-      if (this.terrain) {
-        const terrainHeight = this.terrain.getHeightAt(heroPosition.x, heroPosition.z);
-        if (terrainHeight > 0 && heroPosition.y < terrainHeight + 1) {
-          this.hero.setPosition(heroPosition.x, terrainHeight + 1, heroPosition.z);
+      if (this.terrain && typeof this.terrain.getHeightAt === 'function') {
+        try {
+          const terrainHeight = this.terrain.getHeightAt(heroPosition.x, heroPosition.z);
+          if (terrainHeight > 0 && heroPosition.y < terrainHeight + 1) {
+            this.hero.setPosition(heroPosition.x, terrainHeight + 1, heroPosition.z);
+          }
+        } catch (error) {
+          console.warn("Error getting terrain height:", error);
         }
       }
     }
