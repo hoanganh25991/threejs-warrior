@@ -690,7 +690,8 @@ body {
 
 /* Mouse Capture Toggle Button */
 #mouse-capture-toggle {
-    margin-top: 15px;
+    position: fixed;
+    top: 10px;
     display: flex;
     justify-content: center;
 }
