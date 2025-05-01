@@ -72,10 +72,28 @@ export default class HUD {
             slot.className = 'skill-slot';
             slot.innerHTML = `
                 <div class="key-bind">${key}</div>
+                <div class="skill-icon"></div>
                 <div class="cooldown"></div>
+                <div class="skill-tooltip">
+                    <div class="tooltip-name"></div>
+                    <div class="tooltip-description"></div>
+                    <div class="tooltip-cooldown"></div>
+                    <div class="tooltip-mana"></div>
+                </div>
             `;
             this.skillBar.appendChild(slot);
             this.skillSlots[key] = slot;
+            
+            // Show tooltip on hover
+            slot.addEventListener('mouseenter', () => {
+                const tooltip = slot.querySelector('.skill-tooltip');
+                if (tooltip) tooltip.style.display = 'block';
+            });
+            
+            slot.addEventListener('mouseleave', () => {
+                const tooltip = slot.querySelector('.skill-tooltip');
+                if (tooltip) tooltip.style.display = 'none';
+            });
         });
     }
 
@@ -133,6 +151,13 @@ export default class HUD {
                 background: rgba(0, 0, 0, 0.5);
                 border-radius: 5px;
                 position: relative;
+                cursor: pointer;
+                border: 2px solid #444;
+                overflow: hidden;
+            }
+
+            .skill-slot:hover {
+                border-color: #888;
             }
 
             .key-bind {
@@ -141,6 +166,19 @@ export default class HUD {
                 right: 2px;
                 color: white;
                 font-size: 12px;
+                background: rgba(0, 0, 0, 0.5);
+                padding: 2px 4px;
+                border-radius: 3px;
+                z-index: 2;
+            }
+
+            .skill-icon {
+                width: 100%;
+                height: 100%;
+                background-size: cover;
+                background-position: center;
+                position: relative;
+                z-index: 1;
             }
 
             .cooldown {
@@ -151,6 +189,38 @@ export default class HUD {
                 height: 0%;
                 background: rgba(0, 0, 0, 0.7);
                 transition: height 0.1s;
+                z-index: 3;
+            }
+
+            .skill-tooltip {
+                display: none;
+                position: absolute;
+                bottom: 60px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 200px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                z-index: 10;
+                pointer-events: none;
+            }
+
+            .tooltip-name {
+                font-weight: bold;
+                margin-bottom: 5px;
+                color: #ffcc00;
+            }
+
+            .tooltip-description {
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+
+            .tooltip-cooldown, .tooltip-mana {
+                font-size: 11px;
+                color: #aaa;
             }
 
             .score-display {
@@ -183,15 +253,110 @@ export default class HUD {
         this.expBar.bar.style.width = `${expPercent}%`;
         this.expBar.text.textContent = `Level ${data.hero.level} - ${Math.floor(expPercent)}%`;
 
-        // Update skill cooldowns if hero has them
-        if (data.hero.cooldowns) {
-            for (const [key, cooldown] of Object.entries(data.hero.cooldowns)) {
-                const slot = this.skillSlots[key];
-                if (slot && cooldown > 0) {
-                    const percent = (cooldown / config.skills[key].cooldown) * 100;
-                    slot.querySelector('.cooldown').style.height = `${percent}%`;
-                } else if (slot) {
-                    slot.querySelector('.cooldown').style.height = '0%';
+        // Update skill information and cooldowns
+        if (data.hero.skills) {
+            // For Map-based skills
+            if (data.hero.skills instanceof Map) {
+                for (const [key, skill] of data.hero.skills.entries()) {
+                    const slot = this.skillSlots[key];
+                    if (slot) {
+                        // Update skill icon based on hero type and skill
+                        const iconElement = slot.querySelector('.skill-icon');
+                        if (iconElement) {
+                            // Set background color based on hero type
+                            let bgColor;
+                            switch (data.hero.heroType) {
+                                case 'dragon-knight':
+                                    bgColor = '#ff6600'; // Orange-red for fire
+                                    break;
+                                case 'crystal-maiden':
+                                    bgColor = '#88ccff'; // Light blue for ice
+                                    break;
+                                case 'lina':
+                                    bgColor = '#ff3300'; // Bright red for fire
+                                    break;
+                                case 'axe':
+                                    bgColor = '#cc0000'; // Dark red for blood
+                                    break;
+                                default:
+                                    bgColor = '#888888'; // Gray default
+                            }
+                            
+                            // Set icon background
+                            iconElement.style.backgroundColor = bgColor;
+                            
+                            // Add skill name as text in the icon
+                            if (skill.name && !iconElement.textContent) {
+                                const nameInitial = skill.name.charAt(0);
+                                iconElement.textContent = nameInitial;
+                                iconElement.style.display = 'flex';
+                                iconElement.style.justifyContent = 'center';
+                                iconElement.style.alignItems = 'center';
+                                iconElement.style.fontSize = '24px';
+                                iconElement.style.fontWeight = 'bold';
+                                iconElement.style.color = 'white';
+                                iconElement.style.textShadow = '1px 1px 2px black';
+                            }
+                        }
+                        
+                        // Update tooltip information
+                        const tooltipName = slot.querySelector('.tooltip-name');
+                        const tooltipDesc = slot.querySelector('.tooltip-description');
+                        const tooltipCooldown = slot.querySelector('.tooltip-cooldown');
+                        const tooltipMana = slot.querySelector('.tooltip-mana');
+                        
+                        if (tooltipName && skill.name) {
+                            tooltipName.textContent = skill.name;
+                        }
+                        
+                        if (tooltipDesc) {
+                            // Generate a description if not available
+                            let description = '';
+                            if (skill.damage) {
+                                description += `Deals ${skill.damage} damage. `;
+                            }
+                            if (skill.range) {
+                                description += `Range: ${skill.range} units. `;
+                            }
+                            if (skill.duration) {
+                                description += `Duration: ${skill.duration} seconds. `;
+                            }
+                            tooltipDesc.textContent = description || 'No description available.';
+                        }
+                        
+                        if (tooltipCooldown) {
+                            tooltipCooldown.textContent = `Cooldown: ${skill.getCooldownDuration ? skill.getCooldownDuration() : '?'} seconds`;
+                        }
+                        
+                        if (tooltipMana) {
+                            tooltipMana.textContent = `Mana Cost: ${skill.manaCost || 0}`;
+                        }
+                        
+                        // Update cooldown display
+                        const cooldownElement = slot.querySelector('.cooldown');
+                        if (cooldownElement) {
+                            const cooldown = data.hero.cooldowns.get(key) || 0;
+                            if (cooldown > 0 && skill.getCooldownDuration) {
+                                const percent = (cooldown / skill.getCooldownDuration()) * 100;
+                                cooldownElement.style.height = `${percent}%`;
+                            } else {
+                                cooldownElement.style.height = '0%';
+                            }
+                        }
+                    }
+                }
+            } 
+            // For object-based skills (legacy support)
+            else {
+                for (const key in data.hero.cooldowns) {
+                    const slot = this.skillSlots[key];
+                    const cooldown = data.hero.cooldowns[key];
+                    if (slot && cooldown > 0) {
+                        const percent = (cooldown / config.skills[key].cooldown) * 100;
+                        slot.querySelector('.cooldown').style.height = `${percent}%`;
+                    } else if (slot) {
+                        slot.querySelector('.cooldown').style.height = '0%';
+                    }
                 }
             }
         }

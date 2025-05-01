@@ -22,59 +22,255 @@ export default class GlacialBarrier extends Skill {
     }
 
     createEffect() {
-        // Create an ice barrier around the hero
+        // Create an ice tree barrier around the hero
         const origin = this.hero.group.position.clone();
         
-        // Create barrier geometry
-        const barrierGeometry = new THREE.IcosahedronGeometry(1.5, 1);
-        const barrierMaterial = new THREE.MeshBasicMaterial({
-            color: 0x88ccff,
+        // Create barrier group
+        const barrierGroup = new THREE.Group();
+        barrierGroup.position.copy(origin);
+        barrierGroup.position.y += 1;
+        this.scene.add(barrierGroup);
+        
+        // Create base dome structure
+        const domeGeometry = new THREE.SphereGeometry(1.5, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+        const domeMaterial = new THREE.MeshPhongMaterial({
+            color: 0xadd8e6, // Light blue
             transparent: true,
-            opacity: 0.4,
-            wireframe: true
+            opacity: 0.3,
+            shininess: 90,
+            emissive: 0x0088ff,
+            emissiveIntensity: 0.2,
+            side: THREE.DoubleSide
         });
         
-        const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
-        barrier.position.copy(origin);
-        barrier.position.y += 1;
-        this.scene.add(barrier);
+        const dome = new THREE.Mesh(domeGeometry, domeMaterial);
+        dome.rotation.x = Math.PI; // Flip dome to cover hero
+        barrierGroup.add(dome);
         
-        // Store reference
-        this.barrierMesh = barrier;
+        // Create ice tree trunks around the perimeter
+        const treeCount = 8;
+        const trees = [];
         
-        // Create ice shards around barrier
-        for (let i = 0; i < 12; i++) {
-            const phi = Math.acos(-1 + (2 * i) / 12);
-            const theta = Math.sqrt(12 * Math.PI) * phi;
+        for (let i = 0; i < treeCount; i++) {
+            const angle = (i / treeCount) * Math.PI * 2;
+            const treeGroup = new THREE.Group();
             
-            const x = 1.5 * Math.sin(phi) * Math.cos(theta);
-            const y = 1.5 * Math.sin(phi) * Math.sin(theta);
-            const z = 1.5 * Math.cos(phi);
+            // Position tree on perimeter
+            const x = Math.cos(angle) * 1.5;
+            const z = Math.sin(angle) * 1.5;
+            treeGroup.position.set(x, 0, z);
             
-            const shardGeometry = new THREE.ConeGeometry(0.1, 0.5, 8);
-            const shardMaterial = new THREE.MeshBasicMaterial({
-                color: 0xaaddff,
+            // Create trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.08, 0.12, 1.2, 5);
+            const trunkMaterial = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6, // Light blue
                 transparent: true,
-                opacity: 0.9
+                opacity: 0.8,
+                shininess: 90,
+                emissive: 0x0088ff,
+                emissiveIntensity: 0.3
             });
             
-            const shard = new THREE.Mesh(shardGeometry, shardMaterial);
-            shard.position.set(
-                origin.x + x,
-                origin.y + y + 1,
-                origin.z + z
-            );
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 0.6; // Half height
             
-            // Point shard outward
-            shard.lookAt(new THREE.Vector3(
-                origin.x + x * 2,
-                origin.y + y * 2 + 1,
-                origin.z + z * 2
-            ));
+            // Angle trunk slightly outward
+            trunk.rotation.x = Math.PI * 0.1;
+            trunk.rotation.y = -angle;
             
-            this.scene.add(shard);
-            this.iceShards.push(shard);
+            treeGroup.add(trunk);
+            
+            // Create branches
+            const branchCount = 3 + Math.floor(Math.random() * 3);
+            const branches = [];
+            
+            for (let j = 0; j < branchCount; j++) {
+                const branchAngle = (j / branchCount) * Math.PI * 2;
+                const branchHeight = 0.2 + (j / branchCount) * 0.8;
+                
+                const branchGeometry = new THREE.CylinderGeometry(0.02, 0.04, 0.4, 4);
+                const branch = new THREE.Mesh(branchGeometry, trunkMaterial);
+                
+                // Position on trunk
+                branch.position.y = branchHeight;
+                
+                // Rotate to point outward and upward
+                branch.rotation.z = Math.PI / 4; // 45 degrees up
+                branch.rotation.y = branchAngle;
+                
+                // Move outward from trunk
+                branch.position.x = Math.cos(branchAngle) * 0.1;
+                branch.position.z = Math.sin(branchAngle) * 0.1;
+                
+                treeGroup.add(branch);
+                branches.push(branch);
+            }
+            
+            // Create ice crystals (leaves)
+            const crystalCount = 8 + Math.floor(Math.random() * 5);
+            const crystals = [];
+            
+            for (let j = 0; j < crystalCount; j++) {
+                // Randomly choose crystal shape
+                let crystalGeometry;
+                const crystalType = Math.floor(Math.random() * 3);
+                
+                switch (crystalType) {
+                    case 0:
+                        crystalGeometry = new THREE.TetrahedronGeometry(0.08);
+                        break;
+                    case 1:
+                        crystalGeometry = new THREE.OctahedronGeometry(0.06);
+                        break;
+                    default:
+                        crystalGeometry = new THREE.IcosahedronGeometry(0.05);
+                }
+                
+                const crystalMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xd6f1ff,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.2
+                });
+                
+                const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                
+                // Position randomly on branches or trunk
+                const onBranch = Math.random() > 0.3 && branches.length > 0;
+                
+                if (onBranch) {
+                    // Place on a random branch
+                    const branch = branches[Math.floor(Math.random() * branches.length)];
+                    const branchPos = branch.position.clone();
+                    const branchDir = new THREE.Vector3(branch.position.x, 0, branch.position.z).normalize();
+                    
+                    crystal.position.copy(branchPos);
+                    crystal.position.x += branchDir.x * (0.1 + Math.random() * 0.2);
+                    crystal.position.z += branchDir.z * (0.1 + Math.random() * 0.2);
+                    crystal.position.y += Math.random() * 0.1;
+                } else {
+                    // Place on trunk
+                    const angle = Math.random() * Math.PI * 2;
+                    const height = 0.2 + Math.random() * 1.0;
+                    
+                    crystal.position.set(
+                        Math.cos(angle) * 0.08,
+                        height,
+                        Math.sin(angle) * 0.08
+                    );
+                }
+                
+                // Random rotation
+                crystal.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                treeGroup.add(crystal);
+                crystals.push(crystal);
+            }
+            
+            barrierGroup.add(treeGroup);
+            trees.push({
+                group: treeGroup,
+                trunk,
+                branches,
+                crystals,
+                angle
+            });
         }
+        
+        // Create ice arches connecting the trees
+        for (let i = 0; i < treeCount; i++) {
+            const startAngle = (i / treeCount) * Math.PI * 2;
+            const endAngle = ((i + 1) % treeCount / treeCount) * Math.PI * 2;
+            
+            const startX = Math.cos(startAngle) * 1.5;
+            const startZ = Math.sin(startAngle) * 1.5;
+            
+            const endX = Math.cos(endAngle) * 1.5;
+            const endZ = Math.sin(endAngle) * 1.5;
+            
+            // Create arch curve
+            const archPoints = [];
+            const segments = 8;
+            
+            for (let j = 0; j <= segments; j++) {
+                const t = j / segments;
+                const x = startX + (endX - startX) * t;
+                const z = startZ + (endZ - startZ) * t;
+                
+                // Add height to create arch
+                const y = Math.sin(t * Math.PI) * 0.8;
+                
+                archPoints.push(new THREE.Vector3(x, y, z));
+            }
+            
+            const archCurve = new THREE.CatmullRomCurve3(archPoints);
+            const archGeometry = new THREE.TubeGeometry(archCurve, 8, 0.05, 6, false);
+            const archMaterial = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6, // Light blue
+                transparent: true,
+                opacity: 0.7,
+                shininess: 90,
+                emissive: 0x0088ff,
+                emissiveIntensity: 0.2
+            });
+            
+            const arch = new THREE.Mesh(archGeometry, archMaterial);
+            barrierGroup.add(arch);
+            
+            // Add ice crystals along the arch
+            for (let j = 0; j < 5; j++) {
+                const t = (j + 0.5) / 5;
+                const point = archCurve.getPoint(t);
+                
+                // Randomly choose crystal shape
+                let crystalGeometry;
+                const crystalType = Math.floor(Math.random() * 3);
+                
+                switch (crystalType) {
+                    case 0:
+                        crystalGeometry = new THREE.TetrahedronGeometry(0.06);
+                        break;
+                    case 1:
+                        crystalGeometry = new THREE.OctahedronGeometry(0.05);
+                        break;
+                    default:
+                        crystalGeometry = new THREE.IcosahedronGeometry(0.04);
+                }
+                
+                const crystalMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xd6f1ff,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.2
+                });
+                
+                const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                crystal.position.copy(point);
+                
+                // Random rotation
+                crystal.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                barrierGroup.add(crystal);
+            }
+        }
+        
+        // Store reference to barrier group
+        this.barrierMesh = barrierGroup;
+        
+        // Store trees for animation
+        this.iceShards = trees;
         
         // Create barrier particles
         for (let i = 0; i < this.particleCount; i++) {

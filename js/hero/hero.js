@@ -5,7 +5,18 @@ import Lina from "./lina.js";
 import DefaultHero from "./default-hero.js";
 import Wings from "./wings.js";
 import DragonBreath from "../skills/dragon-knight/dragon-breath.js";
+import FlameStrike from "../skills/dragon-knight/flame-strike.js";
+import DragonTail from "../skills/dragon-knight/dragon-tail.js";
+import ElderDragonForm from "../skills/dragon-knight/elder-dragon-form.js";
+import FireShield from "../skills/dragon-knight/fire-shield.js";
+import Inferno from "../skills/dragon-knight/inferno.js";
+import DragonRush from "../skills/dragon-knight/dragon-rush.js";
+
 import FrostNova from "../skills/crystal-maiden/frost-nova.js";
+import IceBlast from "../skills/crystal-maiden/ice-blast.js";
+import GlacialBarrier from "../skills/crystal-maiden/glacial-barrier.js";
+import Blizzard from "../skills/crystal-maiden/blizzard.js";
+
 import SoundManager from "../audio/sound-manager.js";
 import Attack from "../combat/attack.js";
 import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
@@ -101,9 +112,17 @@ export default class Hero {
     switch (this.heroType) {
       case 'dragon-knight':
         this.skills.set('Y', new DragonBreath(this));
+        this.skills.set('U', new FlameStrike(this));
+        this.skills.set('I', new DragonTail(this));
+        this.skills.set('H', new ElderDragonForm(this));
+        this.skills.set('J', new FireShield(this));
+        this.skills.set('K', new DragonRush(this));
         break;
       case 'crystal-maiden':
         this.skills.set('Y', new FrostNova(this));
+        this.skills.set('U', new IceBlast(this));
+        this.skills.set('I', new GlacialBarrier(this));
+        this.skills.set('H', new Blizzard(this));
         break;
       // Add more hero types and their skills here
     }
