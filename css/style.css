@@ -925,6 +925,11 @@ body {
     top: 10px;
     display: flex;
     justify-content: center;
+    opacity: 0.5;
+}
+
+#crafting-button {
+    opacity: 0.5;
 }
 
 #toggle-mouse-capture {

@@ -49,6 +49,8 @@ class Game {
     this.characterClass = null;
     this.skillTree = null;
     this.hud = null;
+    this.craftingUI = null;
+    this.shopUI = null;
     this.boss = null;
     this.terrain = null;
     this.attack = null;
@@ -263,6 +265,9 @@ class Game {
 
     // Show game UI
     document.getElementById("game-ui").classList.remove("hidden");
+    
+    // Check if shop modal exists in the DOM at game start
+    console.log('Shop modal in DOM at game start:', document.getElementById('shop-modal'));
 
     // Initialize input handler
     this.inputHandler = new InputHandler();
@@ -341,6 +346,15 @@ class Game {
     
     // Initialize crafting UI
     this.craftingUI = new CraftingUI(this.hero);
+    
+    // Check if shop modal exists in the DOM
+    console.log('Shop modal in DOM before ShopUI init:', document.getElementById('shop-modal'));
+    
+    // Initialize shop UI
+    this.shopUI = new ShopUI(this.hero, this.shop);
+    
+    // Log shop UI instance
+    console.log('ShopUI initialized:', this.shopUI);
 
     // Add debug info for collision detection if debug mode is enabled
     if (config.game.debug) {

@@ -17,8 +17,19 @@ export default class ShopUI {
     }
     
     initUI() {
+        console.log('Initializing Shop UI');
+        
         // Get UI elements
         this.shopModal = document.getElementById('shop-modal');
+        console.log('Shop modal element:', this.shopModal);
+        
+        // If shop modal doesn't exist, create it
+        if (!this.shopModal) {
+            console.log('Creating shop modal dynamically');
+            this.createShopModal();
+        }
+        
+        // Get all UI elements
         this.shopContent = document.getElementById('shop-content');
         this.shopTabs = document.getElementById('shop-tabs');
         this.itemsContainer = document.getElementById('shop-items');
@@ -30,14 +41,101 @@ export default class ShopUI {
         this.closeButton = document.querySelector('#shop-modal .close-button');
         this.rarityFilter = document.getElementById('rarity-filter');
         
+        // Log all UI elements to check if they're found
+        console.log('UI Elements after initialization:', {
+            shopModal: this.shopModal,
+            shopContent: this.shopContent,
+            shopTabs: this.shopTabs,
+            itemsContainer: this.itemsContainer,
+            itemDetails: this.itemDetails,
+            playerGold: this.playerGold,
+            shopGold: this.shopGold,
+            buyButton: this.buyButton,
+            sellButton: this.sellButton,
+            closeButton: this.closeButton,
+            rarityFilter: this.rarityFilter
+        });
+        
         // Set initial state
         this.updateGoldDisplay();
     }
     
+    createShopModal() {
+        // Create the shop modal element
+        this.shopModal = document.createElement('div');
+        this.shopModal.id = 'shop-modal';
+        this.shopModal.className = 'modal hidden';
+        
+        // Create the modal content
+        this.shopModal.innerHTML = `
+            <div class="modal-content shop-modal-content">
+                <span class="close-button" title="Close">&times;</span>
+                <h2>Shop</h2>
+                
+                <div class="shop-header">
+                    <div id="player-gold" class="gold-display">0 gold</div>
+                    <div id="shop-gold" class="gold-display">1000 gold</div>
+                </div>
+                
+                <div class="shop-filter">
+                    <label for="rarity-filter">Filter by rarity:</label>
+                    <select id="rarity-filter">
+                        <option value="all">All</option>
+                        <option value="common">Common</option>
+                        <option value="uncommon">Uncommon</option>
+                        <option value="rare">Rare</option>
+                        <option value="epic">Epic</option>
+                        <option value="legendary">Legendary</option>
+                    </select>
+                </div>
+                
+                <div id="shop-content">
+                    <div id="shop-tabs" class="tabs">
+                        <div class="shop-tab active" data-tab="weapons">Weapons</div>
+                        <div class="shop-tab" data-tab="armor">Armor</div>
+                        <div class="shop-tab" data-tab="consumable">Consumables</div>
+                        <div class="shop-tab" data-tab="material">Materials</div>
+                        <div class="shop-tab" data-tab="inventory">My Inventory</div>
+                    </div>
+                    
+                    <div class="shop-container">
+                        <div id="shop-items" class="items-list">
+                            <!-- Items will be populated dynamically -->
+                        </div>
+                        
+                        <div id="item-details" class="item-details">
+                            <!-- Item details will be shown here -->
+                            <p class="no-selection">Select an item to view details</p>
+                        </div>
+                    </div>
+                    
+                    <div class="shop-actions">
+                        <button id="buy-button" disabled>Buy</button>
+                        <button id="sell-button" disabled>Sell</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add the shop modal to the game UI
+        const gameUI = document.getElementById('game-ui');
+        if (gameUI) {
+            gameUI.appendChild(this.shopModal);
+            console.log('Shop modal added to game UI');
+        } else {
+            // If game UI doesn't exist, add to body
+            document.body.appendChild(this.shopModal);
+            console.log('Shop modal added to body (game UI not found)');
+        }
+    }
+    
     addEventListeners() {
+        console.log('Adding event listeners to shop UI');
+        
         // Tab switching
         if (this.shopTabs) {
             const tabs = this.shopTabs.querySelectorAll('.shop-tab');
+            console.log('Shop tabs found:', tabs.length);
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     this.selectedTab = tab.getAttribute('data-tab');
@@ -45,48 +143,73 @@ export default class ShopUI {
                     this.populateItems();
                 });
             });
+        } else {
+            console.warn('Shop tabs not found');
         }
         
         // Close button
         if (this.closeButton) {
+            console.log('Close button found');
             this.closeButton.addEventListener('click', () => {
+                console.log('Close button clicked');
                 this.close();
             });
+        } else {
+            console.warn('Close button not found');
         }
         
         // Buy button
         if (this.buyButton) {
+            console.log('Buy button found');
             this.buyButton.addEventListener('click', () => {
                 this.buySelectedItem();
             });
+        } else {
+            console.warn('Buy button not found');
         }
         
         // Sell button
         if (this.sellButton) {
+            console.log('Sell button found');
             this.sellButton.addEventListener('click', () => {
                 this.sellSelectedItem();
             });
+        } else {
+            console.warn('Sell button not found');
         }
         
         // Rarity filter
         if (this.rarityFilter) {
+            console.log('Rarity filter found');
             this.rarityFilter.addEventListener('change', () => {
                 this.filterRarity = this.rarityFilter.value;
                 this.populateItems();
             });
+        } else {
+            console.warn('Rarity filter not found');
         }
         
         // Global key listener for shop toggle
-        document.addEventListener('keydown', (e) => {
+        console.log('Adding global key listener for shop toggle');
+        this.keyListener = (e) => {
+            console.log('Key pressed:', e.key);
             if (e.key === 'p' || e.key === 'P') {
+                console.log('P key detected, toggling shop');
                 this.toggle();
             }
             
             // Close shop with Escape key
             if (e.key === 'Escape' && this.isOpen) {
+                console.log('Escape key detected, closing shop');
                 this.close();
             }
-        });
+        };
+        
+        // Remove any existing listener to avoid duplicates
+        document.removeEventListener('keydown', this.keyListener);
+        
+        // Add the new listener
+        document.addEventListener('keydown', this.keyListener);
         
         // Listen for item purchase/sell events
         document.addEventListener('itemPurchased', (e) => {
@@ -100,6 +223,8 @@ export default class ShopUI {
             this.populateItems();
             this.showMessage(`Sold ${e.detail.item.name}`);
         });
+        
+        console.log('Event listeners added to shop UI');
     }
     
     updateTabSelection() {
@@ -116,7 +241,18 @@ export default class ShopUI {
     }
     
     populateItems() {
-        if (!this.itemsContainer) return;
+        console.log('Populating items for tab:', this.selectedTab);
+        
+        // Re-fetch itemsContainer if not found
+        if (!this.itemsContainer) {
+            console.log('Items container not found, trying to re-fetch');
+            this.itemsContainer = document.getElementById('shop-items');
+        }
+        
+        if (!this.itemsContainer) {
+            console.error('Items container still not found!');
+            return;
+        }
         
         // Clear current items
         this.itemsContainer.innerHTML = '';
@@ -126,15 +262,19 @@ export default class ShopUI {
         if (this.selectedTab === 'inventory') {
             // Show player inventory
             items = this.hero.inventory ? Array.from(this.hero.inventory.values()) : [];
+            console.log('Player inventory items:', items.length);
         } else {
             // Show shop inventory filtered by type
             const shopInventory = this.shop.getInventoryByType(this.selectedTab);
             items = shopInventory ? Array.from(shopInventory.values()) : [];
+            console.log('Shop inventory items for', this.selectedTab + ':', items.length);
         }
         
         // Apply rarity filter if not set to 'all'
         if (this.filterRarity !== 'all') {
-            items = items.filter(item => item.rarity === this.filterRarity);
+            const filteredItems = items.filter(item => item.rarity === this.filterRarity);
+            console.log('Filtered by rarity', this.filterRarity + ':', filteredItems.length, 'items');
+            items = filteredItems;
         }
         
         // Create item elements
@@ -177,6 +317,7 @@ export default class ShopUI {
             noItems.className = 'no-items';
             noItems.textContent = 'No items available';
             this.itemsContainer.appendChild(noItems);
+            console.log('No items available message shown');
         }
     }
     
@@ -330,12 +471,29 @@ export default class ShopUI {
     }
     
     updateGoldDisplay() {
+        console.log('Updating gold display');
+        
+        // Re-fetch elements in case they were just created
+        if (!this.playerGold) {
+            this.playerGold = document.getElementById('player-gold');
+        }
+        
+        if (!this.shopGold) {
+            this.shopGold = document.getElementById('shop-gold');
+        }
+        
         if (this.playerGold) {
             this.playerGold.textContent = `${this.hero.gold || 0} gold`;
+            console.log('Player gold updated:', this.hero.gold);
+        } else {
+            console.warn('Player gold element not found');
         }
         
         if (this.shopGold) {
             this.shopGold.textContent = `${this.shop.gold || 0} gold`;
+            console.log('Shop gold updated:', this.shop.gold);
+        } else {
+            console.warn('Shop gold element not found');
         }
     }
     
@@ -399,10 +557,37 @@ export default class ShopUI {
     }
     
     open() {
-        if (!this.shopModal) return;
+        console.log('Opening shop modal');
+        
+        // Check if shop modal exists, create it if not
+        if (!this.shopModal) {
+            console.log('Shop modal not found, creating it');
+            this.createShopModal();
+            
+            // Re-initialize UI elements
+            this.shopContent = document.getElementById('shop-content');
+            this.shopTabs = document.getElementById('shop-tabs');
+            this.itemsContainer = document.getElementById('shop-items');
+            this.itemDetails = document.getElementById('item-details');
+            this.playerGold = document.getElementById('player-gold');
+            this.shopGold = document.getElementById('shop-gold');
+            this.buyButton = document.getElementById('buy-button');
+            this.sellButton = document.getElementById('sell-button');
+            this.closeButton = document.querySelector('#shop-modal .close-button');
+            this.rarityFilter = document.getElementById('rarity-filter');
+            
+            // Re-add event listeners
+            this.addEventListeners();
+        }
+        
+        if (!this.shopModal) {
+            console.error('Failed to create shop modal!');
+            return;
+        }
         
         this.shopModal.classList.remove('hidden');
         this.isOpen = true;
+        console.log('Shop opened, isOpen =', this.isOpen);
         
         // Populate items
         this.populateItems();
@@ -416,14 +601,20 @@ export default class ShopUI {
     }
     
     close() {
-        if (!this.shopModal) return;
+        console.log('Closing shop modal');
+        if (!this.shopModal) {
+            console.error('Shop modal element not found!');
+            return;
+        }
         
         this.shopModal.classList.add('hidden');
         this.isOpen = false;
         this.selectedItem = null;
+        console.log('Shop closed, isOpen =', this.isOpen);
     }
     
     toggle() {
+        console.log('Toggle shop called, current state:', this.isOpen);
         if (this.isOpen) {
             this.close();
         } else {
