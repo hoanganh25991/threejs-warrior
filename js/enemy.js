@@ -92,26 +92,46 @@ export class Enemy {
         this.wanderTimer += deltaTime;
         this.attackTimer += deltaTime;
         
-        // Check if player is in attack range
-        const distanceToPlayer = this.mesh.position.distanceTo(playerPosition);
+        // Calculate horizontal distance to player (ignoring height)
+        const horizontalDistance = new THREE.Vector2(
+            this.mesh.position.x - playerPosition.x,
+            this.mesh.position.z - playerPosition.z
+        ).length();
         
-        // Check if player is flying (y position > 0)
-        const isPlayerFlying = playerPosition.y > 0;
+        // Check if player is flying
+        const flyingThreshold = 3.0; // Consider player flying if above this height
+        const isPlayerFlying = playerPosition.y > flyingThreshold;
         
-        // Determine if we can attack based on player flying status and enemy type
-        const canAttack = !isPlayerFlying || this.isRanged;
+        // Determine if this enemy can attack based on type and player position
+        let canAttack = false;
+        let isInRange = false;
         
-        if (distanceToPlayer <= this.attackRange && canAttack) {
-            // Player is in range and we can attack (either player is on ground or we're ranged)
+        if (this.isRanged) {
+            // Ranged enemies can attack flying players
+            // Use 3D distance for range check
+            const distanceToPlayer = this.mesh.position.distanceTo(playerPosition);
+            isInRange = distanceToPlayer <= this.attackRange;
+            canAttack = isInRange;
+        } else {
+            // Melee enemies can only attack grounded players
+            isInRange = horizontalDistance <= this.attackRange;
+            canAttack = isInRange && !isPlayerFlying;
+        }
+        
+        if (canAttack) {
+            // Player is in range and we can attack
             if (this.attackTimer >= this.attackInterval) {
                 this.attack(playerPosition);
                 this.attackTimer = 0;
             }
-            
-            // Move towards player (but stay on ground)
+        }
+        
+        // Always move towards player's horizontal position (but stay on ground)
+        // This ensures enemies always try to get under flying players
+        if (horizontalDistance <= this.attackRange * 2) {
             this.moveTowards(new THREE.Vector3(playerPosition.x, this.mesh.position.y, playerPosition.z), deltaTime);
         } else {
-            // Player is out of range or we can't attack, wander around
+            // Player is too far away, wander around
             this.wander(deltaTime);
         }
         
@@ -120,7 +140,7 @@ export class Enemy {
     }
     
     moveTowards(targetPosition, deltaTime) {
-        // Calculate direction to target
+        // Calculate direction to target (only in x and z directions)
         this.moveDirection.subVectors(targetPosition, this.mesh.position).normalize();
         
         // Move towards target (only in x and z directions)
@@ -130,8 +150,16 @@ export class Enemy {
         // Keep y position constant (enemies stay on ground)
         this.mesh.position.y = 0.75;
         
-        // Rotate to face target (including looking up at flying targets)
-        this.mesh.lookAt(targetPosition);
+        // Create a target position at the same height as the enemy
+        // This ensures the enemy only rotates in the horizontal plane and stays upright
+        const horizontalTarget = new THREE.Vector3(
+            targetPosition.x,
+            this.mesh.position.y,
+            targetPosition.z
+        );
+        
+        // Rotate to face target horizontally only (no looking up)
+        this.mesh.lookAt(horizontalTarget);
     }
     
     wander(deltaTime) {
@@ -168,14 +196,27 @@ export class Enemy {
         const material = new THREE.MeshBasicMaterial({ color });
         const attackEffect = new THREE.Mesh(geometry, material);
         
-        // Position the attack effect
+        // Position the attack effect at the enemy's position
         attackEffect.position.copy(this.mesh.position);
-        attackEffect.position.y = 1;
+        attackEffect.position.y = 1; // Slightly above the enemy's center
+        
+        // Add to scene
+        this.scene.add(attackEffect);
         
         // For ranged enemies, create a projectile that moves toward the player
         if (this.isRanged) {
-            // Create a direction vector from enemy to player
-            const direction = new THREE.Vector3().subVectors(playerPosition, this.mesh.position).normalize();
+            // Create a starting position for the projectile (at enemy's eye level)
+            const startPosition = new THREE.Vector3(
+                this.mesh.position.x,
+                1.0, // Fixed height for projectile start (eye level)
+                this.mesh.position.z
+            );
+            
+            // Reset the attack effect position
+            attackEffect.position.copy(startPosition);
+            
+            // Create a direction vector from enemy to player (including vertical component)
+            const direction = new THREE.Vector3().subVectors(playerPosition, startPosition).normalize();
             
             // Animate the projectile
             const animateProjectile = () => {
@@ -184,9 +225,9 @@ export class Enemy {
                 
                 // Check if we've reached the player or gone too far
                 const distanceToPlayer = attackEffect.position.distanceTo(playerPosition);
-                const distanceToEnemy = attackEffect.position.distanceTo(this.mesh.position);
+                const distanceToStart = attackEffect.position.distanceTo(startPosition);
                 
-                if (distanceToPlayer < 0.5 || distanceToEnemy > this.attackRange) {
+                if (distanceToPlayer < 0.5 || distanceToStart > this.attackRange) {
                     // Hit the player or reached max range
                     this.scene.remove(attackEffect);
                     this.isAttacking = false;
@@ -200,15 +241,25 @@ export class Enemy {
             // Start animation
             animateProjectile();
         } else {
+            // For melee enemies, just show the attack effect in front of them
+            // Create a direction vector from enemy to player (only in x and z)
+            const horizontalDirection = new THREE.Vector3(
+                playerPosition.x - this.mesh.position.x,
+                0,
+                playerPosition.z - this.mesh.position.z
+            ).normalize();
+            
+            // Position the attack effect in front of the enemy (maintaining the same height)
+            attackEffect.position.x += horizontalDirection.x * 0.5;
+            attackEffect.position.z += horizontalDirection.z * 0.5;
+            // Keep y position fixed at 1 (slightly above enemy center)
+            
             // For melee enemies, just show the effect briefly
             setTimeout(() => {
                 this.scene.remove(attackEffect);
                 this.isAttacking = false;
             }, 500);
         }
-        
-        // Add to scene
-        this.scene.add(attackEffect);
         
         // Return damage amount (to be applied to player)
         return this.damage;
