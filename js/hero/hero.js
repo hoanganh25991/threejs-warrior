@@ -123,6 +123,8 @@ export default class Hero {
         this.skills.set('U', new IceBlast(this));
         this.skills.set('I', new GlacialBarrier(this));
         this.skills.set('H', new Blizzard(this));
+        this.skills.set('J', new FrozenOrb(this));
+        this.skills.set('K', new IceShards(this));
         break;
       // Add more hero types and their skills here
     }

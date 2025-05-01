@@ -164,6 +164,20 @@ export default class Blizzard extends Skill {
             particle.velocity.x = (Math.random() - 0.5) * 2;
             particle.velocity.z = (Math.random() - 0.5) * 2;
         }
+        
+        // Set blizzard active
+        this.blizzardActive = true;
+        this.lastParticleTime = Date.now();
+        
+        // Play sound effect
+        if (this.hero.soundManager) {
+            this.hero.soundManager.playSound('blizzard');
+        }
+        
+        // Set a timeout to end the blizzard
+        setTimeout(() => {
+            this.endBlizzard();
+        }, this.duration * 1000);
     }
     
     createFrostPattern(parent, start, end, depth, width) {
@@ -396,21 +410,6 @@ export default class Blizzard extends Skill {
         parent.add(formationGroup);
         return formationGroup;
     }
-        
-        // Set blizzard active
-        this.blizzardActive = true;
-        this.lastParticleTime = Date.now();
-        
-        // Play sound effect
-        if (this.hero.soundManager) {
-            this.hero.soundManager.playSound('blizzard');
-        }
-        
-        // Set a timeout to end the blizzard
-        setTimeout(() => {
-            this.endBlizzard();
-        }, this.duration * 1000);
-    }
     
     endBlizzard() {
         if (!this.blizzardActive) return;
@@ -418,8 +417,16 @@ export default class Blizzard extends Skill {
         // Remove blizzard mesh
         if (this.blizzardMesh) {
             this.scene.remove(this.blizzardMesh);
-            this.blizzardMesh.geometry.dispose();
-            this.blizzardMesh.material.dispose();
+            this.blizzardMesh.traverse(child => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => material.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
             this.blizzardMesh = null;
         }
         
@@ -436,6 +443,13 @@ export default class Blizzard extends Skill {
             // Pulse effect
             const pulseScale = 1 + 0.05 * Math.sin(Date.now() / 300);
             this.blizzardMesh.scale.set(pulseScale, 1, pulseScale);
+            
+            // Rotate the ice trees slightly for a wind effect
+            this.blizzardMesh.children.forEach(child => {
+                if (child.type === 'Group') {
+                    child.rotation.y += delta * 0.1 * (Math.random() * 0.5 + 0.5);
+                }
+            });
         }
         
         // Create continuous snow particles

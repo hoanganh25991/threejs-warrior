@@ -20,21 +20,62 @@ export default class FrostNova extends Skill {
     createEffect() {
         const origin = this.hero.group.position.clone();
         
-        // Create expanding frost ring
-        const segments = 32;
-        const geometry = new THREE.RingGeometry(0.1, this.range, segments);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
+        // Create frost ground effect
+        const groundGeometry = new THREE.CircleGeometry(this.range, 32);
+        const groundMaterial = new THREE.MeshPhongMaterial({
+            color: 0xadd8e6,
             transparent: true,
-            opacity: 0.5,
-            side: THREE.DoubleSide
+            opacity: 0.3,
+            side: THREE.DoubleSide,
+            emissive: 0x0088ff,
+            emissiveIntensity: 0.2
         });
-
-        const ring = new THREE.Mesh(geometry, material);
-        ring.rotation.x = Math.PI / 2; // Lay flat on the ground
-        ring.position.copy(origin);
         
-        this.scene.add(ring);
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2; // Lay flat
+        ground.position.copy(origin);
+        ground.position.y += 0.05; // Slightly above ground
+        this.scene.add(ground);
+        
+        // Create multiple expanding frost rings
+        const ringCount = 3;
+        const rings = [];
+        
+        for (let i = 0; i < ringCount; i++) {
+            const ringGeometry = new THREE.RingGeometry(0.1, 0.3, 32);
+            const ringMaterial = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6,
+                transparent: true,
+                opacity: 0.8,
+                emissive: 0x0088ff,
+                emissiveIntensity: 0.3,
+                side: THREE.DoubleSide
+            });
+            
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = Math.PI / 2; // Lay flat on the ground
+            ring.position.copy(origin);
+            ring.position.y += 0.1; // Slightly above ground
+            
+            this.scene.add(ring);
+            rings.push(ring);
+        }
+        
+        // Create frost patterns on ground (tree root patterns)
+        const patternCount = 6;
+        for (let i = 0; i < patternCount; i++) {
+            const angle = (i / patternCount) * Math.PI * 2;
+            const startRadius = 0.5;
+            const endRadius = this.range * 0.9;
+            
+            // Create branching frost pattern
+            this.createFrostPattern(
+                origin,
+                angle,
+                startRadius,
+                endRadius
+            );
+        }
         
         // Create ice trees around the perimeter
         const treeCount = 8;
@@ -65,24 +106,66 @@ export default class FrostNova extends Skill {
             this.createIceTree(treePosition, 0.5 + Math.random() * 0.5);
         }
         
-        // Animate ring expansion and fade
+        // Animate rings expansion and fade
         const startTime = Date.now();
         const animate = () => {
             const elapsed = (Date.now() - startTime) / 1000;
-            const progress = elapsed / this.duration;
             
-            if (progress < 1) {
-                ring.scale.setScalar(progress);
-                material.opacity = 0.5 * (1 - progress);
+            rings.forEach((ring, index) => {
+                // Stagger the start of each ring
+                const delay = index * 0.3;
+                const adjustedElapsed = elapsed - delay;
+                
+                if (adjustedElapsed <= 0) return;
+                
+                const progress = Math.min(adjustedElapsed / this.duration, 1);
+                
+                // Expand ring
+                const scale = progress * (this.range / 0.2); // 0.2 is average of inner and outer radius
+                ring.scale.setScalar(scale);
+                
+                // Fade out near end
+                if (progress > 0.7) {
+                    ring.material.opacity = 0.8 * (1 - (progress - 0.7) / 0.3);
+                }
+                
+                // Remove when done
+                if (progress >= 1) {
+                    this.scene.remove(ring);
+                    ring.geometry.dispose();
+                    ring.material.dispose();
+                    rings[index] = null;
+                }
+            });
+            
+            // Continue animation if any rings remain
+            if (rings.some(ring => ring !== null)) {
                 requestAnimationFrame(animate);
-            } else {
-                this.scene.remove(ring);
-                ring.geometry.dispose();
-                ring.material.dispose();
             }
         };
         
         animate();
+        
+        // Animate ground fade
+        const animateGround = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const duration = this.slowDuration;
+            const progress = elapsed / duration;
+            
+            if (progress < 1) {
+                // Keep full opacity for first half, then fade
+                if (progress > 0.5) {
+                    ground.material.opacity = 0.3 * (1 - (progress - 0.5) / 0.5);
+                }
+                requestAnimationFrame(animateGround);
+            } else {
+                this.scene.remove(ground);
+                ground.geometry.dispose();
+                ground.material.dispose();
+            }
+        };
+        
+        animateGround();
 
         // Create ice particles
         for (let i = 0; i < 100; i++) {
@@ -332,13 +415,187 @@ export default class FrostNova extends Skill {
         });
     }
     
+    createFrostPattern(origin, angle, startRadius, endRadius) {
+        // Create a branching frost pattern on the ground
+        const startPoint = new THREE.Vector3(
+            origin.x + Math.cos(angle) * startRadius,
+            origin.y + 0.06, // Slightly above ground
+            origin.z + Math.sin(angle) * startRadius
+        );
+        
+        const endPoint = new THREE.Vector3(
+            origin.x + Math.cos(angle) * endRadius,
+            origin.y + 0.06,
+            origin.z + Math.sin(angle) * endRadius
+        );
+        
+        this.createFrostBranch(startPoint, endPoint, 3, 0.8);
+    }
+    
+    createFrostBranch(start, end, depth, width) {
+        if (depth <= 0) return;
+        
+        // Create main branch
+        const points = [start, end];
+        const curve = new THREE.CatmullRomCurve3(points);
+        
+        const tubeGeometry = new THREE.TubeGeometry(curve, 8, width * 0.05, 8, false);
+        const tubeMaterial = new THREE.MeshPhongMaterial({
+            color: 0xadd8e6,
+            transparent: true,
+            opacity: 0.7,
+            emissive: 0x0088ff,
+            emissiveIntensity: 0.2
+        });
+        
+        const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+        this.scene.add(tube);
+        
+        // Store for cleanup
+        this.iceTrees.push({
+            group: tube,
+            trunk: tube,
+            branches: [],
+            crystals: []
+        });
+        
+        // Create sub-branches
+        const midPoint = new THREE.Vector3().lerpVectors(start, end, 0.5);
+        const direction = new THREE.Vector3().subVectors(end, start).normalize();
+        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x);
+        
+        // Create 2 branches at midpoint
+        for (let i = -1; i <= 1; i += 2) {
+            if (i === 0) continue; // Skip middle
+            
+            const branchLength = width * 0.8;
+            const branchEnd = new THREE.Vector3().copy(midPoint).add(
+                perpendicular.clone().multiplyScalar(i * branchLength)
+            );
+            
+            // Add some randomness
+            branchEnd.x += (Math.random() - 0.5) * width * 0.4;
+            branchEnd.z += (Math.random() - 0.5) * width * 0.4;
+            
+            this.createFrostBranch(midPoint, branchEnd, depth - 1, width * 0.6);
+        }
+        
+        // Add some ice crystals along the branch
+        if (depth === 1) {
+            const crystalCount = 2 + Math.floor(Math.random() * 3);
+            
+            for (let i = 0; i < crystalCount; i++) {
+                const t = Math.random();
+                const point = curve.getPoint(t);
+                
+                // Randomly choose crystal shape
+                let crystalGeometry;
+                const crystalType = Math.floor(Math.random() * 3);
+                
+                switch (crystalType) {
+                    case 0:
+                        crystalGeometry = new THREE.TetrahedronGeometry(0.06);
+                        break;
+                    case 1:
+                        crystalGeometry = new THREE.OctahedronGeometry(0.05);
+                        break;
+                    default:
+                        crystalGeometry = new THREE.IcosahedronGeometry(0.04);
+                }
+                
+                const crystalMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xd6f1ff,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.2
+                });
+                
+                const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+                crystal.position.copy(point);
+                crystal.position.y += 0.05; // Slightly above the branch
+                
+                // Random rotation
+                crystal.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                this.scene.add(crystal);
+                
+                // Store for cleanup
+                this.iceTrees.push({
+                    group: crystal,
+                    trunk: crystal,
+                    branches: [],
+                    crystals: [crystal]
+                });
+            }
+        }
+    }
+    
     createEnemyFrostEffect(enemy) {
-        // Create a small ice formation on the enemy
+        // Create a small ice tree formation on the enemy
         const frostGroup = new THREE.Group();
         
-        // Create several ice crystals
+        // Create main trunk
+        const trunkGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.6, 5);
+        const trunkMaterial = new THREE.MeshPhongMaterial({
+            color: 0xadd8e6, // Light blue
+            transparent: true,
+            opacity: 0.8,
+            shininess: 90,
+            emissive: 0x0088ff,
+            emissiveIntensity: 0.3
+        });
+        
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+        trunk.position.y = 0.3; // Half height
+        frostGroup.add(trunk);
+        
+        // Create branches
+        const branchCount = 3 + Math.floor(Math.random() * 2);
+        
+        for (let i = 0; i < branchCount; i++) {
+            const angle = (i / branchCount) * Math.PI * 2;
+            const branchHeight = 0.1 + (i / branchCount) * 0.4;
+            
+            const branchGeometry = new THREE.CylinderGeometry(0.01, 0.03, 0.2, 4);
+            const branch = new THREE.Mesh(branchGeometry, trunkMaterial);
+            
+            // Position on trunk
+            branch.position.y = branchHeight;
+            
+            // Rotate to point outward and upward
+            branch.rotation.z = Math.PI / 4; // 45 degrees up
+            branch.rotation.y = angle;
+            
+            // Move outward from trunk
+            branch.position.x = Math.cos(angle) * 0.05;
+            branch.position.z = Math.sin(angle) * 0.05;
+            
+            frostGroup.add(branch);
+        }
+        
+        // Create ice crystals
         for (let i = 0; i < 5; i++) {
-            const crystalGeometry = new THREE.TetrahedronGeometry(0.1);
+            // Randomly choose crystal shape
+            let crystalGeometry;
+            const crystalType = Math.floor(Math.random() * 3);
+            
+            switch (crystalType) {
+                case 0:
+                    crystalGeometry = new THREE.TetrahedronGeometry(0.1);
+                    break;
+                case 1:
+                    crystalGeometry = new THREE.OctahedronGeometry(0.08);
+                    break;
+                default:
+                    crystalGeometry = new THREE.IcosahedronGeometry(0.06);
+            }
+            
             const crystalMaterial = new THREE.MeshPhongMaterial({
                 color: 0xd6f1ff,
                 transparent: true,
