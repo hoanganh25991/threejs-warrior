@@ -11,6 +11,7 @@ export default class FrostNova extends Skill {
         this.slowDuration = 3.0;
         this.slowAmount = 0.5; // 50% slow
         this.iceTrees = [];
+        this.damageType = 'ice';
     }
 
     getCooldownDuration() {
@@ -196,57 +197,275 @@ export default class FrostNova extends Skill {
         
         // Set a timer to remove the ice trees
         setTimeout(() => this.cleanupIceTrees(), this.slowDuration * 1000);
+        
+        // Add an active effect for collision detection
+        this.addActiveEffect({
+            type: 'aoe',
+            position: origin,
+            radius: this.range,
+            damage: this.damage,
+            damageType: this.damageType,
+            lifetime: this.duration,
+            canHitMultiple: true,
+            onHit: (hitEnemies) => {
+                // Apply slow effect to hit enemies
+                hitEnemies.forEach(hit => {
+                    this.applySlowEffect(hit.enemy);
+                });
+            }
+        });
     }
     
-    createIceTree(position, scale) {
-        const treeGroup = new THREE.Group();
-        treeGroup.position.copy(position);
-        treeGroup.scale.set(scale, scale, scale);
+    updateEffect(delta) {
+        // The collision system will handle damage application
+        // We just need to update visual effects here
         
-        // Create trunk
-        const trunkGeometry = new THREE.CylinderGeometry(0.1, 0.15, 1.2, 6);
-        const trunkMaterial = new THREE.MeshPhongMaterial({
-            color: 0xadd8e6, // Light blue
-            transparent: true,
-            opacity: 0.8,
-            shininess: 90,
-            emissive: 0x0088ff,
-            emissiveIntensity: 0.3
-        });
+        // Create occasional frost particles
+        if (Math.random() < 0.2) {
+            const origin = this.hero.group.position.clone();
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * this.range;
+            
+            const position = new THREE.Vector3(
+                origin.x + Math.cos(angle) * radius,
+                origin.y,
+                origin.z + Math.sin(angle) * radius
+            );
+            
+            const particle = this.createParticle(
+                position,
+                0x00ffff, // Cyan color
+                0.1,      // Size
+                0.5       // Life
+            );
+            
+            // Add upward velocity
+            particle.velocity.y = 1 + Math.random();
+        }
+    }
+    
+    /**
+     * Apply slow effect to an enemy
+     */
+    applySlowEffect(enemy) {
+        // Skip if already slowed
+        if (enemy.slowed) return;
         
-        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-        trunk.position.y = 0.6; // Half height
-        treeGroup.add(trunk);
+        // Apply slow effect
+        enemy.slowed = true;
+        enemy.originalSpeed = enemy.speed;
+        enemy.speed *= (1 - this.slowAmount);
         
-        // Create branches
-        const branchCount = 4 + Math.floor(Math.random() * 3);
-        const branches = [];
+        // Create ice crystals on the enemy
+        this.createEnemyFrostEffect(enemy);
         
+        // Reset speed after slow duration
+        setTimeout(() => {
+            if (enemy.slowed) {
+                enemy.speed = enemy.originalSpeed;
+                enemy.slowed = false;
+                
+                // Remove ice crystals
+                if (enemy.frostEffects) {
+                    enemy.frostEffects.forEach(effect => {
+                        this.scene.remove(effect);
+                    });
+                    enemy.frostEffects = null;
+                }
+            }
+        }, this.slowDuration * 1000);
+    }
+    
+    createFrostPattern(origin, angle, startRadius, endRadius) {
+        // Create a branching frost pattern on the ground
+        const branchCount = 3 + Math.floor(Math.random() * 3);
+        const mainDirection = new THREE.Vector3(
+            Math.cos(angle),
+            0,
+            Math.sin(angle)
+        );
+        
+        // Create main branch
+        this.createFrostBranch(
+            origin,
+            mainDirection,
+            startRadius,
+            endRadius,
+            0.1, // Width
+            0
+        );
+        
+        // Create sub-branches
         for (let i = 0; i < branchCount; i++) {
-            const angle = (i / branchCount) * Math.PI * 2;
-            const height = 0.3 + (i / branchCount) * 0.8;
+            // Calculate branch start position along main branch
+            const branchStartDistance = startRadius + (endRadius - startRadius) * (0.3 + Math.random() * 0.5);
+            const branchStartPos = new THREE.Vector3(
+                origin.x + mainDirection.x * branchStartDistance,
+                origin.y,
+                origin.z + mainDirection.z * branchStartDistance
+            );
             
-            const branchGeometry = new THREE.CylinderGeometry(0.02, 0.05, 0.4, 4);
-            const branch = new THREE.Mesh(branchGeometry, trunkMaterial);
+            // Calculate branch angle (off to the side from main branch)
+            const branchAngle = angle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 6 + Math.random() * Math.PI / 6);
+            const branchDirection = new THREE.Vector3(
+                Math.cos(branchAngle),
+                0,
+                Math.sin(branchAngle)
+            );
             
-            // Position on trunk
-            branch.position.y = height;
+            // Create sub-branch
+            this.createFrostBranch(
+                branchStartPos,
+                branchDirection,
+                0,
+                endRadius * 0.3,
+                0.05, // Width
+                1
+            );
+        }
+    }
+    
+    createFrostBranch(origin, direction, startDistance, endDistance, width, depth) {
+        // Maximum recursion depth
+        if (depth > 2) return;
+        
+        // Create frost line on ground
+        const points = [];
+        const segmentCount = 10;
+        const totalDistance = endDistance - startDistance;
+        
+        // Create a slightly curved path
+        const controlPoint = new THREE.Vector3(
+            origin.x + direction.x * (startDistance + totalDistance * 0.5) + (Math.random() - 0.5) * totalDistance * 0.3,
+            origin.y,
+            origin.z + direction.z * (startDistance + totalDistance * 0.5) + (Math.random() - 0.5) * totalDistance * 0.3
+        );
+        
+        for (let i = 0; i <= segmentCount; i++) {
+            const t = i / segmentCount;
+            const segmentDistance = startDistance + totalDistance * t;
             
-            // Rotate to point outward and upward
-            branch.rotation.z = Math.PI / 4; // 45 degrees up
-            branch.rotation.y = angle;
+            // Quadratic bezier curve
+            const p0 = new THREE.Vector3(
+                origin.x + direction.x * startDistance,
+                origin.y,
+                origin.z + direction.z * startDistance
+            );
             
-            // Move outward from trunk
-            branch.position.x = Math.cos(angle) * 0.1;
-            branch.position.z = Math.sin(angle) * 0.1;
+            const p2 = new THREE.Vector3(
+                origin.x + direction.x * endDistance,
+                origin.y,
+                origin.z + direction.z * endDistance
+            );
             
-            treeGroup.add(branch);
-            branches.push(branch);
+            // Interpolate between points
+            const point = new THREE.Vector3();
+            point.x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * controlPoint.x + t * t * p2.x;
+            point.y = origin.y + 0.01; // Slightly above ground
+            point.z = (1 - t) * (1 - t) * p0.z + 2 * (1 - t) * t * controlPoint.z + t * t * p2.z;
+            
+            points.push(point);
         }
         
-        // Create ice crystals (leaves)
-        const crystalCount = 12 + Math.floor(Math.random() * 8);
-        const crystals = [];
+        // Create frost line segments
+        for (let i = 0; i < points.length - 1; i++) {
+            const start = points[i];
+            const end = points[i + 1];
+            
+            // Calculate segment direction
+            const segmentDir = new THREE.Vector3().subVectors(end, start).normalize();
+            
+            // Create perpendicular vector for width
+            const perpendicular = new THREE.Vector3(-segmentDir.z, 0, segmentDir.x);
+            
+            // Create quad geometry for segment
+            const segmentWidth = width * (1 - i / points.length * 0.5); // Taper width
+            
+            const v1 = new THREE.Vector3().copy(start).add(perpendicular.clone().multiplyScalar(segmentWidth));
+            const v2 = new THREE.Vector3().copy(start).add(perpendicular.clone().multiplyScalar(-segmentWidth));
+            const v3 = new THREE.Vector3().copy(end).add(perpendicular.clone().multiplyScalar(-segmentWidth));
+            const v4 = new THREE.Vector3().copy(end).add(perpendicular.clone().multiplyScalar(segmentWidth));
+            
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                v1.x, v1.y, v1.z,
+                v2.x, v2.y, v2.z,
+                v3.x, v3.y, v3.z,
+                
+                v1.x, v1.y, v1.z,
+                v3.x, v3.y, v3.z,
+                v4.x, v4.y, v4.z
+            ]);
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6,
+                transparent: true,
+                opacity: 0.5,
+                emissive: 0x0088ff,
+                emissiveIntensity: 0.2
+            });
+            
+            const segment = new THREE.Mesh(geometry, material);
+            this.scene.add(segment);
+            
+            // Add to ice trees for cleanup
+            this.iceTrees.push({
+                group: segment,
+                isSegment: true
+            });
+        }
+        
+        // Recursively create smaller branches
+        if (depth < 2 && Math.random() < 0.7) {
+            const branchCount = 1 + Math.floor(Math.random() * 2);
+            
+            for (let i = 0; i < branchCount; i++) {
+                // Calculate branch start position along this branch
+                const branchIndex = Math.floor(points.length * (0.5 + Math.random() * 0.3));
+                const branchStartPos = points[branchIndex];
+                
+                // Calculate branch angle (off to the side from this branch)
+                const currentDir = new THREE.Vector3().subVectors(
+                    points[branchIndex + 1] || points[branchIndex],
+                    points[branchIndex - 1] || points[branchIndex]
+                ).normalize();
+                
+                const branchAngle = Math.atan2(currentDir.z, currentDir.x) + 
+                                   (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4 + Math.random() * Math.PI / 4);
+                
+                const branchDirection = new THREE.Vector3(
+                    Math.cos(branchAngle),
+                    0,
+                    Math.sin(branchAngle)
+                );
+                
+                // Create sub-branch
+                this.createFrostBranch(
+                    branchStartPos,
+                    branchDirection,
+                    0,
+                    totalDistance * 0.4,
+                    width * 0.6,
+                    depth + 1
+                );
+            }
+        }
+    }
+    
+    createEnemyFrostEffect(enemy) {
+        // Create ice crystals on the enemy
+        if (!enemy.frostEffects) {
+            enemy.frostEffects = [];
+        }
+        
+        // Get enemy position and size
+        const position = enemy.group ? enemy.group.position : enemy.position;
+        const size = enemy.size || 1;
+        
+        // Create 3-5 ice crystals
+        const crystalCount = 3 + Math.floor(Math.random() * 3);
         
         for (let i = 0; i < crystalCount; i++) {
             // Randomly choose crystal shape
@@ -255,345 +474,13 @@ export default class FrostNova extends Skill {
             
             switch (crystalType) {
                 case 0:
-                    crystalGeometry = new THREE.TetrahedronGeometry(0.1);
+                    crystalGeometry = new THREE.TetrahedronGeometry(0.1 * size);
                     break;
                 case 1:
-                    crystalGeometry = new THREE.OctahedronGeometry(0.08);
+                    crystalGeometry = new THREE.OctahedronGeometry(0.08 * size);
                     break;
                 default:
-                    crystalGeometry = new THREE.IcosahedronGeometry(0.06);
-            }
-            
-            const crystalMaterial = new THREE.MeshPhongMaterial({
-                color: 0xd6f1ff,
-                transparent: true,
-                opacity: 0.7,
-                shininess: 100,
-                emissive: 0x0088ff,
-                emissiveIntensity: 0.2
-            });
-            
-            const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
-            
-            // Position randomly on branches or trunk
-            const onBranch = Math.random() > 0.3 && branches.length > 0;
-            
-            if (onBranch) {
-                // Place on a random branch
-                const branch = branches[Math.floor(Math.random() * branches.length)];
-                const branchPos = branch.position.clone();
-                const branchDir = new THREE.Vector3(branch.position.x, 0, branch.position.z).normalize();
-                
-                crystal.position.copy(branchPos);
-                crystal.position.x += branchDir.x * (0.1 + Math.random() * 0.2);
-                crystal.position.z += branchDir.z * (0.1 + Math.random() * 0.2);
-                crystal.position.y += Math.random() * 0.1;
-            } else {
-                // Place on trunk
-                const angle = Math.random() * Math.PI * 2;
-                const height = 0.2 + Math.random() * 1.0;
-                
-                crystal.position.set(
-                    Math.cos(angle) * 0.08,
-                    height,
-                    Math.sin(angle) * 0.08
-                );
-            }
-            
-            // Random rotation
-            crystal.rotation.set(
-                Math.random() * Math.PI,
-                Math.random() * Math.PI,
-                Math.random() * Math.PI
-            );
-            
-            treeGroup.add(crystal);
-            crystals.push(crystal);
-        }
-        
-        // Add frost particles
-        const particleCount = 5 + Math.floor(Math.random() * 5);
-        for (let i = 0; i < particleCount; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const height = 0.2 + Math.random() * 1.0;
-            const radius = 0.1 + Math.random() * 0.2;
-            
-            const particlePos = new THREE.Vector3(
-                position.x + Math.cos(angle) * radius,
-                position.y + height,
-                position.z + Math.sin(angle) * radius
-            );
-            
-            const particle = this.createParticle(
-                particlePos,
-                0x88ccff, // Light blue
-                0.05 + Math.random() * 0.05, // Size
-                2.0 + Math.random() * 2.0 // Life
-            );
-            
-            // Slow upward drift
-            particle.velocity.y = 0.2 + Math.random() * 0.3;
-        }
-        
-        this.scene.add(treeGroup);
-        
-        // Store tree components for later cleanup
-        this.iceTrees.push({
-            group: treeGroup,
-            trunk,
-            branches,
-            crystals
-        });
-        
-        return treeGroup;
-    }
-
-    updateEffect(delta) {
-        // Find all enemies in range
-        const enemies = this.scene.getObjectsByProperty('type', 'enemy');
-        const origin = this.hero.group.position;
-
-        enemies.forEach(enemy => {
-            const distance = enemy.position.distanceTo(origin);
-            
-            if (distance <= this.range) {
-                // Apply damage
-                if (enemy.takeDamage) {
-                    enemy.takeDamage(this.damage * delta);
-                }
-                
-                // Apply slow effect
-                if (!enemy.slowed) {
-                    enemy.slowed = true;
-                    enemy.originalSpeed = enemy.speed;
-                    enemy.speed *= (1 - this.slowAmount);
-                    
-                    // Create ice crystals on the enemy
-                    this.createEnemyFrostEffect(enemy);
-                    
-                    // Reset speed after slow duration
-                    setTimeout(() => {
-                        if (enemy.slowed) {
-                            enemy.speed = enemy.originalSpeed;
-                            enemy.slowed = false;
-                            
-                            // Remove ice crystals
-                            if (enemy.frostEffect) {
-                                this.scene.remove(enemy.frostEffect);
-                                enemy.frostEffect = null;
-                            }
-                        }
-                    }, this.slowDuration * 1000);
-                }
-
-                // Create frost particles on enemy
-                if (Math.random() < delta * 5) {
-                    const pos = enemy.position.clone();
-                    pos.y += 1; // Adjust to hit body
-                    
-                    this.createParticle(
-                        pos,
-                        0x00ffff, // Cyan color
-                        0.1,      // Size
-                        0.5       // Life
-                    );
-                }
-            }
-        });
-        
-        // Animate ice trees
-        this.iceTrees.forEach(tree => {
-            // Subtle shimmer effect on crystals
-            tree.crystals.forEach(crystal => {
-                crystal.rotation.x += delta * 0.2;
-                crystal.rotation.y += delta * 0.1;
-                
-                // Pulse opacity
-                const opacity = 0.5 + Math.sin(Date.now() * 0.003) * 0.2;
-                crystal.material.opacity = opacity;
-            });
-        });
-    }
-    
-    createFrostPattern(origin, angle, startRadius, endRadius) {
-        // Create a branching frost pattern on the ground
-        const startPoint = new THREE.Vector3(
-            origin.x + Math.cos(angle) * startRadius,
-            origin.y + 0.06, // Slightly above ground
-            origin.z + Math.sin(angle) * startRadius
-        );
-        
-        const endPoint = new THREE.Vector3(
-            origin.x + Math.cos(angle) * endRadius,
-            origin.y + 0.06,
-            origin.z + Math.sin(angle) * endRadius
-        );
-        
-        this.createFrostBranch(startPoint, endPoint, 3, 0.8);
-    }
-    
-    createFrostBranch(start, end, depth, width) {
-        if (depth <= 0) return;
-        
-        // Create main branch
-        const points = [start, end];
-        const curve = new THREE.CatmullRomCurve3(points);
-        
-        const tubeGeometry = new THREE.TubeGeometry(curve, 8, width * 0.05, 8, false);
-        const tubeMaterial = new THREE.MeshPhongMaterial({
-            color: 0xadd8e6,
-            transparent: true,
-            opacity: 0.7,
-            emissive: 0x0088ff,
-            emissiveIntensity: 0.2
-        });
-        
-        const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
-        this.scene.add(tube);
-        
-        // Store for cleanup
-        this.iceTrees.push({
-            group: tube,
-            trunk: tube,
-            branches: [],
-            crystals: []
-        });
-        
-        // Create sub-branches
-        const midPoint = new THREE.Vector3().lerpVectors(start, end, 0.5);
-        const direction = new THREE.Vector3().subVectors(end, start).normalize();
-        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x);
-        
-        // Create 2 branches at midpoint
-        for (let i = -1; i <= 1; i += 2) {
-            if (i === 0) continue; // Skip middle
-            
-            const branchLength = width * 0.8;
-            const branchEnd = new THREE.Vector3().copy(midPoint).add(
-                perpendicular.clone().multiplyScalar(i * branchLength)
-            );
-            
-            // Add some randomness
-            branchEnd.x += (Math.random() - 0.5) * width * 0.4;
-            branchEnd.z += (Math.random() - 0.5) * width * 0.4;
-            
-            this.createFrostBranch(midPoint, branchEnd, depth - 1, width * 0.6);
-        }
-        
-        // Add some ice crystals along the branch
-        if (depth === 1) {
-            const crystalCount = 2 + Math.floor(Math.random() * 3);
-            
-            for (let i = 0; i < crystalCount; i++) {
-                const t = Math.random();
-                const point = curve.getPoint(t);
-                
-                // Randomly choose crystal shape
-                let crystalGeometry;
-                const crystalType = Math.floor(Math.random() * 3);
-                
-                switch (crystalType) {
-                    case 0:
-                        crystalGeometry = new THREE.TetrahedronGeometry(0.06);
-                        break;
-                    case 1:
-                        crystalGeometry = new THREE.OctahedronGeometry(0.05);
-                        break;
-                    default:
-                        crystalGeometry = new THREE.IcosahedronGeometry(0.04);
-                }
-                
-                const crystalMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xd6f1ff,
-                    transparent: true,
-                    opacity: 0.7,
-                    shininess: 100,
-                    emissive: 0x0088ff,
-                    emissiveIntensity: 0.2
-                });
-                
-                const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
-                crystal.position.copy(point);
-                crystal.position.y += 0.05; // Slightly above the branch
-                
-                // Random rotation
-                crystal.rotation.set(
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI
-                );
-                
-                this.scene.add(crystal);
-                
-                // Store for cleanup
-                this.iceTrees.push({
-                    group: crystal,
-                    trunk: crystal,
-                    branches: [],
-                    crystals: [crystal]
-                });
-            }
-        }
-    }
-    
-    createEnemyFrostEffect(enemy) {
-        // Create a small ice tree formation on the enemy
-        const frostGroup = new THREE.Group();
-        
-        // Create main trunk
-        const trunkGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.6, 5);
-        const trunkMaterial = new THREE.MeshPhongMaterial({
-            color: 0xadd8e6, // Light blue
-            transparent: true,
-            opacity: 0.8,
-            shininess: 90,
-            emissive: 0x0088ff,
-            emissiveIntensity: 0.3
-        });
-        
-        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-        trunk.position.y = 0.3; // Half height
-        frostGroup.add(trunk);
-        
-        // Create branches
-        const branchCount = 3 + Math.floor(Math.random() * 2);
-        
-        for (let i = 0; i < branchCount; i++) {
-            const angle = (i / branchCount) * Math.PI * 2;
-            const branchHeight = 0.1 + (i / branchCount) * 0.4;
-            
-            const branchGeometry = new THREE.CylinderGeometry(0.01, 0.03, 0.2, 4);
-            const branch = new THREE.Mesh(branchGeometry, trunkMaterial);
-            
-            // Position on trunk
-            branch.position.y = branchHeight;
-            
-            // Rotate to point outward and upward
-            branch.rotation.z = Math.PI / 4; // 45 degrees up
-            branch.rotation.y = angle;
-            
-            // Move outward from trunk
-            branch.position.x = Math.cos(angle) * 0.05;
-            branch.position.z = Math.sin(angle) * 0.05;
-            
-            frostGroup.add(branch);
-        }
-        
-        // Create ice crystals
-        for (let i = 0; i < 5; i++) {
-            // Randomly choose crystal shape
-            let crystalGeometry;
-            const crystalType = Math.floor(Math.random() * 3);
-            
-            switch (crystalType) {
-                case 0:
-                    crystalGeometry = new THREE.TetrahedronGeometry(0.1);
-                    break;
-                case 1:
-                    crystalGeometry = new THREE.OctahedronGeometry(0.08);
-                    break;
-                default:
-                    crystalGeometry = new THREE.IcosahedronGeometry(0.06);
+                    crystalGeometry = new THREE.IcosahedronGeometry(0.06 * size);
             }
             
             const crystalMaterial = new THREE.MeshPhongMaterial({
@@ -609,13 +496,13 @@ export default class FrostNova extends Skill {
             
             // Position randomly on enemy
             const angle = Math.random() * Math.PI * 2;
-            const radius = 0.3 + Math.random() * 0.2;
-            const height = Math.random() * 1.5;
+            const height = 0.2 + Math.random() * 0.8;
+            const radius = 0.3 * size;
             
             crystal.position.set(
-                Math.cos(angle) * radius,
-                height,
-                Math.sin(angle) * radius
+                position.x + Math.cos(angle) * radius,
+                position.y + height,
+                position.z + Math.sin(angle) * radius
             );
             
             // Random rotation
@@ -625,44 +512,45 @@ export default class FrostNova extends Skill {
                 Math.random() * Math.PI
             );
             
-            frostGroup.add(crystal);
+            this.scene.add(crystal);
+            enemy.frostEffects.push(crystal);
         }
-        
-        // Attach to enemy
-        enemy.add(frostGroup);
-        enemy.frostEffect = frostGroup;
     }
     
     cleanupIceTrees() {
-        this.iceTrees.forEach(tree => {
-            // Remove trunk
-            this.scene.remove(tree.trunk);
-            tree.trunk.geometry.dispose();
-            tree.trunk.material.dispose();
-            
-            // Remove branches
-            tree.branches.forEach(branch => {
-                this.scene.remove(branch);
-                branch.geometry.dispose();
-                branch.material.dispose();
-            });
-            
-            // Remove crystals
-            tree.crystals.forEach(crystal => {
-                this.scene.remove(crystal);
-                crystal.geometry.dispose();
-                crystal.material.dispose();
-            });
-            
-            // Remove group
-            this.scene.remove(tree.group);
-        });
+        // Remove all ice trees
+        for (const tree of this.iceTrees) {
+            if (tree.isSegment) {
+                // Simple segment
+                this.scene.remove(tree.group);
+                if (tree.group.geometry) tree.group.geometry.dispose();
+                if (tree.group.material) tree.group.material.dispose();
+            } else {
+                // Full tree
+                this.scene.remove(tree.group);
+                
+                // Dispose of geometries and materials
+                if (tree.trunk) {
+                    tree.trunk.geometry.dispose();
+                    tree.trunk.material.dispose();
+                }
+                
+                if (tree.branches) {
+                    tree.branches.forEach(branch => {
+                        branch.geometry.dispose();
+                        branch.material.dispose();
+                    });
+                }
+                
+                if (tree.crystals) {
+                    tree.crystals.forEach(crystal => {
+                        crystal.geometry.dispose();
+                        crystal.material.dispose();
+                    });
+                }
+            }
+        }
         
         this.iceTrees = [];
-    }
-    
-    cleanup() {
-        super.cleanup();
-        this.cleanupIceTrees();
     }
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { config } from '../config/config.js';
+import CollisionSystem from '../combat/collision.js';
 
 export default class Skill {
     constructor(hero) {
@@ -12,6 +13,9 @@ export default class Skill {
         this.range = 0;
         this.duration = 0;
         this.particles = [];
+        this.activeEffects = [];
+        this.collisionSystem = new CollisionSystem(this.scene);
+        this.damageType = 'physical'; // Default damage type
     }
 
     canUse() {
@@ -36,6 +40,9 @@ export default class Skill {
 
         if (this.isActive) {
             this.updateEffect(delta);
+            
+            // Check for collisions with active effects
+            this.checkCollisions(delta);
         }
 
         // Update particles
@@ -50,6 +57,16 @@ export default class Skill {
                 this.updateParticle(particle, delta);
             }
         }
+        
+        // Update active effects
+        for (let i = this.activeEffects.length - 1; i >= 0; i--) {
+            const effect = this.activeEffects[i];
+            effect.lifetime -= delta;
+            
+            if (effect.lifetime <= 0) {
+                this.activeEffects.splice(i, 1);
+            }
+        }
     }
 
     createEffect() {
@@ -58,6 +75,111 @@ export default class Skill {
 
     updateEffect(delta) {
         // Override in subclass
+    }
+    
+    /**
+     * Check for collisions between skill effects and enemies
+     */
+    checkCollisions(delta) {
+        // Process each active effect
+        for (const effect of this.activeEffects) {
+            // Skip effects that have already hit their target
+            if (effect.hasHit && !effect.canHitMultiple) continue;
+            
+            // Get effect properties
+            const origin = effect.position || this.hero.group.position.clone();
+            const direction = effect.direction || this.hero.direction.clone();
+            
+            // Check for collisions
+            const hitEnemies = this.collisionSystem.checkSkillCollision(
+                effect,
+                origin,
+                direction,
+                effect.range || this.range,
+                effect.radius || 1,
+                effect.damage || this.damage,
+                effect.damageType || this.damageType
+            );
+            
+            // Process hits
+            if (hitEnemies.length > 0) {
+                effect.hasHit = true;
+                
+                // Call onHit handler if defined
+                if (typeof effect.onHit === 'function') {
+                    effect.onHit(hitEnemies);
+                }
+                
+                // Create hit effects
+                for (const hit of hitEnemies) {
+                    this.createHitEffect(hit.position, hit.damage, effect.damageType || this.damageType);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Add an active effect for collision detection
+     */
+    addActiveEffect(effect) {
+        // Set default properties if not provided
+        effect.type = effect.type || 'projectile';
+        effect.lifetime = effect.lifetime || this.duration || 2.0;
+        effect.hasHit = false;
+        effect.canHitMultiple = effect.canHitMultiple || false;
+        effect.damageType = effect.damageType || this.damageType;
+        
+        this.activeEffects.push(effect);
+        return effect;
+    }
+    
+    /**
+     * Create a hit effect at the target position
+     */
+    createHitEffect(position, damage, damageType) {
+        // Create particles for hit effect
+        const color = this.getDamageTypeColor(damageType);
+        
+        // Create 5-10 particles for the hit effect
+        const particleCount = 5 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < particleCount; i++) {
+            const particle = this.createParticle(
+                position.clone(),
+                color,
+                0.1 + Math.random() * 0.2,
+                0.3 + Math.random() * 0.3,
+                {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 5,
+                        Math.random() * 5,
+                        (Math.random() - 0.5) * 5
+                    )
+                }
+            );
+        }
+        
+        // Play hit sound if available
+        if (this.hero.soundManager) {
+            const soundType = damageType === 'physical' ? 'hit' : 
+                             damageType === 'fire' ? 'fire-hit' : 
+                             damageType === 'ice' ? 'ice-hit' : 'hit';
+            this.hero.soundManager.playSound(soundType);
+        }
+    }
+    
+    /**
+     * Get color based on damage type
+     */
+    getDamageTypeColor(damageType) {
+        switch (damageType) {
+            case 'fire': return 0xff4400;
+            case 'ice': return 0x00ffff;
+            case 'lightning': return 0xffff00;
+            case 'poison': return 0x00ff00;
+            case 'magic': return 0xff00ff;
+            case 'physical': return 0xff0000;
+            default: return 0xffffff;
+        }
     }
 
     createParticle(position, color = 0xffffff, size = 0.1, life = 1.0, options = {}) {
