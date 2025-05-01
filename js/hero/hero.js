@@ -258,7 +258,7 @@ export default class Hero {
               },
               
               getCooldownDuration: () => {
-                return skill.cooldown;
+                return skill.cooldown || 5.0; // Default to 5 seconds if cooldown is not defined
               }
             });
           }
@@ -284,7 +284,18 @@ export default class Hero {
     if (skill.canUse()) {
       console.log(`Activating skill: ${skill.name || key}`);
       skill.activate();
-      this.cooldowns.set(key, skill.getCooldownDuration());
+      
+      // Set cooldown - handle different ways cooldown might be specified
+      let cooldownDuration = 5.0; // Default cooldown
+      
+      if (typeof skill.getCooldownDuration === 'function') {
+        cooldownDuration = skill.getCooldownDuration();
+      } else if (skill.cooldown !== undefined) {
+        cooldownDuration = skill.cooldown;
+      }
+      
+      console.log(`Setting cooldown for ${key} to ${cooldownDuration} seconds`);
+      this.cooldowns.set(key, cooldownDuration);
     } else {
       console.log(`Cannot use skill: ${skill.name || key} (on cooldown or insufficient mana)`);
     }
@@ -433,6 +444,7 @@ export default class Hero {
       manaCost: manaCost,
       damage: damage,
       damageType: damageType,
+      cooldown: 5.0, // Store cooldown value
       
       // Skill methods
       canUse: () => {
@@ -444,9 +456,6 @@ export default class Hero {
         if (this.mana >= manaCost) {
           // Deduct mana
           this.mana -= manaCost;
-          
-          // Set cooldown
-          this.cooldowns.set(name, 5.0); // Default 5 second cooldown
           
           console.log(`Using skill: ${name}, Damage: ${damage}`);
           
@@ -540,9 +549,6 @@ export default class Hero {
 
     // Update cooldowns
     this.updateCooldowns(deltaTime);
-
-    // Handle skill activation
-    this.handleSkills(keys);
 
     // Update direction vector based on current rotation
     this.updateDirection();
