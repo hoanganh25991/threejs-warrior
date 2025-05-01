@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Texture Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .texture-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .texture-item {
+            text-align: center;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        canvas {
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #eee;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Particle Texture Generator</h1>
+    
+    <div class="instructions">
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Click "Generate All Textures" to create all particle textures</li>
+            <li>For each texture, click the "Download" button to save it</li>
+            <li>Save all textures to your game's <code>/assets/textures/particles/</code> directory</li>
+        </ol>
+    </div>
+    
+    <button id="generate-all">Generate All Textures</button>
+    
+    <div class="texture-grid" id="texture-container"></div>
+    
+    <script>
+        // Texture definitions
+        const textures = [
+            { name: 'physical', color: 'rgba(255, 255, 255, 1)' },
+            { name: 'fire', color: 'rgba(255, 100, 0, 1)' },
+            { name: 'ice', color: 'rgba(100, 200, 255, 1)' },
+            { name: 'lightning', color: 'rgba(255, 255, 100, 1)' },
+            { name: 'healing', color: 'rgba(100, 255, 100, 1)' },
+            { name: 'shield', color: 'rgba(200, 200, 255, 1)' },
+            { name: 'smoke', color: 'rgba(100, 100, 100, 1)' },
+            { name: 'explosion', color: 'rgba(255, 200, 0, 1)' },
+            { name: 'blood', color: 'rgba(200, 0, 0, 1)' },
+            { name: 'water', color: 'rgba(0, 100, 255, 1)' },
+            { name: 'levelUp', color: 'rgba(255, 255, 0, 1)' }
+        ];
+        
+        // Function to create a circular gradient texture
+        function createParticleTexture(canvas, color, size = 128) {
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Create radial gradient
+            const gradient = ctx.createRadialGradient(
+                size/2, size/2, 0,
+                size/2, size/2, size/2
+            );
+            
+            // Set gradient colors
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(0.5, color.replace(')', ', 0.5)'));
+            gradient.addColorStop(1, color.replace(')', ', 0)'));
+            
+            // Fill with gradient
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+        }
+        
+        // Function to generate all textures
+        function generateAllTextures() {
+            const container = document.getElementById('texture-container');
+            container.innerHTML = '';
+            
+            textures.forEach(texture => {
+                // Create container for this texture
+                const textureItem = document.createElement('div');
+                textureItem.className = 'texture-item';
+                
+                // Add title
+                const title = document.createElement('h3');
+                title.textContent = texture.name + '.png';
+                textureItem.appendChild(title);
+                
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                textureItem.appendChild(canvas);
+                
+                // Generate texture
+                createParticleTexture(canvas, texture.color);
+                
+                // Add download button
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = 'Download';
+                downloadBtn.addEventListener('click', () => {
+                    const link = document.createElement('a');
+                    link.download = texture.name + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+                textureItem.appendChild(downloadBtn);
+                
+                // Add to container
+                container.appendChild(textureItem);
+            });
+        }
+        
+        // Set up event listener
+        document.getElementById('generate-all').addEventListener('click', generateAllTextures);
+    </script>
+</body>
+</html>

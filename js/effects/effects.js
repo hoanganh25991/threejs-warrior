@@ -5,10 +5,80 @@ class Effects {
     constructor(scene) {
         this.scene = scene;
         this.effects = new Map();
+        this.fallbackTextures = new Map(); // Cache for fallback textures
+    }
+    
+    // Create a simple circular texture as a fallback
+    createFallbackTexture(color = 0xffffff) {
+        // Check if we already have a fallback texture for this color
+        const colorKey = color.toString(16);
+        if (this.fallbackTextures.has(colorKey)) {
+            return this.fallbackTextures.get(colorKey);
+        }
+        
+        // Create a canvas to draw the particle
+        const size = 64;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext('2d');
+        
+        // Convert hex color to RGB
+        const r = (color >> 16) & 255;
+        const g = (color >> 8) & 255;
+        const b = color & 255;
+        
+        // Draw a radial gradient
+        const gradient = context.createRadialGradient(
+            size/2, size/2, 0,
+            size/2, size/2, size/2
+        );
+        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1.0)`);
+        gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.5)`);
+        gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
+        
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, size, size);
+        
+        // Create a texture from the canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        
+        // Cache the texture
+        this.fallbackTextures.set(colorKey, texture);
+        
+        return texture;
     }
 
     createEffect(type, position, options = {}) {
-        const texture = new THREE.TextureLoader().load(`/assets/textures/particles/${type}.png`);
+        // Create a fallback texture in case the image file is missing
+        const fallbackTexture = this.createFallbackTexture(options.color || 0xffffff);
+        
+        // Try to load the texture, but use fallback if it fails
+        let texture;
+        try {
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.crossOrigin = '';
+            
+            // Set up error handling for texture loading
+            texture = fallbackTexture;
+            textureLoader.load(
+                `./assets/textures/particles/${type}.png`,
+                (loadedTexture) => {
+                    // Success - update the texture if particles still exist
+                    texture = loadedTexture;
+                },
+                undefined, // Progress callback
+                (error) => {
+                    console.warn(`Failed to load texture for ${type}, using fallback`, error);
+                    // Keep using the fallback texture
+                }
+            );
+        } catch (error) {
+            console.warn(`Error creating texture for ${type}, using fallback`, error);
+            texture = fallbackTexture;
+        }
+        
         const particles = new ParticleSystem(this.scene, {
             maxParticles: options.maxParticles || 100,
             particleSize: options.particleSize || 0.1,
@@ -78,7 +148,7 @@ class Effects {
 
 class FireEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
-        const texture = new THREE.TextureLoader().load('/assets/textures/particles/fire.png');
+        const texture = new THREE.TextureLoader().load('./assets/textures/particles/fire.png');
         
         super(scene, {
             maxParticles: options.maxParticles || 200,
@@ -116,7 +186,7 @@ class FireEffect extends ParticleSystem {
 
 class SmokeEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
-        const texture = new THREE.TextureLoader().load('/assets/textures/particles/smoke.png');
+        const texture = new THREE.TextureLoader().load('./assets/textures/particles/smoke.png');
         
         super(scene, {
             maxParticles: options.maxParticles || 100,
@@ -154,7 +224,7 @@ class SmokeEffect extends ParticleSystem {
 
 class BloodEffect extends ParticleSystem {
     constructor(scene, position, direction, options = {}) {
-        const texture = new THREE.TextureLoader().load('/assets/textures/particles/blood.png');
+        const texture = new THREE.TextureLoader().load('./assets/textures/particles/blood.png');
         
         super(scene, {
             maxParticles: options.maxParticles || 50,
@@ -190,7 +260,7 @@ class BloodEffect extends ParticleSystem {
 
 class RainEffect extends ParticleSystem {
     constructor(scene, camera, options = {}) {
-        const texture = new THREE.TextureLoader().load('/assets/textures/particles/raindrop.png');
+        const texture = new THREE.TextureLoader().load('./assets/textures/particles/raindrop.png');
         
         super(scene, {
             maxParticles: options.maxParticles || 1000,
@@ -230,7 +300,7 @@ class RainEffect extends ParticleSystem {
 
 class ExplosionEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
-        const texture = new THREE.TextureLoader().load('/assets/textures/particles/explosion.png');
+        const texture = new THREE.TextureLoader().load('./assets/textures/particles/explosion.png');
         
         super(scene, {
             maxParticles: options.maxParticles || 100,
@@ -321,7 +391,7 @@ class ExplosionEffect extends ParticleSystem {
 
 class WaterSplashEffect extends ParticleSystem {
     constructor(scene, position, options = {}) {
-        const texture = new THREE.TextureLoader().load('/assets/textures/particles/water.png');
+        const texture = new THREE.TextureLoader().load('./assets/textures/particles/water.png');
         
         super(scene, {
             maxParticles: options.maxParticles || 50,

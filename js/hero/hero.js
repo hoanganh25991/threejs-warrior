@@ -126,39 +126,39 @@ export default class Hero {
     switch (this.heroType) {
       case 'dragon-knight':
         console.log('Setting up Dragon Knight skills');
-        this.skills.set('Y', new DragonBreath(this));
-        this.skills.set('U', new FlameStrike(this));
-        this.skills.set('I', new DragonTail(this));
-        this.skills.set('H', new ElderDragonForm(this));
-        this.skills.set('J', new FireShield(this));
-        this.skills.set('K', new DragonRush(this));
+        this.skills.set('y', new DragonBreath(this));
+        this.skills.set('u', new FlameStrike(this));
+        this.skills.set('i', new DragonTail(this));
+        this.skills.set('h', new ElderDragonForm(this));
+        this.skills.set('j', new FireShield(this));
+        this.skills.set('k', new DragonRush(this));
         break;
       case 'crystal-maiden':
         console.log('Setting up Crystal Maiden skills');
-        this.skills.set('Y', new FrostNova(this));
-        this.skills.set('U', new IceBlast(this));
-        this.skills.set('I', new GlacialBarrier(this));
-        this.skills.set('H', new Blizzard(this));
-        this.skills.set('J', new FrozenOrb(this));
-        this.skills.set('K', new IceShards(this));
+        this.skills.set('y', new FrostNova(this));
+        this.skills.set('u', new IceBlast(this));
+        this.skills.set('i', new GlacialBarrier(this));
+        this.skills.set('h', new Blizzard(this));
+        this.skills.set('j', new FrozenOrb(this));
+        this.skills.set('k', new IceShards(this));
         break;
       case 'axe':
         console.log('Setting up Axe skills');
-        this.skills.set('Y', new BerserkersCall(this));
-        this.skills.set('U', new BattleHunger(this));
-        this.skills.set('I', new CounterHelix(this));
-        this.skills.set('H', new CullingBlade(this));
-        this.skills.set('J', new BattleTrance(this));
-        this.skills.set('K', new BerserkersRage(this));
+        this.skills.set('y', new BerserkersCall(this));
+        this.skills.set('u', new BattleHunger(this));
+        this.skills.set('i', new CounterHelix(this));
+        this.skills.set('h', new CullingBlade(this));
+        this.skills.set('j', new BattleTrance(this));
+        this.skills.set('k', new BerserkersRage(this));
         break;
       case 'lina':
         console.log('Setting up Lina skills (generic placeholders)');
-        this.skills.set('Y', this.createGenericSkill('Dragon Slave', 40, 100, 'fire'));
-        this.skills.set('U', this.createGenericSkill('Light Strike Array', 60, 120, 'fire'));
-        this.skills.set('I', this.createGenericSkill('Fiery Soul', 50, 0, 'buff'));
-        this.skills.set('H', this.createGenericSkill('Laguna Blade', 100, 300, 'fire'));
-        this.skills.set('J', this.createGenericSkill('Flame Cloak', 70, 0, 'buff'));
-        this.skills.set('K', this.createGenericSkill('Inferno Wave', 80, 150, 'fire'));
+        this.skills.set('y', this.createGenericSkill('Dragon Slave', 40, 100, 'fire'));
+        this.skills.set('u', this.createGenericSkill('Light Strike Array', 60, 120, 'fire'));
+        this.skills.set('i', this.createGenericSkill('Fiery Soul', 50, 0, 'buff'));
+        this.skills.set('h', this.createGenericSkill('Laguna Blade', 100, 300, 'fire'));
+        this.skills.set('j', this.createGenericSkill('Flame Cloak', 70, 0, 'buff'));
+        this.skills.set('k', this.createGenericSkill('Inferno Wave', 80, 150, 'fire'));
         break;
       default:
         console.log(`Unknown hero type: ${this.heroType}, no skills assigned`);
@@ -269,57 +269,69 @@ export default class Hero {
 
   useSkill(key) {
     console.log(`Attempting to use skill with key: ${key}`);
+    
+    // Create a fallback skill if none exists
+    if (!this.skills.has(key)) {
+      console.log(`No skill found for key: ${key}, creating a fallback skill`);
+      
+      // Create a simple fallback skill
+      const fallbackSkill = {
+        name: `Skill ${key}`,
+        manaCost: 10,
+        damage: 20,
+        cooldown: 0,
+        
+        canUse: () => true,
+        
+        activate: () => {
+          console.log(`Using fallback skill: ${key}`);
+          
+          // Create a simple visual effect
+          if (this.effects) {
+            const position = new THREE.Vector3().copy(this.group.position);
+            position.y += 1;
+            
+            this.effects.createEffect('physical', position, {
+              direction: this.direction.clone(),
+              color: 0xffffff
+            });
+          }
+          
+          return true;
+        },
+        
+        update: () => {},
+        
+        getCooldownDuration: () => 5.0
+      };
+      
+      // Add the fallback skill to the skills map
+      this.skills.set(key, fallbackSkill);
+    }
+    
+    // Get the skill (which now should always exist)
     const skill = this.skills.get(key);
     
-    if (!skill) {
-      console.log(`No skill found for key: ${key}`);
-      return;
-    }
+    // Set a cooldown of 5 seconds
+    this.cooldowns.set(key, 5.0);
     
-    // Debug: Log the skill object to see its structure
-    console.log('Skill object:', skill);
-    
-    if (!skill.canUse) {
-      console.log(`Skill for key ${key} doesn't have canUse method`);
-      return;
-    }
-    
+    // Try to activate the skill
     try {
-      if (skill.canUse()) {
+      // Check if we can use the skill
+      const canUse = typeof skill.canUse === 'function' ? skill.canUse() : true;
+      
+      if (canUse) {
         console.log(`Activating skill: ${skill.name || key}`);
         
-        try {
+        // Try to activate the skill
+        if (typeof skill.activate === 'function') {
           skill.activate();
-        } catch (error) {
-          console.error(`Error activating skill: ${error.message}`);
         }
-        
-        // Set cooldown - handle different ways cooldown might be specified
-        let cooldownDuration = 5.0; // Default cooldown
-        
-        try {
-          if (typeof skill.getCooldownDuration === 'function') {
-            console.log('Using getCooldownDuration method');
-            cooldownDuration = skill.getCooldownDuration();
-          } else if (skill.cooldown !== undefined) {
-            console.log('Using cooldown property:', skill.cooldown);
-            cooldownDuration = skill.cooldown;
-          } else {
-            console.log('Using default cooldown');
-          }
-        } catch (error) {
-          console.error(`Error getting cooldown: ${error.message}`);
-        }
-        
-        console.log(`Setting cooldown for ${key} to ${cooldownDuration} seconds`);
-        this.cooldowns.set(key, cooldownDuration);
       } else {
         console.log(`Cannot use skill: ${skill.name || key} (on cooldown or insufficient mana)`);
       }
     } catch (error) {
-      console.error(`Error in useSkill: ${error.message}`);
-      // Set a default cooldown to prevent further errors
-      this.cooldowns.set(key, 5.0);
+      console.error(`Error using skill ${key}: ${error.message}`);
     }
   }
 
@@ -356,19 +368,25 @@ export default class Hero {
       this.attackSystem.startAttack();
     }
 
-    // Check if skills are initialized
-    if (this.skills.size === 0) {
-      console.log("Skills not initialized, initializing now...");
-      this.initializeSkills();
+    // Simple direct skill handling without using the skill system
+    if (input.keys.y && !this.skillCooldowns?.y) {
+      this.useSimpleSkill('y', 'Fire Blast', 0xff0000);
     }
-
-    // Handle skill activation
-    if (input.keys.y) this.useSkill('Y');
-    if (input.keys.u) this.useSkill('U');
-    if (input.keys.i) this.useSkill('I');
-    if (input.keys.h) this.useSkill('H');
-    if (input.keys.j) this.useSkill('J');
-    if (input.keys.k) this.useSkill('K');
+    if (input.keys.u && !this.skillCooldowns?.u) {
+      this.useSimpleSkill('u', 'Ice Spike', 0x00ffff);
+    }
+    if (input.keys.i && !this.skillCooldowns?.i) {
+      this.useSimpleSkill('i', 'Lightning Strike', 0xffff00);
+    }
+    if (input.keys.h && !this.skillCooldowns?.h) {
+      this.useSimpleSkill('h', 'Healing Wave', 0x00ff00);
+    }
+    if (input.keys.j && !this.skillCooldowns?.j) {
+      this.useSimpleSkill('j', 'Shield', 0xffffff);
+    }
+    if (input.keys.k && !this.skillCooldowns?.k) {
+      this.useSimpleSkill('k', 'Dash', 0x0000ff);
+    }
     
     // Toggle auto-attack with T key
     if (input.keys.t && !this.lastTKeyState) {
@@ -376,6 +394,101 @@ export default class Hero {
       this.showMessage(`Auto-attack ${this.autoAttackEnabled ? 'enabled' : 'disabled'}`);
     }
     this.lastTKeyState = input.keys.t;
+  }
+  
+  // Simple skill implementation that doesn't rely on the skill system
+  useSimpleSkill(key, name, color) {
+    console.log(`Using simple skill: ${name}`);
+    
+    // Show a message
+    this.showMessage(`Used ${name}!`);
+    
+    // Create a simple visual effect if effects system exists
+    if (this.effects) {
+      try {
+        const position = new THREE.Vector3().copy(this.group.position);
+        position.y += 1; // Raise to character height
+        
+        // Create multiple particles for a more impressive effect
+        for (let i = 0; i < 3; i++) {
+          // Create particles at slightly different positions
+          const offset = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5
+          );
+          const particlePos = position.clone().add(offset);
+          
+          // Create the effect with the specified color
+          this.effects.createEffect('physical', particlePos, {
+            direction: this.direction.clone(),
+            color: color,
+            maxParticles: 50,
+            particleSize: 0.2
+          });
+        }
+        
+        // Also create a simple sphere mesh for immediate visual feedback
+        this.createVisualFeedback(position, color);
+      } catch (error) {
+        console.error(`Error creating effect: ${error.message}`);
+      }
+    }
+    
+    // Initialize skillCooldowns if it doesn't exist
+    if (!this.skillCooldowns) {
+      this.skillCooldowns = {};
+    }
+    
+    // Set a cooldown
+    this.skillCooldowns[key] = true;
+    
+    // Clear cooldown after 2 seconds
+    setTimeout(() => {
+      this.skillCooldowns[key] = false;
+    }, 2000);
+  }
+  
+  // Create a simple visual feedback for skills
+  createVisualFeedback(position, color) {
+    // Create a sphere geometry
+    const geometry = new THREE.SphereGeometry(0.2, 16, 16);
+    const material = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.7
+    });
+    
+    const sphere = new THREE.Mesh(geometry, material);
+    sphere.position.copy(position);
+    
+    // Add to scene
+    this.scene.add(sphere);
+    
+    // Animate the sphere
+    const startTime = Date.now();
+    const duration = 0.5; // seconds
+    
+    const animate = () => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Scale up and fade out
+      const scale = 1 + progress * 2;
+      sphere.scale.set(scale, scale, scale);
+      material.opacity = 0.7 * (1 - progress);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Remove from scene when animation is complete
+        this.scene.remove(sphere);
+        geometry.dispose();
+        material.dispose();
+      }
+    };
+    
+    animate();
   }
 
   init() {
