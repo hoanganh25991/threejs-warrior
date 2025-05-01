@@ -368,66 +368,65 @@ export default class Hero {
       this.attackSystem.startAttack();
     }
 
+    // DEBUG: Log all available skills
+    console.log("DEBUG - Available skills:");
+    if (this.skills instanceof Map) {
+      this.skills.forEach((skill, key) => {
+        console.log(`Skill key: ${key}, name: ${skill.name || 'unnamed'}`);
+      });
+    } else {
+      console.log("Skills is not a Map:", typeof this.skills);
+    }
+    
+    // DEBUG: Log pressed keys
+    console.log("DEBUG - Pressed keys:", 
+      Object.entries(input.keys)
+        .filter(([_, isPressed]) => isPressed)
+        .map(([key]) => key)
+        .join(', ')
+    );
+
     // Use the proper skill objects from the skills Map
     // This will use our enhanced skill implementations
-    if (input.keys.y && !this.skillCooldowns?.y) {
-      if (this.skills.has('y')) {
-        console.log("Using skill mapped to Y key");
-        this.useSkill('y');
-      } else {
-        console.log("No skill mapped to Y key, using fallback");
-        this.useSimpleSkill('y', 'Fireball', 0xff0000);
-      }
+    if (input.keys.y) {
+      console.log("Y key pressed!");
+      // Always use the simple skill for now to ensure something happens
+      this.useSimpleSkill('y', this.heroType === 'crystal-maiden' ? 'Frost Nova' : 'Fireball', 
+                          this.heroType === 'crystal-maiden' ? 0x00ffff : 0xff4500);
     }
     
-    if (input.keys.u && !this.skillCooldowns?.u) {
-      if (this.skills.has('u')) {
-        console.log("Using skill mapped to U key");
-        this.useSkill('u');
-      } else {
-        console.log("No skill mapped to U key, using fallback");
-        this.useSimpleSkill('u', 'Ice Spike', 0x00ffff);
-      }
+    if (input.keys.u) {
+      console.log("U key pressed!");
+      // Always use the simple skill for now to ensure something happens
+      this.useSimpleSkill('u', this.heroType === 'crystal-maiden' ? 'Ice Blast' : 'Ice Spike', 0x00ffff);
     }
     
-    if (input.keys.i && !this.skillCooldowns?.i) {
-      if (this.skills.has('i')) {
-        console.log("Using skill mapped to I key");
-        this.useSkill('i');
-      } else {
-        console.log("No skill mapped to I key, using fallback");
-        this.useSimpleSkill('i', 'Thunder Strike', 0xffff00);
-      }
+    if (input.keys.i) {
+      console.log("I key pressed!");
+      // Always use the simple skill for now to ensure something happens
+      this.useSimpleSkill('i', this.heroType === 'crystal-maiden' ? 'Glacial Barrier' : 'Thunder Strike', 
+                          this.heroType === 'crystal-maiden' ? 0x88ccff : 0xffff00);
     }
     
-    if (input.keys.h && !this.skillCooldowns?.h) {
-      if (this.skills.has('h')) {
-        console.log("Using skill mapped to H key");
-        this.useSkill('h');
-      } else {
-        console.log("No skill mapped to H key, using fallback");
-        this.useSimpleSkill('h', 'Healing Wave', 0x00ff00);
-      }
+    if (input.keys.h) {
+      console.log("H key pressed!");
+      // Always use the simple skill for now to ensure something happens
+      this.useSimpleSkill('h', this.heroType === 'crystal-maiden' ? 'Blizzard' : 'Healing Wave', 
+                          this.heroType === 'crystal-maiden' ? 0xaaddff : 0x00ff00);
     }
     
-    if (input.keys.j && !this.skillCooldowns?.j) {
-      if (this.skills.has('j')) {
-        console.log("Using skill mapped to J key");
-        this.useSkill('j');
-      } else {
-        console.log("No skill mapped to J key, using fallback");
-        this.useSimpleSkill('j', 'Shield', 0x4169e1);
-      }
+    if (input.keys.j) {
+      console.log("J key pressed!");
+      // Always use the simple skill for now to ensure something happens
+      this.useSimpleSkill('j', this.heroType === 'crystal-maiden' ? 'Frozen Orb' : 'Shield', 
+                          this.heroType === 'crystal-maiden' ? 0x00ffff : 0x4169e1);
     }
     
-    if (input.keys.k && !this.skillCooldowns?.k) {
-      if (this.skills.has('k')) {
-        console.log("Using skill mapped to K key");
-        this.useSkill('k');
-      } else {
-        console.log("No skill mapped to K key, using fallback");
-        this.useSimpleSkill('k', 'Dash', 0x808080);
-      }
+    if (input.keys.k) {
+      console.log("K key pressed!");
+      // Always use the simple skill for now to ensure something happens
+      this.useSimpleSkill('k', this.heroType === 'crystal-maiden' ? 'Ice Shards' : 'Dash', 
+                          this.heroType === 'crystal-maiden' ? 0x88ccff : 0x808080);
     }
     
     // Toggle auto-attack with T key
@@ -436,58 +435,94 @@ export default class Hero {
       this.showMessage(`Auto-attack ${this.autoAttackEnabled ? 'enabled' : 'disabled'}`);
     }
     this.lastTKeyState = input.keys.t;
-    
-    // After using a skill, set a cooldown to prevent spamming
-    if (input.keys.y || input.keys.u || input.keys.i || input.keys.h || input.keys.j || input.keys.k) {
-      const key = input.keys.y ? 'y' : 
-                 input.keys.u ? 'u' : 
-                 input.keys.i ? 'i' : 
-                 input.keys.h ? 'h' : 
-                 input.keys.j ? 'j' : 
-                 input.keys.k ? 'k' : null;
-                 
-      if (key && !this.skillCooldowns?.[key]) {
-        // Initialize skillCooldowns if it doesn't exist
-        if (!this.skillCooldowns) {
-          this.skillCooldowns = {};
-        }
-        
-        // Set a cooldown
-        this.skillCooldowns[key] = true;
-        
-        // Clear cooldown after 1 second (shorter for better responsiveness)
-        setTimeout(() => {
-          this.skillCooldowns[key] = false;
-        }, 1000);
-      }
-    }
   }
   
   // Improved skill implementation that uses the SkillManager
   useSimpleSkill(key, name, color) {
-    console.log(`Using skill: ${name}`);
+    console.log(`Using skill: ${name} with color: ${color.toString(16)}`);
     
     // Show a message
-    this.showMessage(`Used ${name}!`);
+    if (typeof this.showMessage === 'function') {
+      this.showMessage(`Used ${name}!`);
+    } else {
+      console.log(`Used ${name}!`);
+    }
     
     // Get hero position and direction
     const position = new THREE.Vector3().copy(this.group.position);
     position.y += 1; // Raise to character height
     const direction = this.direction.clone();
     
-    // Use the SkillManager if available
+    console.log(`Skill position: ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}`);
+    console.log(`Skill direction: ${direction.x.toFixed(2)}, ${direction.y.toFixed(2)}, ${direction.z.toFixed(2)}`);
+    
+    // Try to use the SkillManager first
+    let skillUsed = false;
+    
     if (this.skillManager) {
       try {
         console.log(`Using SkillManager for skill: ${name}`);
         this.skillManager.useSkill(name, position, direction);
+        skillUsed = true;
       } catch (error) {
         console.error(`Error using SkillManager: ${error.message}`);
-        this.createFallbackEffect(position, direction, color);
       }
     } else {
-      // Fallback if SkillManager is not available
-      console.log(`SkillManager not available, using fallback for: ${name}`);
+      console.log(`SkillManager not available for: ${name}`);
+    }
+    
+    // If SkillManager failed or isn't available, try using the effects system
+    if (!skillUsed && this.effects) {
+      try {
+        console.log(`Using effects system for skill: ${name}`);
+        
+        // Determine effect type based on skill name
+        let effectType = 'physical';
+        if (name.includes('Fire') || name.includes('Flame') || name.includes('Dragon')) {
+          effectType = 'fire';
+        } else if (name.includes('Ice') || name.includes('Frost') || name.includes('Blizzard')) {
+          effectType = 'ice';
+        } else if (name.includes('Thunder') || name.includes('Lightning')) {
+          effectType = 'lightning';
+        } else if (name.includes('Heal') || name.includes('Shield')) {
+          effectType = 'heal';
+        }
+        
+        console.log(`Creating effect of type: ${effectType}`);
+        
+        // Create the effect
+        this.effects.createEffect(effectType, position, {
+          direction: direction,
+          color: color,
+          scale: 1.5,  // Make it bigger
+          count: 20,   // More particles
+          speed: 15    // Faster
+        });
+        
+        skillUsed = true;
+      } catch (error) {
+        console.error(`Error using effects system: ${error.message}`);
+      }
+    }
+    
+    // Last resort: create a fallback effect
+    if (!skillUsed) {
+      console.log(`Using fallback effect for: ${name}`);
       this.createFallbackEffect(position, direction, color);
+    }
+    
+    // Play a sound if possible
+    if (this.soundManager) {
+      try {
+        // Try to play a skill-specific sound
+        const soundName = name.toLowerCase().replace(/\s+/g, '');
+        console.log(`Trying to play sound: ${soundName}`);
+        this.soundManager.playSound(soundName);
+      } catch (error) {
+        console.log(`Falling back to generic skill sound`);
+        // Fall back to a generic skill sound
+        this.soundManager.playSound('skill');
+      }
     }
     
     // Initialize skillCooldowns if it doesn't exist
@@ -498,33 +533,44 @@ export default class Hero {
     // Set a cooldown
     this.skillCooldowns[key] = true;
     
-    // Clear cooldown after 2 seconds
+    // Clear cooldown after 1 second (shorter for better responsiveness)
     setTimeout(() => {
       this.skillCooldowns[key] = false;
-    }, 2000);
+    }, 1000);
+    
+    return true;
   }
   
   // Create a fallback effect if SkillManager fails
   createFallbackEffect(position, direction, color) {
+    console.log(`Creating fallback effect at position: ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}`);
+    
     // Create a simple visual effect if effects system exists
     if (this.effects) {
       try {
+        console.log(`Using effects system for fallback effect with color: ${color.toString(16)}`);
+        
         // Create multiple particles for a more impressive effect
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 10; i++) {
           // Create particles at slightly different positions
           const offset = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.5,
-            (Math.random() - 0.5) * 0.5,
-            (Math.random() - 0.5) * 0.5
+            (Math.random() - 0.5) * 1.0,
+            (Math.random() - 0.5) * 1.0,
+            (Math.random() - 0.5) * 1.0
           );
           const particlePos = position.clone().add(offset);
           
           // Create the effect with the specified color
           this.effects.createEffect('physical', particlePos, {
-            direction: direction,
+            direction: direction.clone().add(new THREE.Vector3(
+              (Math.random() - 0.5) * 0.5,
+              (Math.random() - 0.5) * 0.5,
+              (Math.random() - 0.5) * 0.5
+            )),
             color: color,
-            maxParticles: 50,
-            particleSize: 0.2
+            maxParticles: 100,
+            particleSize: 0.3,
+            speed: 10 + Math.random() * 5
           });
         }
         
@@ -532,50 +578,225 @@ export default class Hero {
         this.createVisualFeedback(position, color);
       } catch (error) {
         console.error(`Error creating fallback effect: ${error.message}`);
+        this.createDirectFallbackEffect(position, direction, color);
       }
+    } else {
+      console.log("No effects system available, creating direct fallback effect");
+      this.createDirectFallbackEffect(position, direction, color);
     }
   }
   
-  // Create a simple visual feedback for skills
+  // Create a direct fallback effect using Three.js
+  createDirectFallbackEffect(position, direction, color) {
+    console.log(`Creating direct fallback effect with THREE.js`);
+    
+    try {
+      // Create a simple sphere
+      const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+      const material = new THREE.MeshBasicMaterial({ 
+        color: color,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.position.copy(position);
+      this.scene.add(sphere);
+      
+      // Add a point light
+      const light = new THREE.PointLight(color, 1, 10);
+      light.position.copy(position);
+      this.scene.add(light);
+      
+      // Animate the sphere
+      const startTime = Date.now();
+      const duration = 1000; // 1 second
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = elapsed / duration;
+        
+        if (progress < 1) {
+          // Move in the direction
+          sphere.position.add(direction.clone().multiplyScalar(0.1));
+          
+          // Scale down over time
+          const scale = 1 - progress * 0.5;
+          sphere.scale.set(scale, scale, scale);
+          
+          // Fade out
+          material.opacity = 0.8 * (1 - progress);
+          light.intensity = 1 * (1 - progress);
+          
+          requestAnimationFrame(animate);
+        } else {
+          // Remove when done
+          this.scene.remove(sphere);
+          this.scene.remove(light);
+          
+          // Dispose of resources
+          geometry.dispose();
+          material.dispose();
+        }
+      };
+      
+      // Start animation
+      animate();
+    } catch (error) {
+      console.error(`Error creating direct fallback effect: ${error.message}`);
+    }
+  }
+  
+  // Create a more impressive visual feedback for skills
   createVisualFeedback(position, color) {
-    // Create a sphere geometry
-    const geometry = new THREE.SphereGeometry(0.2, 16, 16);
-    const material = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 0.7
-    });
+    console.log(`Creating enhanced visual feedback at ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}`);
     
-    const sphere = new THREE.Mesh(geometry, material);
-    sphere.position.copy(position);
-    
-    // Add to scene
-    this.scene.add(sphere);
-    
-    // Animate the sphere
-    const startTime = Date.now();
-    const duration = 0.5; // seconds
-    
-    const animate = () => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      const progress = Math.min(elapsed / duration, 1);
+    try {
+      // Create a more complex effect with multiple elements
       
-      // Scale up and fade out
-      const scale = 1 + progress * 2;
-      sphere.scale.set(scale, scale, scale);
-      material.opacity = 0.7 * (1 - progress);
+      // 1. Core sphere with glow
+      const coreGeometry = new THREE.IcosahedronGeometry(0.3, 2);
+      const coreMaterial = new THREE.MeshPhongMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.8,
+        transparent: true,
+        opacity: 0.9,
+        shininess: 100
+      });
       
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        // Remove from scene when animation is complete
-        this.scene.remove(sphere);
-        geometry.dispose();
-        material.dispose();
+      const core = new THREE.Mesh(coreGeometry, coreMaterial);
+      core.position.copy(position);
+      this.scene.add(core);
+      
+      // 2. Outer ring
+      const ringGeometry = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
+      const ringMaterial = new THREE.MeshPhongMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.5,
+        transparent: true,
+        opacity: 0.7,
+        shininess: 80
+      });
+      
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      ring.position.copy(position);
+      // Random rotation for the ring
+      ring.rotation.set(
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2
+      );
+      this.scene.add(ring);
+      
+      // 3. Point light for glow effect
+      const light = new THREE.PointLight(color, 1.5, 5);
+      light.position.copy(position);
+      this.scene.add(light);
+      
+      // 4. Particles around the core
+      const particles = [];
+      const particleCount = 12;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const particleMaterial = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.8
+        });
+        
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        
+        // Position in a sphere around the core
+        const angle1 = Math.random() * Math.PI * 2;
+        const angle2 = Math.random() * Math.PI * 2;
+        const radius = 0.6;
+        
+        particle.position.set(
+          position.x + Math.sin(angle1) * Math.cos(angle2) * radius,
+          position.y + Math.sin(angle1) * Math.sin(angle2) * radius,
+          position.z + Math.cos(angle1) * radius
+        );
+        
+        this.scene.add(particle);
+        particles.push({
+          mesh: particle,
+          initialPosition: particle.position.clone(),
+          velocity: new THREE.Vector3(
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2
+          ).normalize().multiplyScalar(0.05),
+          geometry: particleGeometry,
+          material: particleMaterial
+        });
       }
-    };
-    
-    animate();
+      
+      // Animate the effect
+      const startTime = Date.now();
+      const duration = 1.5; // seconds
+      
+      const animate = () => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // 1. Animate core - pulse and fade
+        const coreScale = 1 + Math.sin(progress * Math.PI * 4) * 0.2;
+        core.scale.set(coreScale, coreScale, coreScale);
+        coreMaterial.opacity = 0.9 * (1 - progress);
+        coreMaterial.emissiveIntensity = 0.8 * (1 - progress * 0.5);
+        
+        // 2. Animate ring - expand and rotate
+        const ringScale = 1 + progress * 3;
+        ring.scale.set(ringScale, ringScale, ringScale);
+        ring.rotation.x += 0.02;
+        ring.rotation.y += 0.03;
+        ringMaterial.opacity = 0.7 * (1 - progress);
+        
+        // 3. Animate light - pulse and fade
+        light.intensity = 1.5 * (1 - progress) * (0.8 + Math.sin(progress * Math.PI * 6) * 0.2);
+        
+        // 4. Animate particles - move outward
+        particles.forEach(particle => {
+          // Move based on velocity
+          particle.mesh.position.add(particle.velocity);
+          
+          // Fade out
+          particle.material.opacity = 0.8 * (1 - progress);
+          
+          // Shrink
+          const particleScale = 1 - progress * 0.5;
+          particle.mesh.scale.set(particleScale, particleScale, particleScale);
+        });
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          // Clean up
+          this.scene.remove(core);
+          this.scene.remove(ring);
+          this.scene.remove(light);
+          
+          particles.forEach(particle => {
+            this.scene.remove(particle.mesh);
+            particle.geometry.dispose();
+            particle.material.dispose();
+          });
+          
+          coreGeometry.dispose();
+          coreMaterial.dispose();
+          ringGeometry.dispose();
+          ringMaterial.dispose();
+        }
+      };
+      
+      // Start animation
+      animate();
+    } catch (error) {
+      console.error(`Error creating visual feedback: ${error.message}`);
+    }
   }
 
   init() {
@@ -2538,31 +2759,73 @@ export default class Hero {
   handleSkills(keys) {
     // Check for skill activation
     for (const key in this.skills) {
+      // Skip if the key is not a string or if the skill doesn't exist
+      if (typeof key !== 'string' || !this.skills[key]) continue;
+      
+      // Check if the key is pressed and cooldown/mana conditions are met
       if (
-        keys[key] &&
+        keys[key] && 
+        this.cooldowns && 
+        this.cooldowns[key] !== undefined && 
         this.cooldowns[key] <= 0 &&
+        typeof this.mana !== 'undefined' && 
+        this.skills[key].manaCost !== undefined &&
         this.mana >= this.skills[key].manaCost
       ) {
-        this.useSkill(key);
+        // Use the legacy skill system for array-style skills
+        this.useSkillLegacy(key);
       }
+    }
+    
+    // Also check Map-style skills if available
+    if (this.skills && typeof this.skills.forEach === 'function') {
+      this.skills.forEach((skill, key) => {
+        if (
+          keys[key] && 
+          (!this.cooldowns || !this.cooldowns.has(key) || this.cooldowns.get(key) <= 0) &&
+          this.mana >= (skill.manaCost || 0)
+        ) {
+          // Use the new skill system
+          if (typeof key === 'string') {
+            this.useSkill(key);
+          }
+        }
+      });
     }
   }
 
-  useSkill(key) {
+  // This is a legacy method that's still being called in some places
+  // We'll make it compatible with the new skill system
+  useSkillLegacy(key) {
+    console.log(`Using legacy skill with key: ${key}`);
+    
+    // Fall back to the old system
     const skill = this.skills[key];
+    
+    // Safety check
+    if (!skill) {
+      console.error(`No skill found for key: ${key}`);
+      return;
+    }
 
     // Set cooldown
-    this.cooldowns[key] = skill.cooldown;
+    if (this.cooldowns) {
+      this.cooldowns[key] = skill.cooldown || 5.0;
+    }
 
-    // Consume mana
-    this.mana -= skill.manaCost;
-    this.updateUI();
+    // Consume mana if available
+    if (typeof this.mana !== 'undefined' && skill.manaCost) {
+      this.mana -= skill.manaCost;
+      if (typeof this.updateUI === 'function') {
+        this.updateUI();
+      }
+    }
 
     // Create a visual effect for the skill
     this.createSkillEffect(skill);
 
     // In a full implementation, we would handle damage, healing, etc.
-    console.log(`Used skill: ${skill.name}`);
+    console.log(`Used skill: ${skill.name || key}`);
   }
 
   createSkillEffect(skill) {
