@@ -69,6 +69,8 @@ export class EnemyManager {
             // Create a collision box for the enemy if not already present
             if (!enemy.mesh.userData.collisionBox) {
                 const boundingBox = new THREE.Box3().setFromObject(enemy.mesh);
+                // Expand the box significantly to ensure no walking through
+                boundingBox.expandByScalar(0.5); // Keep consistent with other changes
                 enemy.mesh.userData.collisionBox = boundingBox;
             }
         }

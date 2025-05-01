@@ -71,8 +71,8 @@ export class Enemy {
         
         // Create a collision box for the enemy
         const boundingBox = new THREE.Box3().setFromObject(this.mesh);
-        // Expand the box slightly to ensure no walking through
-        boundingBox.expandByScalar(0.1);
+        // Expand the box significantly to ensure no walking through
+        boundingBox.expandByScalar(0.5); // Increased from 0.1 to 0.5 for more robust collision
         this.mesh.userData.collisionBox = boundingBox;
         
         // Add a custom property to mark this as an enemy for collision detection
@@ -157,6 +157,8 @@ export class Enemy {
         // Update collision box to match current position
         if (this.mesh && this.mesh.userData.collisionBox) {
             const boundingBox = new THREE.Box3().setFromObject(this.mesh);
+            // Expand the box significantly to ensure no walking through
+            boundingBox.expandByScalar(0.5); // Keep consistent with initialization
             this.mesh.userData.collisionBox = boundingBox;
         }
     }

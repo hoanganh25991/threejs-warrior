@@ -227,8 +227,8 @@ export class CollisionDetector {
                     const box = new THREE.Box3().setFromObject(enemy.mesh);
                     enemy.mesh.userData.collisionBox = box;
                     
-                    // Expand the box slightly to ensure no walking through
-                    box.expandByScalar(0.1);
+                    // Expand the box significantly to ensure no walking through
+                    box.expandByScalar(0.5); // Increased from 0.1 to 0.5 for more robust collision
                     
                     // Check if the hero sphere intersects with the enemy's box
                     if (box.intersectsSphere(heroSphere)) {
@@ -255,7 +255,7 @@ export class CollisionDetector {
                 const distance = Math.sqrt(dx * dx + dz * dz);
                 
                 // Enemy collision radius (increased to ensure no walking through)
-                const enemyRadius = 1.2; // Further increased for better collision detection
+                const enemyRadius = 1.8; // Increased from 1.2 to 1.8 for better collision detection
                 
                 // Check if we're colliding with the enemy
                 if (distance < (heroRadius + enemyRadius)) {
@@ -391,8 +391,8 @@ export class CollisionDetector {
                         // Update the collision box to match the current position
                         const box = new THREE.Box3().setFromObject(enemy.mesh);
                         
-                        // Expand the box slightly to ensure no sliding through
-                        box.expandByScalar(0.1);
+                        // Expand the box significantly to ensure no sliding through
+                        box.expandByScalar(0.5); // Increased from 0.1 to 0.5 for more robust collision
                         
                         // Check if the slide sphere intersects with the enemy's box
                         if (box.intersectsSphere(slideHeroSphere)) {
@@ -414,7 +414,7 @@ export class CollisionDetector {
                     const distance = Math.sqrt(dx * dx + dz * dz);
                     
                     // Enemy collision radius - increased to ensure no sliding through
-                    const enemyRadius = 1.2; // Further increased for better collision detection
+                    const enemyRadius = 1.8; // Increased from 1.2 to 1.8 for better collision detection
                     
                     // Check if sliding would collide with the enemy
                     if (distance < (heroRadius + enemyRadius)) {
