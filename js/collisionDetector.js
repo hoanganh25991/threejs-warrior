@@ -17,6 +17,14 @@ export class CollisionDetector {
         if (this.debug) {
             this.initDebugVisualization();
         }
+        
+        // Log initialization
+        console.log("Collision detector initialized with world:", world);
+        if (world.enemyManager) {
+            console.log("Enemy manager found in world");
+        } else {
+            console.log("No enemy manager found in world yet, will check dynamically");
+        }
     }
     
     initDebugVisualization() {
@@ -144,6 +152,9 @@ export class CollisionDetector {
             });
         }
         
+        // Note: Enemies are handled dynamically in the checkCollision method
+        // since they move around and are managed by the enemyManager
+        
         // Log the number of collision objects if debug is enabled
         if (this.debug) {
             console.log(`Initialized ${this.collisionObjects.length} collision objects`);
@@ -205,6 +216,33 @@ export class CollisionDetector {
             }
         }
         
+        // Check for collisions with enemies
+        if (this.world.enemyManager && this.world.enemyManager.enemies) {
+            for (const enemy of this.world.enemyManager.enemies) {
+                if (!enemy.mesh) continue;
+                
+                // Calculate distance to enemy (horizontal only)
+                const dx = newPosition.x - enemy.mesh.position.x;
+                const dz = newPosition.z - enemy.mesh.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                // Enemy collision radius (can be adjusted)
+                const enemyRadius = 0.7;
+                
+                // Check if we're colliding with the enemy
+                if (distance < (heroRadius + enemyRadius)) {
+                    // Create a collision object for the enemy
+                    collidingObject = {
+                        type: 'enemy',
+                        mesh: enemy.mesh,
+                        isCollidable: true,
+                        isWalkable: false
+                    };
+                    break;
+                }
+            }
+        }
+        
         // If we found a solid colliding object, handle collision response
         if (collidingObject) {
             // Try to slide along the collision surface
@@ -212,7 +250,12 @@ export class CollisionDetector {
             const collisionNormal = new THREE.Vector3();
             
             // Get collision normal based on collision type
-            if (collidingObject.mesh.userData.collisionType === "cylinder") {
+            if (collidingObject.type === 'enemy') {
+                // For enemies - calculate normal from enemy center to collision point
+                collisionNormal.subVectors(newPosition, collidingObject.mesh.position).normalize();
+                collisionNormal.y = 0; // Keep sliding horizontal for enemies
+            }
+            else if (collidingObject.mesh.userData.collisionType === "cylinder") {
                 // For trees - calculate normal from center to collision point
                 const center = new THREE.Vector3();
                 collidingObject.mesh.userData.collisionMesh.getWorldPosition(center);
@@ -248,8 +291,9 @@ export class CollisionDetector {
             const slideHeroSphere = new THREE.Sphere(slidePosition, heroRadius);
             let canSlide = true;
             
+            // Check if sliding would cause collision with solid objects
             for (const obj of this.collisionObjects) {
-                if (!obj.mesh || !obj.mesh.isCollidable || obj.mesh.isWalkable) continue;
+                if (!obj.mesh || !obj.isCollidable || obj.isWalkable) continue;
                 
                 const collisionData = obj.mesh.userData;
                 if (collisionData.collisionType === "cylinder") {
@@ -279,6 +323,27 @@ export class CollisionDetector {
                 }
             }
             
+            // Check if sliding would cause collision with enemies
+            if (canSlide && this.world.enemyManager && this.world.enemyManager.enemies) {
+                for (const enemy of this.world.enemyManager.enemies) {
+                    if (!enemy.mesh) continue;
+                    
+                    // Calculate distance to enemy (horizontal only)
+                    const dx = slidePosition.x - enemy.mesh.position.x;
+                    const dz = slidePosition.z - enemy.mesh.position.z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+                    
+                    // Enemy collision radius
+                    const enemyRadius = 0.7;
+                    
+                    // Check if sliding would collide with the enemy
+                    if (distance < (heroRadius + enemyRadius)) {
+                        canSlide = false;
+                        break;
+                    }
+                }
+            }
+            
             if (canSlide) {
                 // Allow sliding
                 return {
@@ -293,6 +358,37 @@ export class CollisionDetector {
                     newPosition: position.clone().add(collisionNormal.multiplyScalar(0.1)),
                     isSliding: false
                 };
+            }
+        }
+        
+        // Check if we can stand on top of solid objects
+        // Cast a ray downward from the new position
+        this.raycaster.set(
+            new THREE.Vector3(newPosition.x, newPosition.y + 1, newPosition.z), // Start from slightly above
+            new THREE.Vector3(0, -1, 0) // Cast downward
+        );
+        
+        // Check for intersections with solid objects
+        const intersects = this.raycaster.intersectObjects(
+            this.collisionObjects.map(obj => obj.mesh).filter(Boolean),
+            true
+        );
+        
+        // If there's an intersection with a solid object
+        if (intersects.length > 0) {
+            const hitObject = intersects[0].object;
+            const hitPoint = intersects[0].point;
+            
+            // Find the corresponding collision object
+            const hitCollisionObj = this.collisionObjects.find(obj => 
+                obj.mesh === hitObject || (obj.mesh && obj.mesh.children.includes(hitObject))
+            );
+            
+            // If we hit a solid object and we're above it
+            if (hitCollisionObj && !hitCollisionObj.isWalkable && 
+                position.y > hitPoint.y + 0.5) { // We're above the object
+                // Allow standing on top
+                highestWalkableSurface = Math.max(highestWalkableSurface, hitPoint.y);
             }
         }
         
@@ -413,12 +509,24 @@ export class CollisionDetector {
                     console.log(`Bridge: height ${objectHeight.toFixed(2)}`);
                 }
             } else if (obj.type === 'rock') {
-                // For rocks, we want to prevent the hero from walking through them
-                // So we set the height very high to ensure collision
-                objectHeight = position.y + 100; // Set height much higher than hero can reach
+                // For rocks, check if we're above the rock
+                const rockBoundingBox = new THREE.Box3().setFromObject(obj.mesh);
+                const rockHeight = rockBoundingBox.max.y;
                 
-                if (this.debug) {
-                    console.log(`Rock: collision height ${objectHeight.toFixed(2)}`);
+                // If we're above the rock, allow standing on it
+                if (position.y > rockHeight - 0.5) {
+                    objectHeight = rockHeight + 0.1; // Stand on top with small offset
+                    
+                    if (this.debug) {
+                        console.log(`Rock: standing on top, height ${objectHeight.toFixed(2)}`);
+                    }
+                } else {
+                    // Otherwise, prevent walking through
+                    objectHeight = position.y + 100; // Set height much higher than hero can reach
+                    
+                    if (this.debug) {
+                        console.log(`Rock: collision height ${objectHeight.toFixed(2)}`);
+                    }
                 }
             } else if (obj.type === 'castle') {
                 // For castle, add a small offset
@@ -440,12 +548,31 @@ export class CollisionDetector {
                     console.log(`Castle: height ${objectHeight.toFixed(2)}`);
                 }
             } else if (obj.type === 'tree') {
-                // Trees are not walkable, we want to prevent the hero from walking through them
-                // So we set the height very high to ensure collision
+                // Check if we're above the tree
+                const treeBoundingBox = new THREE.Box3().setFromObject(obj.mesh);
+                const treeHeight = treeBoundingBox.max.y;
+                
+                // If we're above the tree, allow standing on it
+                if (position.y > treeHeight - 0.5) {
+                    objectHeight = treeHeight + 0.1; // Stand on top with small offset
+                    
+                    if (this.debug) {
+                        console.log(`Tree: standing on top, height ${objectHeight.toFixed(2)}`);
+                    }
+                } else {
+                    // Otherwise, prevent walking through
+                    objectHeight = position.y + 100; // Set height much higher than hero can reach
+                    
+                    if (this.debug) {
+                        console.log(`Tree: collision height ${objectHeight.toFixed(2)}`);
+                    }
+                }
+            } else if (obj.type === 'enemy') {
+                // Enemies are not walkable, prevent walking through them
                 objectHeight = position.y + 100; // Set height much higher than hero can reach
                 
                 if (this.debug) {
-                    console.log(`Tree: collision height ${objectHeight.toFixed(2)}`);
+                    console.log(`Enemy: collision height ${objectHeight.toFixed(2)}`);
                 }
             }
         }

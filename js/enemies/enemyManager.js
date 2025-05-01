@@ -56,15 +56,19 @@ export default class EnemyManager {
         const angle = Math.random() * Math.PI * 2;
         const radius = this.spawnRadius + Math.random() * 10; // Between spawnRadius and spawnRadius + 10
         
+        // Always spawn enemies at ground level (y=0)
         const spawnPosition = new THREE.Vector3(
             playerPosition.x + Math.cos(angle) * radius,
-            0,
+            0, // Fixed at ground level
             playerPosition.z + Math.sin(angle) * radius
         );
         
         // Create new enemy
         const enemy = new Enemy(this.scene, spawnPosition, enemyType);
         this.enemies.push(enemy);
+        
+        // Ensure the enemy is properly positioned on the ground
+        enemy.group.position.y = 0;
         
         return enemy;
     }

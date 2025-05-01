@@ -613,6 +613,13 @@ export default class Enemy {
                 // Do nothing when dead
                 break;
         }
+        
+        // Ensure enemy always stays on the ground
+        this.group.position.y = 0;
+        
+        // Ensure enemy always remains upright (no tilting)
+        this.group.rotation.x = 0;
+        this.group.rotation.z = 0;
 
         // Update health bar
         this.updateHealthBar();
@@ -670,18 +677,33 @@ export default class Enemy {
             return;
         }
         
-        const distance = this.group.position.distanceTo(targetPosition);
+        // Create a horizontal-only target position (ignore height differences)
+        const horizontalTargetPosition = new THREE.Vector3(
+            targetPosition.x,
+            this.group.position.y, // Keep enemy's current height
+            targetPosition.z
+        );
         
-        if (distance <= this.attackRange) {
+        // Calculate horizontal distance to target (ignoring height)
+        const horizontalDistance = new THREE.Vector2(
+            this.group.position.x - targetPosition.x,
+            this.group.position.z - targetPosition.z
+        ).length();
+        
+        if (horizontalDistance <= this.attackRange) {
             this.setState('attack');
         } else {
-            // Move towards target
+            // Move towards target (only in horizontal plane)
             const direction = new THREE.Vector3()
-                .subVectors(targetPosition, this.group.position)
+                .subVectors(horizontalTargetPosition, this.group.position)
                 .normalize();
             
-            this.group.position.add(direction.multiplyScalar(this.speed * delta));
-            this.group.lookAt(targetPosition);
+            // Apply movement only in X and Z directions (no vertical movement)
+            this.group.position.x += direction.x * this.speed * delta;
+            this.group.position.z += direction.z * this.speed * delta;
+            
+            // Always look at the horizontal target position (don't tilt up/down)
+            this.group.lookAt(horizontalTargetPosition);
         }
     }
 
@@ -704,12 +726,48 @@ export default class Enemy {
             return;
         }
         
-        const distance = this.group.position.distanceTo(targetPosition);
+        // Calculate horizontal distance to target (ignoring height)
+        const horizontalDistance = new THREE.Vector2(
+            this.group.position.x - targetPosition.x,
+            this.group.position.z - targetPosition.z
+        ).length();
         
-        if (distance > this.attackRange) {
+        // Check if target is flying (above a certain height threshold)
+        const flyingThreshold = 3.0; // Consider target flying if above this height
+        const isTargetFlying = targetPosition.y > flyingThreshold;
+        
+        // Determine if this enemy can attack based on type and target position
+        let canAttack = false;
+        
+        // Check if this is a ranged enemy (archer or mage)
+        const isRanged = this.enemyType === 'archer' || this.enemyType === 'mage';
+        
+        if (isRanged) {
+            // Ranged enemies can attack flying targets
+            // Use horizontal distance for range check
+            canAttack = horizontalDistance <= this.attackRange;
+        } else {
+            // Melee enemies can only attack grounded targets
+            canAttack = horizontalDistance <= this.attackRange && !isTargetFlying;
+        }
+        
+        if (horizontalDistance > this.attackRange) {
             this.setState('chase');
-        } else if (this.attackCooldown <= 0) {
-            this.attack();
+        } else if (canAttack && this.attackCooldown <= 0) {
+            this.attack(isTargetFlying);
+        } else if (!canAttack) {
+            // If we can't attack (e.g., melee enemy with flying target),
+            // just stay in position and wait
+            
+            // Create a horizontal-only target position (for looking at target)
+            const horizontalTargetPosition = new THREE.Vector3(
+                targetPosition.x,
+                this.group.position.y, // Keep enemy's current height
+                targetPosition.z
+            );
+            
+            // Always look at the horizontal target position (don't tilt up/down)
+            this.group.lookAt(horizontalTargetPosition);
         }
     }
     
@@ -727,21 +785,30 @@ export default class Enemy {
         return null;
     }
 
-    attack() {
+    attack(isTargetFlying = false) {
         if (!this.target) return;
 
         console.log(`Enemy attacking target with ${this.damage} damage`);
         
-        // Deal damage to target - handle different ways the target might take damage
-        if (typeof this.target.takeDamage === 'function') {
-            this.target.takeDamage(this.damage);
-        } else if (this.target.health !== undefined) {
-            // Direct manipulation if takeDamage not available
-            this.target.health = Math.max(0, this.target.health - this.damage);
-            
-            // If the target has an updateUI method, call it
-            if (typeof this.target.updateUI === 'function') {
-                this.target.updateUI();
+        // Check if this is a ranged enemy (archer or mage)
+        const isRanged = this.enemyType === 'archer' || this.enemyType === 'mage';
+        
+        if (isRanged && isTargetFlying) {
+            // For ranged enemies attacking flying targets, create a projectile
+            this.createRangedProjectile();
+        } else {
+            // For melee attacks or ranged attacks on ground targets
+            // Deal damage to target - handle different ways the target might take damage
+            if (typeof this.target.takeDamage === 'function') {
+                this.target.takeDamage(this.damage);
+            } else if (this.target.health !== undefined) {
+                // Direct manipulation if takeDamage not available
+                this.target.health = Math.max(0, this.target.health - this.damage);
+                
+                // If the target has an updateUI method, call it
+                if (typeof this.target.updateUI === 'function') {
+                    this.target.updateUI();
+                }
             }
         }
 
@@ -758,6 +825,98 @@ export default class Enemy {
             // Fallback animation if no animation clips are available
             this.playAttackAnimation();
         }
+    }
+    
+    createRangedProjectile() {
+        // Get target position
+        const targetPosition = this.getTargetPosition();
+        if (!targetPosition) return;
+        
+        // Create a projectile
+        const projectileGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        
+        // Different colors for different enemy types
+        let projectileColor;
+        switch(this.enemyType) {
+            case 'archer':
+                projectileColor = 0x8B4513; // Brown for arrows
+                break;
+            case 'mage':
+                projectileColor = 0x00FFFF; // Cyan for magic
+                break;
+            default:
+                projectileColor = 0xFF0000; // Red for default
+        }
+        
+        const projectileMaterial = new THREE.MeshBasicMaterial({ 
+            color: projectileColor,
+            emissive: projectileColor,
+            emissiveIntensity: 0.5
+        });
+        
+        const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
+        
+        // Position the projectile at the enemy's eye level (approximately 1.5 units above ground)
+        const eyeLevel = 1.5;
+        projectile.position.set(
+            this.group.position.x,
+            eyeLevel, // Fixed eye level height
+            this.group.position.z
+        );
+        
+        // Add to scene
+        this.scene.add(projectile);
+        
+        // Create a direction vector from enemy to target (including vertical component)
+        const direction = new THREE.Vector3()
+            .subVectors(targetPosition, projectile.position)
+            .normalize();
+        
+        // Animate the projectile
+        const projectileSpeed = 15; // Units per second
+        const maxDistance = this.attackRange * 1.5; // Maximum travel distance
+        const startPosition = projectile.position.clone();
+        
+        // Store reference to this enemy for damage application
+        const enemyRef = this;
+        
+        const animateProjectile = function(time) {
+            // Move the projectile
+            projectile.position.add(direction.clone().multiplyScalar(projectileSpeed * 0.016)); // Assuming ~60fps
+            
+            // Check if we've reached the target or gone too far
+            const distanceToTarget = projectile.position.distanceTo(targetPosition);
+            const distanceFromStart = projectile.position.distanceTo(startPosition);
+            
+            if (distanceToTarget < 0.5) {
+                // Hit the target - apply damage
+                if (typeof enemyRef.target.takeDamage === 'function') {
+                    enemyRef.target.takeDamage(enemyRef.damage);
+                } else if (enemyRef.target.health !== undefined) {
+                    // Direct manipulation if takeDamage not available
+                    enemyRef.target.health = Math.max(0, enemyRef.target.health - enemyRef.damage);
+                    
+                    // If the target has an updateUI method, call it
+                    if (typeof enemyRef.target.updateUI === 'function') {
+                        enemyRef.target.updateUI();
+                    }
+                }
+                
+                // Remove projectile
+                enemyRef.scene.remove(projectile);
+                return;
+            } else if (distanceFromStart > maxDistance) {
+                // Reached max range without hitting target
+                enemyRef.scene.remove(projectile);
+                return;
+            }
+            
+            // Continue animation
+            requestAnimationFrame(animateProjectile);
+        };
+        
+        // Start animation
+        requestAnimationFrame(animateProjectile);
     }
     
     playAttackAnimation() {
