@@ -136,9 +136,10 @@ export default class CharacterInfo {
         const skills = this.hero.skillTree.skills;
         const characterClass = this.hero.characterClass.type;
         
-        // Create a visual skill tree container
+        // Create a visual skill tree container (hidden by default)
         const skillTreeContainer = document.createElement('div');
         skillTreeContainer.className = `skill-tree-container ${characterClass}`;
+        skillTreeContainer.style.display = 'none';
         
         // Add a description for the skill tree
         const skillTreeDescription = document.createElement('div');
@@ -328,9 +329,9 @@ export default class CharacterInfo {
         skillTreeContainer.appendChild(skillTree);
         skillsContainer.appendChild(skillTreeContainer);
         
-        // Add the list view toggle
+        // Add the view toggle button
         const toggleButton = document.createElement('button');
-        toggleButton.textContent = 'Toggle List View';
+        toggleButton.textContent = 'Toggle Tree View';
         toggleButton.style.marginTop = '10px';
         toggleButton.style.padding = '5px 10px';
         toggleButton.style.backgroundColor = '#555';
@@ -350,81 +351,208 @@ export default class CharacterInfo {
             if (treeView) {
                 treeView.style.display = treeView.style.display === 'none' ? 'block' : 'none';
             }
+            
+            // Update button text based on which view is visible
+            if (treeView.style.display === 'none') {
+                toggleButton.textContent = 'Toggle Tree View';
+            } else {
+                toggleButton.textContent = 'Toggle List View';
+            }
         });
         
         skillsContainer.appendChild(toggleButton);
         
-        // Also add a simple list view (hidden by default)
+        // Add a simple list view (shown by default)
         const listView = document.createElement('div');
         listView.className = 'skills-list-view';
-        listView.style.display = 'none';
+        listView.style.display = 'block';
         listView.style.marginTop = '10px';
         
-        // Create a skill item for each skill in list format
+        // Add a description for the list view
+        const listViewDescription = document.createElement('div');
+        listViewDescription.className = 'skill-list-description';
+        listViewDescription.style.marginBottom = '20px';
+        listViewDescription.style.padding = '10px';
+        listViewDescription.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        listViewDescription.style.borderRadius = '5px';
+        listViewDescription.style.color = '#fff';
+        listViewDescription.style.fontSize = '14px';
+        listViewDescription.style.lineHeight = '1.4';
+        
+        // Add class-specific description
+        let listDescription = '';
+        switch(characterClass) {
+            case 'warrior':
+                listDescription = 'Warriors excel at close combat with powerful melee attacks and defensive abilities. Focus on strength to increase your damage output and health.';
+                break;
+            case 'mage':
+                listDescription = 'Mages are masters of elemental magic, dealing high damage from a distance. Focus on intelligence to increase your spell power and mana pool.';
+                break;
+            case 'rogue':
+                listDescription = 'Rogues are agile fighters who rely on stealth and critical strikes. Focus on dexterity to increase your attack speed and critical chance.';
+                break;
+            case 'paladin':
+                listDescription = 'Paladins balance offensive holy magic with protective abilities. Balance strength and intelligence to be effective in both attack and support.';
+                break;
+            default:
+                listDescription = 'Choose skills that complement your playstyle and character attributes.';
+        }
+        
+        listViewDescription.innerHTML = `<strong>Skill Guide for ${this.capitalizeFirstLetter(characterClass)}:</strong><br>${listDescription}<br><br>
+            <strong>Available Skill Points:</strong> ${this.hero.characterClass.skillPoints}`;
+        
+        listView.appendChild(listViewDescription);
+        
+        // Organize skills by category
+        const categories = {
+            'Base Skills': [],
+            'Advanced Skills': [],
+            'Ultimate Skills': []
+        };
+        
+        // Categorize skills based on their requirements
         for (const skillId in skills) {
             const skill = skills[skillId];
-            const isUnlocked = this.hero.skillTree.isSkillUnlocked(skillId);
-            const canUnlock = this.hero.skillTree.canUnlockSkill(skillId);
-            
-            const skillElement = document.createElement('div');
-            skillElement.className = 'skill-item';
-            
-            // Add skill name
-            const nameElement = document.createElement('div');
-            nameElement.className = 'skill-name';
-            nameElement.textContent = skill.name;
-            skillElement.appendChild(nameElement);
-            
-            // Add skill description
-            const descElement = document.createElement('div');
-            descElement.className = 'skill-description';
-            descElement.textContent = skill.description;
-            skillElement.appendChild(descElement);
-            
-            // Add skill stats
-            const statsElement = document.createElement('div');
-            statsElement.className = 'skill-stats';
-            
-            // Add relevant stats based on skill type
-            if (skill.baseDamage) {
-                statsElement.innerHTML += `Damage: ${skill.baseDamage}<br>`;
-            }
-            if (skill.damageType) {
-                statsElement.innerHTML += `Type: ${this.capitalizeFirstLetter(skill.damageType)}<br>`;
-            }
-            if (skill.cooldown) {
-                statsElement.innerHTML += `Cooldown: ${skill.cooldown}s<br>`;
-            }
-            if (skill.manaCost) {
-                statsElement.innerHTML += `Mana: ${skill.manaCost}<br>`;
-            }
-            
-            skillElement.appendChild(statsElement);
-            
-            // Add unlock button if not already unlocked
-            if (!isUnlocked) {
-                const unlockButton = document.createElement('button');
-                unlockButton.className = 'skill-unlock-btn';
-                unlockButton.textContent = 'Unlock Skill';
-                unlockButton.disabled = !canUnlock || this.hero.characterClass.skillPoints <= 0;
-                
-                unlockButton.addEventListener('click', () => {
-                    this.unlockSkill(skillId);
-                });
-                
-                skillElement.appendChild(unlockButton);
+            if (!skill.requirements || skill.requirements.length === 0) {
+                categories['Base Skills'].push(skillId);
+            } else if (skill.requirements.some(req => req.includes('-3'))) {
+                categories['Ultimate Skills'].push(skillId);
             } else {
-                // Show that the skill is already unlocked
-                const unlockedText = document.createElement('div');
-                unlockedText.className = 'skill-unlocked';
-                unlockedText.textContent = 'Unlocked';
-                unlockedText.style.color = '#4CAF50';
-                unlockedText.style.fontWeight = 'bold';
-                unlockedText.style.marginTop = '8px';
-                skillElement.appendChild(unlockedText);
+                categories['Advanced Skills'].push(skillId);
             }
+        }
+        
+        // Create sections for each category
+        for (const category in categories) {
+            if (categories[category].length === 0) continue;
             
-            listView.appendChild(skillElement);
+            // Create category header
+            const categoryHeader = document.createElement('div');
+            categoryHeader.className = 'skill-category-header';
+            categoryHeader.textContent = category;
+            categoryHeader.style.color = '#f8d000';
+            categoryHeader.style.fontSize = '1.2rem';
+            categoryHeader.style.fontWeight = 'bold';
+            categoryHeader.style.margin = '15px 0 10px 0';
+            categoryHeader.style.padding = '5px 0';
+            categoryHeader.style.borderBottom = '1px solid #444';
+            listView.appendChild(categoryHeader);
+            
+            // Create skill items for this category
+            categories[category].forEach(skillId => {
+                const skill = skills[skillId];
+                const isUnlocked = this.hero.skillTree.isSkillUnlocked(skillId);
+                const canUnlock = this.hero.skillTree.canUnlockSkill(skillId);
+                
+                const skillElement = document.createElement('div');
+                skillElement.className = 'skill-item';
+                
+                // Add status indicator
+                if (isUnlocked) {
+                    skillElement.style.borderLeft = '4px solid #4CAF50';
+                } else if (canUnlock) {
+                    skillElement.style.borderLeft = '4px solid #f8d000';
+                } else {
+                    skillElement.style.borderLeft = '4px solid #555';
+                    skillElement.style.opacity = '0.7';
+                }
+                
+                // Create header with name and status
+                const headerElement = document.createElement('div');
+                headerElement.style.display = 'flex';
+                headerElement.style.justifyContent = 'space-between';
+                headerElement.style.alignItems = 'center';
+                
+                // Add skill name
+                const nameElement = document.createElement('div');
+                nameElement.className = 'skill-name';
+                nameElement.textContent = skill.name;
+                headerElement.appendChild(nameElement);
+                
+                // Add status text
+                const statusElement = document.createElement('div');
+                statusElement.style.fontSize = '0.8rem';
+                statusElement.style.padding = '2px 6px';
+                statusElement.style.borderRadius = '3px';
+                
+                if (isUnlocked) {
+                    statusElement.textContent = 'Unlocked';
+                    statusElement.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
+                    statusElement.style.color = '#4CAF50';
+                } else if (canUnlock) {
+                    statusElement.textContent = 'Available';
+                    statusElement.style.backgroundColor = 'rgba(248, 208, 0, 0.2)';
+                    statusElement.style.color = '#f8d000';
+                } else {
+                    statusElement.textContent = 'Locked';
+                    statusElement.style.backgroundColor = 'rgba(85, 85, 85, 0.2)';
+                    statusElement.style.color = '#aaa';
+                }
+                
+                headerElement.appendChild(statusElement);
+                skillElement.appendChild(headerElement);
+                
+                // Add skill description
+                const descElement = document.createElement('div');
+                descElement.className = 'skill-description';
+                descElement.textContent = skill.description;
+                skillElement.appendChild(descElement);
+                
+                // Add skill stats
+                const statsElement = document.createElement('div');
+                statsElement.className = 'skill-stats';
+                
+                // Add relevant stats based on skill type
+                if (skill.baseDamage) {
+                    statsElement.innerHTML += `Damage: ${skill.baseDamage}<br>`;
+                }
+                if (skill.damageType) {
+                    statsElement.innerHTML += `Type: ${this.capitalizeFirstLetter(skill.damageType)}<br>`;
+                }
+                if (skill.cooldown) {
+                    statsElement.innerHTML += `Cooldown: ${skill.cooldown}s<br>`;
+                }
+                if (skill.manaCost) {
+                    statsElement.innerHTML += `Mana: ${skill.manaCost}<br>`;
+                }
+                
+                skillElement.appendChild(statsElement);
+                
+                // Add requirements if any
+                if (skill.requirements && skill.requirements.length > 0) {
+                    const reqElement = document.createElement('div');
+                    reqElement.className = `skill-requirements ${this.areRequirementsMet(skill.requirements) ? 'met' : ''}`;
+                    reqElement.style.fontSize = '0.9rem';
+                    reqElement.style.marginTop = '5px';
+                    reqElement.style.color = this.areRequirementsMet(skill.requirements) ? '#4CAF50' : '#ff6b6b';
+                    
+                    const reqList = skill.requirements.map(req => {
+                        const [reqSkill, reqLevel] = req.split('-');
+                        const reqSkillObj = skills[reqSkill];
+                        return reqSkillObj ? `${reqSkillObj.name} (Level ${reqLevel})` : req;
+                    }).join(', ');
+                    
+                    reqElement.textContent = `Requires: ${reqList}`;
+                    skillElement.appendChild(reqElement);
+                }
+                
+                // Add unlock button if not already unlocked
+                if (!isUnlocked) {
+                    const unlockButton = document.createElement('button');
+                    unlockButton.className = 'skill-unlock-btn';
+                    unlockButton.textContent = 'Unlock Skill';
+                    unlockButton.disabled = !canUnlock || this.hero.characterClass.skillPoints <= 0;
+                    unlockButton.style.marginTop = '10px';
+                    
+                    unlockButton.addEventListener('click', () => {
+                        this.unlockSkill(skillId);
+                    });
+                    
+                    skillElement.appendChild(unlockButton);
+                }
+                
+                listView.appendChild(skillElement);
+            });
         }
         
         skillsContainer.appendChild(listView);
