@@ -13,6 +13,9 @@ export default class CraftingUI {
         // Initialize player skills (simplified for demo)
         this.skills = this.loadSkills();
         
+        // Store original input handler state
+        this.originalInputState = null;
+        
         this.init();
     }
     
@@ -378,6 +381,13 @@ export default class CraftingUI {
         document.getElementById('add-materials').addEventListener('click', () => {
             this.addTestMaterials();
         });
+        
+        // Add escape key handler to close panel
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isOpen) {
+                this.closePanel();
+            }
+        });
     }
     
     togglePanel() {
@@ -385,14 +395,58 @@ export default class CraftingUI {
         this.panel.style.display = this.isOpen ? 'flex' : 'none';
         
         if (this.isOpen) {
+            // Disable mouse capture for camera control
+            this.disableMouseCapture();
+            
+            // Refresh UI
             this.refreshRecipeList();
             this.refreshInventory();
+        } else {
+            // Re-enable mouse capture for camera control
+            this.enableMouseCapture();
         }
     }
     
     closePanel() {
         this.isOpen = false;
         this.panel.style.display = 'none';
+        
+        // Re-enable mouse capture for camera control
+        this.enableMouseCapture();
+    }
+    
+    disableMouseCapture() {
+        // Get the input handler from window (set in main.js)
+        if (window.inputHandler) {
+            // Store original state
+            this.originalInputState = {
+                isMouseCaptured: window.inputHandler.isMouseCaptured,
+                isPointerLocked: document.pointerLockElement !== null
+            };
+            
+            // Disable mouse capture
+            window.inputHandler.isMouseCaptured = false;
+            
+            // Exit pointer lock if active
+            if (document.pointerLockElement) {
+                document.exitPointerLock();
+            }
+            
+            console.log('Mouse capture disabled for crafting UI');
+        }
+    }
+    
+    enableMouseCapture() {
+        // Only re-enable if we previously disabled it
+        if (window.inputHandler && this.originalInputState) {
+            // Restore original state
+            window.inputHandler.isMouseCaptured = this.originalInputState.isMouseCaptured;
+            
+            // Reset stored state
+            this.originalInputState = null;
+            
+            console.log('Mouse capture re-enabled');
+        }
     }
     
     refreshRecipeList(category = 'all') {

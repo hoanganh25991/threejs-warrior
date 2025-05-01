@@ -11,6 +11,7 @@ export class InputHandler {
             buttons: [false, false, false]
         };
         this.isPointerLocked = false;
+        this.isMouseCaptured = true; // Flag to enable/disable mouse capture
         this.mouseSensitivity = config.controls.mouse.sensitivity; // Use sensitivity from config
         
         // Initialize key states
@@ -178,7 +179,7 @@ export class InputHandler {
     }
     
     handleMouseMove(event) {
-        if (this.isPointerLocked) {
+        if (this.isPointerLocked && this.isMouseCaptured) {
             // Store raw movement values
             this.mouse.movementX = event.movementX * this.mouseSensitivity;
             this.mouse.movementY = event.movementY * this.mouseSensitivity;
@@ -198,8 +199,8 @@ export class InputHandler {
     handleMouseDown(event) {
         this.mouse.buttons[event.button] = true;
         
-        // Request pointer lock on click if not already locked
-        if (!this.isPointerLocked) {
+        // Request pointer lock on click if not already locked and mouse capture is enabled
+        if (!this.isPointerLocked && this.isMouseCaptured) {
             this.requestPointerLock();
         }
         
@@ -213,7 +214,7 @@ export class InputHandler {
     
     requestPointerLock() {
         const canvas = document.getElementById('game-canvas');
-        if (canvas && !this.isPointerLocked) {
+        if (canvas && !this.isPointerLocked && this.isMouseCaptured) {
             canvas.requestPointerLock();
         }
     }
@@ -255,8 +256,8 @@ export class InputHandler {
             lookX -= 2; // Look left
         }
         
-        // Add mouse movement if pointer is locked
-        if (this.isPointerLocked) {
+        // Add mouse movement if pointer is locked and mouse capture is enabled
+        if (this.isPointerLocked && this.isMouseCaptured) {
             lookX += this.mouse.movementX;
             lookY += this.mouse.movementY; // Add vertical mouse movement
         }
