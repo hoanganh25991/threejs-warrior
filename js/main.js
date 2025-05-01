@@ -5,11 +5,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // Import game modules
 import { config } from "./config/config.js";
 import Hero from "./hero/hero.js";
-import EnemyManager from "./enemyManager.js";
+import EnemyManager from "./enemies/enemy.js";
 import SkillManager from "./skills/skillManager.js";
 import InputHandler from "./input.js";
 import World from "./world/world.js";
-import SoundManager from "./soundManager.js";
+import SoundManager from "./audio/sound-manager.js";
 import CollisionDetector from "./collisionDetector.js";
 import ParticleSystem from "./effects/particle-system.js";
 import Effects from "./effects/effects.js";
@@ -19,6 +19,8 @@ import CharacterClass from "./rpg/character-class.js";
 import SkillTree from "./rpg/skill-tree.js";
 import HUD from "./ui/hud.js";
 import Boss from "./enemies/boss.js";
+import Attack from "./combat/attack.js";
+import Terrain from "./terrain/terrain.js";
 
 // Game class
 class Game {
@@ -45,6 +47,8 @@ class Game {
     this.skillTree = null;
     this.hud = null;
     this.boss = null;
+    this.terrain = null;
+    this.attack = null;
     this.isGameStarted = false;
     this.selectedHero = null;
     this.isLoading = true;
@@ -95,6 +99,7 @@ class Game {
 
     // Initialize sound manager
     this.soundManager = new SoundManager();
+    this.soundManager.init();
 
     // Make sound manager globally accessible
     window.soundManager = this.soundManager;
@@ -277,18 +282,33 @@ class Game {
       }
     });
 
+    // Initialize terrain system
+    this.terrain = new Terrain(this.scene, {
+      width: 1000,
+      height: 1000,
+      segmentsW: 100,
+      segmentsH: 100,
+      maxHeight: 50,
+      minHeight: -50,
+      textures: {
+        diffuse: '/assets/textures/terrain/grass_diffuse.jpg',
+        normal: '/assets/textures/terrain/grass_normal.jpg',
+        displacement: '/assets/textures/terrain/grass_height.jpg'
+      }
+    });
+
     // Initialize RPG systems
-    this.shop = new Shop(this.scene);
-    this.crafting = new Crafting(this.scene);
-    this.characterClass = new CharacterClass();
-    this.skillTree = new SkillTree();
+    this.shop = new Shop(this.scene, this.effects);
+    this.crafting = new Crafting();
+    this.characterClass = new CharacterClass(this.selectedHero);
+    this.skillTree = new SkillTree(this.selectedHero);
 
     // Initialize UI
     this.hud = new HUD();
     
     // Play background music
     if (this.soundManager) {
-      this.soundManager.playMusic();
+      this.soundManager.playSound('background-music', { loop: true });
     }
 
     // Create hero with all systems connected
@@ -300,6 +320,9 @@ class Game {
       shop: this.shop,
       crafting: this.crafting
     });
+
+    // Initialize combat system
+    this.attack = new Attack(this.hero);
 
     // Add debug info for collision detection if debug mode is enabled
     if (config.game.debug) {
@@ -340,16 +363,31 @@ class Game {
       this.world.update(deltaTime, this.camera);
     }
 
+    // Update terrain
+    if (this.terrain) {
+      this.terrain.update(deltaTime);
+    }
+
     // Update game systems
     if (this.effects) {
       this.effects.update(deltaTime);
     }
     if (this.skillManager) {
-      this.skillManager.update(deltaTime);
+      this.skillManager.update(deltaTime, this.enemyManager);
     }
     if (this.enemyManager && this.hero) {
       const heroPosition = this.hero.getPosition();
       this.enemyManager.update(deltaTime, heroPosition);
+    }
+
+    // Update combat system
+    if (this.attack) {
+      this.attack.update(deltaTime);
+      
+      // Handle attack input
+      if (this.inputHandler && this.inputHandler.isKeyPressed('mouse0') && this.attack.canAttack()) {
+        this.attack.startAttack();
+      }
     }
 
     // Update boss if present
@@ -357,12 +395,22 @@ class Game {
       this.boss.update(deltaTime);
     }
 
+    // Update RPG systems
+    if (this.shop && this.hero) {
+      // Shop interactions would be handled by UI events
+    }
+    
+    if (this.crafting && this.hero) {
+      // Crafting interactions would be handled by UI events
+    }
+
     // Update UI
     if (this.hud) {
       this.hud.update({
         hero: this.hero,
         boss: this.boss,
-        skillManager: this.skillManager
+        skillManager: this.skillManager,
+        characterClass: this.characterClass
       });
     }
 
@@ -424,6 +472,14 @@ class Game {
 
       // Make the camera look where the player is looking
       this.camera.lookAt(targetPosition);
+      
+      // Check if hero is on terrain and adjust height if needed
+      if (this.terrain) {
+        const terrainHeight = this.terrain.getHeightAt(heroPosition.x, heroPosition.z);
+        if (terrainHeight > 0 && heroPosition.y < terrainHeight + 1) {
+          this.hero.setPosition(heroPosition.x, terrainHeight + 1, heroPosition.z);
+        }
+      }
     }
 
     // Update collision detector
