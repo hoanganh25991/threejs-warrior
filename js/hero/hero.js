@@ -12,13 +12,31 @@ import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
 import { config } from "../config/config.js";
 
 export default class Hero {
-  constructor(scene, heroType) {
+  constructor(scene, heroType, options = {}) {
     this.scene = scene;
     this.heroType = heroType;
-    this.health = config.player.health;
-    this.maxHealth = config.player.health;
-    this.mana = config.player.mana;
-    this.maxMana = config.player.mana;
+    
+    // Extract RPG components from options
+    this.skillManager = options.skillManager || null;
+    this.effects = options.effects || null;
+    this.characterClass = options.characterClass || null;
+    this.skillTree = options.skillTree || null;
+    this.shop = options.shop || null;
+    this.crafting = options.crafting || null;
+    
+    // Initialize health and mana from character class if available
+    if (this.characterClass && this.characterClass.stats) {
+      this.health = this.characterClass.stats.health || config.player.health;
+      this.maxHealth = this.characterClass.stats.health || config.player.health;
+      this.mana = this.characterClass.stats.mana || config.player.mana;
+      this.maxMana = this.characterClass.stats.mana || config.player.mana;
+    } else {
+      this.health = config.player.health;
+      this.maxHealth = config.player.health;
+      this.mana = config.player.mana;
+      this.maxMana = config.player.mana;
+    }
+    
     this.experience = config.player.experience.initial;
     this.level = 1;
     this.nextLevelExp = config.player.experience.levelUpThreshold;
@@ -83,6 +101,101 @@ export default class Hero {
         this.skills.set('Y', new FrostNova(this));
         break;
       // Add more hero types and their skills here
+    }
+    
+    // If we have a skill tree, initialize skills from it
+    if (this.skillTree) {
+      // Get all skills from the skill tree
+      for (const skillId in this.skillTree.skills) {
+        const skill = this.skillTree.skills[skillId];
+        
+        // Check if the skill is unlocked or is a starting skill (no requirements)
+        if (this.skillTree.isSkillUnlocked(skillId) || 
+            (skill.requirements && skill.requirements.length === 0)) {
+          
+          // Map skill to a key if not already mapped
+          // This is a simple mapping - in a full implementation, you'd want a more sophisticated system
+          const keyMap = {
+            'brutal-strike': 'Y',
+            'whirlwind': 'U',
+            'iron-skin': 'I',
+            'fireball': 'Y',
+            'meteor': 'U',
+            'shadow-strike': 'Y',
+            'smoke-bomb': 'U',
+            'divine-smite': 'Y',
+            'holy-shield': 'U'
+          };
+          
+          const key = keyMap[skillId];
+          if (key && !this.skills.has(key)) {
+            // Create a generic skill wrapper for the skill tree skill
+            this.skills.set(key, {
+              name: skill.name,
+              description: skill.description,
+              cooldown: skill.cooldown,
+              manaCost: skill.manaCost,
+              baseDamage: skill.baseDamage,
+              damageType: skill.damageType,
+              effects: skill.effects,
+              
+              // Skill methods
+              canUse: () => {
+                return this.mana >= skill.manaCost && 
+                       (!this.cooldowns.has(key) || this.cooldowns.get(key) <= 0);
+              },
+              
+              activate: () => {
+                if (this.mana >= skill.manaCost) {
+                  // Deduct mana
+                  this.mana -= skill.manaCost;
+                  
+                  // Set cooldown
+                  this.cooldowns.set(key, skill.cooldown);
+                  
+                  // Calculate damage if applicable
+                  let damage = 0;
+                  if (skill.baseDamage && this.characterClass) {
+                    damage = this.characterClass.getSkillDamage(skillId);
+                  }
+                  
+                  console.log(`Using skill: ${skill.name}, Damage: ${damage}`);
+                  
+                  // Play sound effect
+                  if (this.soundManager) {
+                    this.soundManager.playSound('skill-cast');
+                  }
+                  
+                  // Create visual effect
+                  if (this.effects) {
+                    // Different effect based on damage type
+                    const effectType = skill.damageType === 'magic' ? 'magic' : 'physical';
+                    const position = new THREE.Vector3().copy(this.group.position);
+                    position.y += 1; // Adjust to be at character height
+                    
+                    this.effects.createEffect(effectType, position, {
+                      direction: this.direction.clone(),
+                      color: this.heroType === 'crystal-maiden' ? 0x00ffff : 
+                             this.heroType === 'lina' ? 0xff4400 : 0xffffff
+                    });
+                  }
+                  
+                  return true;
+                }
+                return false;
+              },
+              
+              update: (delta) => {
+                // Nothing to update for basic skills
+              },
+              
+              getCooldownDuration: () => {
+                return skill.cooldown;
+              }
+            });
+          }
+        }
+      }
     }
   }
 
@@ -1567,6 +1680,250 @@ export default class Hero {
         }
       }
     }
+  }
+  
+  gainExperience(amount) {
+    // If we have a character class, use its experience system
+    if (this.characterClass) {
+      this.characterClass.gainExperience(amount);
+      
+      // Update hero level from character class
+      this.level = this.characterClass.level;
+      
+      // Show a message
+      this.showMessage(`Gained ${amount} experience!`);
+      
+      return;
+    }
+    
+    // Fallback to basic experience system if no character class
+    this.experience += amount;
+    
+    // Check for level up
+    if (this.experience >= this.nextLevelExp) {
+      this.levelUp();
+    }
+    
+    // Show a message
+    this.showMessage(`Gained ${amount} experience!`);
+  }
+  
+  levelUp() {
+    // If we have a character class, it handles leveling up
+    if (this.characterClass) {
+      // The character class already leveled up in gainExperience
+      // Just update our stats from it
+      if (this.characterClass.stats) {
+        this.maxHealth = this.characterClass.stats.health;
+        this.health = this.maxHealth; // Heal to full on level up
+        this.maxMana = this.characterClass.stats.mana;
+        this.mana = this.maxMana; // Restore mana to full on level up
+      }
+      
+      // Show level up message
+      this.showMessage(`Level up! You are now level ${this.level}!`);
+      this.showMessage(`You gained skill points and attribute points!`);
+      
+      // Play level up sound
+      if (this.soundManager) {
+        this.soundManager.playSound('level-up');
+      }
+      
+      // Create level up effect
+      if (this.effects) {
+        const position = new THREE.Vector3().copy(this.group.position);
+        this.effects.createEffect('levelUp', position);
+      }
+      
+      return;
+    }
+    
+    // Fallback to basic leveling if no character class
+    this.level++;
+    this.experience -= this.nextLevelExp;
+    this.nextLevelExp = Math.floor(this.nextLevelExp * 1.5); // Increase exp needed for next level
+    
+    // Increase stats
+    this.maxHealth += 10;
+    this.health = this.maxHealth; // Heal to full on level up
+    this.maxMana += 5;
+    this.mana = this.maxMana; // Restore mana to full on level up
+    
+    // Show level up message
+    this.showMessage(`Level up! You are now level ${this.level}!`);
+    
+    // Play level up sound
+    if (this.soundManager) {
+      this.soundManager.playSound('level-up');
+    }
+  }
+  
+  equipItem(item, slot) {
+    // If we have a character class, use its equipment system
+    if (this.characterClass) {
+      const success = this.characterClass.equipItem(item, slot);
+      
+      if (success) {
+        // Update stats from character class
+        if (this.characterClass.stats) {
+          this.maxHealth = this.characterClass.stats.health;
+          this.maxMana = this.characterClass.stats.mana;
+        }
+        
+        // Show message
+        this.showMessage(`Equipped ${item.name}!`);
+        
+        // Play equip sound
+        if (this.soundManager) {
+          this.soundManager.playSound('equip-item');
+        }
+        
+        return true;
+      } else {
+        // Show message
+        this.showMessage(`Cannot equip ${item.name}!`);
+        return false;
+      }
+    }
+    
+    // No character class, can't equip
+    this.showMessage(`Cannot equip items without a character class!`);
+    return false;
+  }
+  
+  unequipItem(slot) {
+    // If we have a character class, use its equipment system
+    if (this.characterClass) {
+      const item = this.characterClass.unequipItem(slot);
+      
+      if (item) {
+        // Update stats from character class
+        if (this.characterClass.stats) {
+          this.maxHealth = this.characterClass.stats.health;
+          this.maxMana = this.characterClass.stats.mana;
+        }
+        
+        // Show message
+        this.showMessage(`Unequipped ${item.name}!`);
+        
+        // Play unequip sound
+        if (this.soundManager) {
+          this.soundManager.playSound('unequip-item');
+        }
+        
+        return item;
+      }
+    }
+    
+    return null;
+  }
+  
+  spendSkillPoint(skillId) {
+    // If we have a character class and skill tree, use them
+    if (this.characterClass && this.skillTree) {
+      const success = this.characterClass.spendSkillPoint(skillId);
+      
+      if (success) {
+        // Show message
+        this.showMessage(`Learned new skill: ${this.skillTree.getSkill(skillId).name}!`);
+        
+        // Play skill learn sound
+        if (this.soundManager) {
+          this.soundManager.playSound('learn-skill');
+        }
+        
+        // Reinitialize skills to include the new one
+        this.initializeSkills();
+        
+        return true;
+      } else {
+        // Show message
+        this.showMessage(`Cannot learn that skill!`);
+        return false;
+      }
+    }
+    
+    // No character class or skill tree, can't spend skill points
+    this.showMessage(`Cannot learn skills without a character class!`);
+    return false;
+  }
+  
+  spendAttributePoint(attribute) {
+    // If we have a character class, use it
+    if (this.characterClass) {
+      const success = this.characterClass.spendAttributePoint(attribute);
+      
+      if (success) {
+        // Update stats from character class
+        if (this.characterClass.stats) {
+          this.maxHealth = this.characterClass.stats.health;
+          this.maxMana = this.characterClass.stats.mana;
+        }
+        
+        // Show message
+        this.showMessage(`Increased ${attribute}!`);
+        
+        return true;
+      } else {
+        // Show message
+        this.showMessage(`Cannot increase ${attribute}!`);
+        return false;
+      }
+    }
+    
+    // No character class, can't spend attribute points
+    this.showMessage(`Cannot increase attributes without a character class!`);
+    return false;
+  }
+  
+  getStats() {
+    // If we have a character class, get stats from it
+    if (this.characterClass && this.characterClass.stats) {
+      return {
+        ...this.characterClass.stats,
+        health: this.health,
+        maxHealth: this.maxHealth,
+        mana: this.mana,
+        maxMana: this.maxMana,
+        level: this.level,
+        experience: this.characterClass.experience,
+        nextLevelExp: this.characterClass.getExperienceForNextLevel(),
+        skillPoints: this.characterClass.skillPoints,
+        attributePoints: this.characterClass.attributePoints,
+        equipment: this.characterClass.equipment
+      };
+    }
+    
+    // Fallback to basic stats if no character class
+    return {
+      health: this.health,
+      maxHealth: this.maxHealth,
+      mana: this.mana,
+      maxMana: this.maxMana,
+      level: this.level,
+      experience: this.experience,
+      nextLevelExp: this.nextLevelExp
+    };
+  }
+  
+  calculateDamage(baseDamage, damageType = 'physical') {
+    // If we have a character class, use its damage calculation
+    if (this.characterClass) {
+      return this.characterClass.calculateDamage(baseDamage, damageType);
+    }
+    
+    // Fallback to basic damage calculation
+    return Math.floor(baseDamage);
+  }
+  
+  calculateDefense(damage, damageType = 'physical') {
+    // If we have a character class, use its defense calculation
+    if (this.characterClass) {
+      return this.characterClass.calculateDefense(damage, damageType);
+    }
+    
+    // Fallback to basic defense calculation (no reduction)
+    return damage;
   }
 
   handleSkills(keys) {

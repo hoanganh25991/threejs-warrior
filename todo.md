@@ -45,7 +45,7 @@
 - [ ] Add effect animation when hero dies
 - [ ] Add effect animation when hero levels up
 - [ ] Add effect animation when hero buys/sells/crafts items/weapons/armors/etc.
-- [ ] Add a RPG game mode, allow player to choose class, level up, buy items, etc.
+- [x] Add a RPG game mode, allow player to choose class, level up, buy items, etc.
 - [ ] Add a shop where player can buy items, sell items, etc.
 - [ ] Add a crafting system where player can craft items, weapons, armor, etc.
 - [ ] Update terrain texture, terrain heightmap, terrain normalmap, terrain displacementmap, terrain specularmap, terrain bumpmap, terrain ambientocclusionmap, terrain lightmap, etc.

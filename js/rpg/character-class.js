@@ -27,7 +27,7 @@ export default class CharacterClass {
     getBaseStats() {
         const baseStats = {
             warrior: {
-                health: 150,
+                health: 150_000,
                 mana: 50,
                 strength: 15,
                 dexterity: 10,
