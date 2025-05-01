@@ -47,6 +47,11 @@ export default class Hero {
     this.cooldowns = new Map();
     this.rotation = new THREE.Euler(0, 0, 0, "YXZ"); // YXZ order for FPS-style rotation
     this.direction = new THREE.Vector3(0, 0, -1); // Forward direction
+    
+    // Inventory and economy
+    this.inventory = new Map();
+    this.gold = 500; // Starting gold
+    this.stats = {}; // Will be populated from character class
 
     // Physics properties
     this.velocity = new THREE.Vector3(0, 0, 0);
@@ -839,6 +844,139 @@ export default class Hero {
                           S=${window.inputHandler?.isKeyPressed("s")}, 
                           D=${window.inputHandler?.isKeyPressed("d")}</p>
     `;
+  }
+
+  // Inventory Methods
+  addItem(item) {
+    if (!item) return false;
+
+    // Check if item is stackable and already exists in inventory
+    if (item.stackable && this.inventory.has(item.id)) {
+      const existingItem = this.inventory.get(item.id);
+      existingItem.quantity += item.quantity || 1;
+      return true;
+    } else {
+      // Add new item to inventory
+      this.inventory.set(item.id, item);
+      
+      // Emit event for UI updates
+      const event = new CustomEvent('inventoryUpdated', {
+        detail: {
+          hero: this,
+          item: item,
+          action: 'add'
+        }
+      });
+      document.dispatchEvent(event);
+      
+      return true;
+    }
+  }
+
+  removeItem(itemId, quantity = 1) {
+    if (!this.inventory.has(itemId)) return false;
+
+    const item = this.inventory.get(itemId);
+    
+    if (item.stackable) {
+      item.quantity -= quantity;
+      if (item.quantity <= 0) {
+        this.inventory.delete(itemId);
+      }
+    } else {
+      this.inventory.delete(itemId);
+    }
+
+    // Emit event for UI updates
+    const event = new CustomEvent('inventoryUpdated', {
+      detail: {
+        hero: this,
+        itemId: itemId,
+        action: 'remove'
+      }
+    });
+    document.dispatchEvent(event);
+    
+    return true;
+  }
+
+  useItem(itemId) {
+    if (!this.inventory.has(itemId)) return false;
+
+    const item = this.inventory.get(itemId);
+    
+    // Check if item is usable
+    if (!item.effect) return false;
+    
+    // Use the item on the hero
+    const success = item.use(this);
+    
+    if (success) {
+      // Remove one from stack if stackable, or remove completely if not
+      if (item.stackable) {
+        item.quantity--;
+        if (item.quantity <= 0) {
+          this.inventory.delete(itemId);
+        }
+      } else {
+        this.inventory.delete(itemId);
+      }
+      
+      // Emit event for UI updates
+      const event = new CustomEvent('itemUsed', {
+        detail: {
+          hero: this,
+          item: item
+        }
+      });
+      document.dispatchEvent(event);
+      
+      return true;
+    }
+    
+    return false;
+  }
+
+  equipItem(itemId) {
+    // This would be expanded in a full implementation to handle equipment slots
+    if (!this.inventory.has(itemId)) return false;
+    
+    const item = this.inventory.get(itemId);
+    
+    // Check if item is equippable
+    if (item.type !== 'weapon' && item.type !== 'armor') return false;
+    
+    // Check level requirement
+    if (item.levelReq && this.level < item.levelReq) return false;
+    
+    // Check stat requirements
+    if (item.requirements) {
+      for (const [stat, value] of Object.entries(item.requirements)) {
+        if (this.stats[stat] < value) return false;
+      }
+    }
+    
+    // In a full implementation, we would handle equipment slots here
+    console.log(`Equipped ${item.name}`);
+    
+    // Emit event for UI updates
+    const event = new CustomEvent('itemEquipped', {
+      detail: {
+        hero: this,
+        item: item
+      }
+    });
+    document.dispatchEvent(event);
+    
+    return true;
+  }
+
+  getInventory() {
+    return Array.from(this.inventory.values());
+  }
+
+  getInventoryByType(type) {
+    return this.getInventory().filter(item => item.type === type);
   }
 
   handleRotation(inputHandler) {

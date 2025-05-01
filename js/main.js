@@ -19,6 +19,7 @@ import CharacterClass from "./rpg/character-class.js";
 import SkillTree from "./rpg/skill-tree.js";
 import HUD from "./ui/hud.js";
 import CraftingUI from "./ui/craftingUI.js";
+import ShopUI from "./ui/shopUI.js";
 import Boss from "./enemies/boss.js";
 import Attack from "./combat/attack.js";
 import Terrain from "./terrain/terrain.js";

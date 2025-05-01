@@ -212,6 +212,57 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Shop Modal -->
+            <div id="shop-modal" class="modal hidden">
+                <div class="modal-content shop-modal-content">
+                    <span class="close-button" title="Close">&times;</span>
+                    <h2>Shop</h2>
+                    
+                    <div class="shop-header">
+                        <div id="player-gold" class="gold-display">0 gold</div>
+                        <div id="shop-gold" class="gold-display">1000 gold</div>
+                    </div>
+                    
+                    <div class="shop-filter">
+                        <label for="rarity-filter">Filter by rarity:</label>
+                        <select id="rarity-filter">
+                            <option value="all">All</option>
+                            <option value="common">Common</option>
+                            <option value="uncommon">Uncommon</option>
+                            <option value="rare">Rare</option>
+                            <option value="epic">Epic</option>
+                            <option value="legendary">Legendary</option>
+                        </select>
+                    </div>
+                    
+                    <div id="shop-content">
+                        <div id="shop-tabs" class="tabs">
+                            <div class="shop-tab active" data-tab="weapons">Weapons</div>
+                            <div class="shop-tab" data-tab="armor">Armor</div>
+                            <div class="shop-tab" data-tab="consumable">Consumables</div>
+                            <div class="shop-tab" data-tab="material">Materials</div>
+                            <div class="shop-tab" data-tab="inventory">My Inventory</div>
+                        </div>
+                        
+                        <div class="shop-container">
+                            <div id="shop-items" class="items-list">
+                                <!-- Items will be populated dynamically -->
+                            </div>
+                            
+                            <div id="item-details" class="item-details">
+                                <!-- Item details will be shown here -->
+                                <p class="no-selection">Select an item to view details</p>
+                            </div>
+                        </div>
+                        
+                        <div class="shop-actions">
+                            <button id="buy-button" disabled>Buy</button>
+                            <button id="sell-button" disabled>Sell</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
