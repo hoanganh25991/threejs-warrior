@@ -362,7 +362,8 @@
             });
             renderer.setSize(canvas.clientWidth, canvas.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true;
+            // Disable shadows completely to avoid compatibility issues with Three.js 0.159.0
+            renderer.shadowMap.enabled = false;
 
             // Add controls
             controls = new OrbitControls(camera, renderer.domElement);
@@ -406,17 +407,8 @@
             // Directional light (sun)
             const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
             directionalLight.position.set(50, 100, 50);
-            directionalLight.castShadow = true;
-
-            // Set up shadow properties
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 500;
-            directionalLight.shadow.camera.left = -100;
-            directionalLight.shadow.camera.right = 100;
-            directionalLight.shadow.camera.top = 100;
-            directionalLight.shadow.camera.bottom = -100;
+            // Disable shadow casting
+            directionalLight.castShadow = false;
 
             scene.add(directionalLight);
 
