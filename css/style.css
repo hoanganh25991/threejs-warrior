@@ -676,6 +676,51 @@ body {
     cursor: not-allowed;
 }
 
+/* Mouse Capture Toggle Button */
+#mouse-capture-toggle {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+#toggle-mouse-capture {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #666;
+    border-radius: 5px;
+    color: white;
+    padding: 8px 15px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+#toggle-mouse-capture:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+    border-color: #f8d000;
+    box-shadow: 0 0 10px rgba(248, 208, 0, 0.5);
+}
+
+#toggle-mouse-capture.active {
+    background-color: rgba(0, 100, 0, 0.7);
+    border-color: #4CAF50;
+}
+
+#toggle-mouse-capture.inactive {
+    background-color: rgba(100, 0, 0, 0.7);
+    border-color: #f44336;
+}
+
+.toggle-icon {
+    margin-right: 8px;
+    font-size: 1.2em;
+}
+
+.toggle-text {
+    font-size: 0.9em;
+}
+
 /* Cooldown overlay */
 .cooldown-overlay {
     position: absolute;

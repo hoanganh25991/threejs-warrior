@@ -22,6 +22,7 @@ import CraftingUI from "./ui/craftingUI.js";
 import Boss from "./enemies/boss.js";
 import Attack from "./combat/attack.js";
 import Terrain from "./terrain/terrain.js";
+import MouseCaptureManager from "./ui/mouse-capture-manager.js";
 
 // Game class
 class Game {
@@ -265,6 +266,10 @@ class Game {
     // Initialize input handler
     this.inputHandler = new InputHandler();
     window.inputHandler = this.inputHandler;
+    
+    // Initialize mouse capture manager
+    this.mouseCaptureManager = new MouseCaptureManager(this.inputHandler);
+    window.mouseCaptureManager = this.mouseCaptureManager;
 
     // Initialize game systems
     this.skillManager = new SkillManager(this.scene);

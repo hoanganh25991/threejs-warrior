@@ -1,10 +1,14 @@
 // Character Info UI Module
 export default class CharacterInfo {
-    constructor(hero) {
+    constructor(hero, mouseCaptureManager) {
         this.hero = hero;
         this.modal = document.getElementById('class-info-modal');
         this.closeButton = document.querySelector('.close-button');
         this.openButton = document.getElementById('class-info-button');
+        this.mouseCaptureManager = mouseCaptureManager || window.mouseCaptureManager;
+        
+        // Unique identifier for this component
+        this.componentId = 'character-info-modal';
         
         // Initialize event listeners
         this.initEventListeners();
@@ -51,10 +55,33 @@ export default class CharacterInfo {
         
         // Show modal
         this.modal.classList.remove('hidden');
+        
+        // Disable mouse capture while modal is open
+        if (this.mouseCaptureManager) {
+            this.mouseCaptureManager.disableMouseCapture(this.componentId);
+        } else {
+            // Fallback if mouse capture manager is not available
+            if (window.inputHandler) {
+                window.inputHandler.isMouseCaptured = false;
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
+            }
+        }
     }
     
     closeModal() {
         this.modal.classList.add('hidden');
+        
+        // Re-enable mouse capture when modal is closed
+        if (this.mouseCaptureManager) {
+            this.mouseCaptureManager.enableMouseCapture(this.componentId);
+        } else {
+            // Fallback if mouse capture manager is not available
+            if (window.inputHandler) {
+                window.inputHandler.isMouseCaptured = true;
+            }
+        }
     }
     
     updateCharacterInfo() {

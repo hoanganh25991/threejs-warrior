@@ -416,8 +416,12 @@ export default class CraftingUI {
     }
     
     disableMouseCapture() {
-        // Get the input handler from window (set in main.js)
-        if (window.inputHandler) {
+        // Use mouse capture manager if available
+        if (window.mouseCaptureManager) {
+            window.mouseCaptureManager.disableMouseCapture('crafting-ui');
+        } 
+        // Fallback to direct input handler access
+        else if (window.inputHandler) {
             // Store original state
             this.originalInputState = {
                 isMouseCaptured: window.inputHandler.isMouseCaptured,
@@ -437,8 +441,12 @@ export default class CraftingUI {
     }
     
     enableMouseCapture() {
-        // Only re-enable if we previously disabled it
-        if (window.inputHandler && this.originalInputState) {
+        // Use mouse capture manager if available
+        if (window.mouseCaptureManager) {
+            window.mouseCaptureManager.enableMouseCapture('crafting-ui');
+        }
+        // Fallback to direct input handler access
+        else if (window.inputHandler && this.originalInputState) {
             // Restore original state
             window.inputHandler.isMouseCaptured = this.originalInputState.isMouseCaptured;
             

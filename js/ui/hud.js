@@ -8,7 +8,7 @@ export default class HUD {
         
         // Initialize character info UI if hero is available
         if (hero) {
-            this.characterInfo = new CharacterInfo(hero);
+            this.characterInfo = new CharacterInfo(hero, window.mouseCaptureManager);
         }
     }
 
@@ -203,7 +203,7 @@ export default class HUD {
         if (this.hero !== data.hero) {
             this.hero = data.hero;
             if (!this.characterInfo && this.hero) {
-                this.characterInfo = new CharacterInfo(this.hero);
+                this.characterInfo = new CharacterInfo(this.hero, window.mouseCaptureManager);
             } else if (this.characterInfo) {
                 this.characterInfo.hero = this.hero;
             }
