@@ -62,6 +62,17 @@ export class Enemy {
         this.mesh.position.copy(position);
         this.mesh.position.y = 0.75; // Half height
         this.mesh.castShadow = true;
+        
+        // Add collision data to the mesh's userData
+        this.mesh.userData.collisionType = "box";
+        this.mesh.userData.collisionRadius = 0.9; // Larger collision radius
+        this.mesh.userData.collisionHeight = 1.5;
+        this.mesh.userData.isEnemy = true; // Flag to identify as enemy
+        
+        // Create a collision box for the enemy
+        const boundingBox = new THREE.Box3().setFromObject(this.mesh);
+        this.mesh.userData.collisionBox = boundingBox;
+        
         this.scene.add(this.mesh);
         
         // Create health bar
@@ -137,6 +148,12 @@ export class Enemy {
         
         // Update health bar
         this.updateHealthBar();
+        
+        // Update collision box to match current position
+        if (this.mesh && this.mesh.userData.collisionBox) {
+            const boundingBox = new THREE.Box3().setFromObject(this.mesh);
+            this.mesh.userData.collisionBox = boundingBox;
+        }
     }
     
     moveTowards(targetPosition, deltaTime) {

@@ -55,6 +55,24 @@ export class EnemyManager {
         
         // Create new enemy
         const enemy = new Enemy(this.scene, enemyType, spawnPosition);
+        
+        // Ensure enemy has proper collision data
+        if (enemy.mesh) {
+            // Add collision data to the mesh's userData if not already present
+            if (!enemy.mesh.userData.collisionType) {
+                enemy.mesh.userData.collisionType = "box";
+                enemy.mesh.userData.collisionRadius = 1.0;
+                enemy.mesh.userData.collisionHeight = 1.5;
+                enemy.mesh.userData.isEnemy = true;
+            }
+            
+            // Create a collision box for the enemy if not already present
+            if (!enemy.mesh.userData.collisionBox) {
+                const boundingBox = new THREE.Box3().setFromObject(enemy.mesh);
+                enemy.mesh.userData.collisionBox = boundingBox;
+            }
+        }
+        
         this.enemies.push(enemy);
         
         return enemy;
