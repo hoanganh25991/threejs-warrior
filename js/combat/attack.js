@@ -465,29 +465,114 @@ export default class Attack {
         
         console.log(`Found ${enemyGroups.length} enemies for melee attack check`);
         
+        // Define different attack ranges and damage multipliers
+        const attackRanges = {
+            close: 1.0,    // Very close range
+            medium: 2.0,   // Medium range (standard)
+            extended: 3.0  // Extended range (edge of weapon)
+        };
+        
+        // Define damage multipliers based on distance
+        const damageMultipliers = {
+            close: 1.5,    // More damage at close range
+            medium: 1.0,   // Standard damage at medium range
+            extended: 0.7  // Less damage at extended range
+        };
+        
+        // Wider angle for close range attacks
+        const angleMultipliers = {
+            close: 0.0,    // Almost 180 degrees at close range (any direction)
+            medium: 0.3,   // About 90 degrees at medium range
+            extended: 0.7  // About 45 degrees at extended range
+        };
+        
         enemyGroups.forEach(enemyGroup => {
             const distance = enemyGroup.position.distanceTo(origin);
-            if (distance <= this.attackRange) {
-                // Check if enemy is in front of hero
-                const toEnemy = enemyGroup.position.clone().sub(origin).normalize();
-                const dot = toEnemy.dot(this.hero.direction);
-                
-                if (dot > 0.5) { // Within ~60 degree cone
-                    // Get the enemy instance from userData
-                    const enemy = enemyGroup.userData.enemyRef;
-                    if (enemy) {
-                        console.log(`Dealing ${this.baseDamage} damage to enemy`);
-                        enemy.takeDamage(this.baseDamage);
+            
+            // Determine range category
+            let rangeCategory;
+            let damageMultiplier;
+            let requiredDot;
+            
+            if (distance <= attackRanges.close) {
+                rangeCategory = 'close';
+                damageMultiplier = damageMultipliers.close;
+                requiredDot = angleMultipliers.close;
+            } else if (distance <= attackRanges.medium) {
+                rangeCategory = 'medium';
+                damageMultiplier = damageMultipliers.medium;
+                requiredDot = angleMultipliers.medium;
+            } else if (distance <= attackRanges.extended) {
+                rangeCategory = 'extended';
+                damageMultiplier = damageMultipliers.extended;
+                requiredDot = angleMultipliers.extended;
+            } else {
+                // Out of range
+                return;
+            }
+            
+            // Check if enemy is in the correct angle based on range
+            const toEnemy = enemyGroup.position.clone().sub(origin).normalize();
+            const dot = toEnemy.dot(this.hero.direction);
+            
+            if (dot > requiredDot) {
+                // Get the enemy instance from userData
+                const enemy = enemyGroup.userData.enemyRef;
+                if (enemy) {
+                    // Calculate final damage based on range
+                    const finalDamage = Math.floor(this.baseDamage * damageMultiplier);
+                    
+                    console.log(`Dealing ${finalDamage} damage to enemy at ${rangeCategory} range (${distance.toFixed(2)} units)`);
+                    enemy.takeDamage(finalDamage);
+                    
+                    // Create impact effect at enemy position
+                    this.createImpactEffect(enemyGroup.position.clone());
+                    
+                    // Add knockback effect for close range
+                    if (rangeCategory === 'close') {
+                        this.applyKnockback(enemy, toEnemy);
                     }
                 }
             }
         });
+    }
+    
+    applyKnockback(enemy, direction) {
+        // Apply knockback if the enemy has a knockback method
+        if (enemy.applyKnockback) {
+            enemy.applyKnockback(direction, 2.0); // Direction and force
+        } 
+        // Otherwise, try to move the enemy directly
+        else if (enemy.group && enemy.group.position) {
+            const knockbackDistance = 1.0;
+            enemy.group.position.add(direction.multiplyScalar(knockbackDistance));
+        }
     }
 
     handleRangedAttack() {
         const origin = this.hero.group.position.clone();
         origin.y += 1; // Adjust to be at weapon height
         const direction = this.hero.direction.clone();
+        
+        // Define different attack ranges and damage multipliers for ranged attacks
+        const attackRanges = {
+            close: 1.5,     // Very close range
+            medium: 5.0,    // Medium range (standard)
+            extended: 10.0  // Extended range
+        };
+        
+        // Define damage multipliers based on distance
+        const damageMultipliers = {
+            close: 0.8,     // Less damage at close range (harder to aim)
+            medium: 1.2,    // More damage at medium range (optimal)
+            extended: 0.9   // Less damage at extended range (damage falloff)
+        };
+        
+        // For very close range, switch to a cone attack like melee
+        if (this.isEnemyInCloseRange(origin, attackRanges.close)) {
+            this.handleCloseRangedAttack(origin, attackRanges.close, damageMultipliers.close);
+            return;
+        }
         
         // Create a raycaster for detecting hits
         const raycaster = new THREE.Raycaster(origin, direction);
@@ -517,15 +602,96 @@ export default class Attack {
         // Check for intersections
         const intersects = raycaster.intersectObjects(enemyObjects);
         
-        if (intersects.length > 0 && intersects[0].distance <= this.attackRange) {
+        if (intersects.length > 0) {
+            const hitDistance = intersects[0].distance;
+            
+            // Determine range category and damage multiplier
+            let damageMultiplier;
+            let rangeCategory;
+            
+            if (hitDistance <= attackRanges.close) {
+                // Already handled by handleCloseRangedAttack
+                return;
+            } else if (hitDistance <= attackRanges.medium) {
+                rangeCategory = 'medium';
+                damageMultiplier = damageMultipliers.medium;
+            } else if (hitDistance <= attackRanges.extended) {
+                rangeCategory = 'extended';
+                damageMultiplier = damageMultipliers.extended;
+            } else {
+                // Out of range
+                return;
+            }
+            
             const hitObject = intersects[0].object;
             const enemy = enemyMap.get(hitObject);
             
             if (enemy) {
-                console.log(`Ranged attack hit enemy at distance ${intersects[0].distance}`);
-                enemy.takeDamage(this.baseDamage);
+                // Calculate final damage based on range
+                const finalDamage = Math.floor(this.baseDamage * damageMultiplier);
+                
+                console.log(`Ranged attack hit enemy at ${rangeCategory} range (${hitDistance.toFixed(2)} units) for ${finalDamage} damage`);
+                enemy.takeDamage(finalDamage);
+                
+                // Create impact effect at hit position
+                this.createImpactEffect(intersects[0].point);
             }
         }
+    }
+    
+    isEnemyInCloseRange(origin, closeRange) {
+        let enemyInCloseRange = false;
+        
+        this.scene.traverse(object => {
+            if (object.userData && object.userData.type === 'enemy') {
+                const distance = object.position.distanceTo(origin);
+                if (distance <= closeRange) {
+                    enemyInCloseRange = true;
+                }
+            }
+        });
+        
+        return enemyInCloseRange;
+    }
+    
+    handleCloseRangedAttack(origin, range, damageMultiplier) {
+        console.log('Switching to close-range attack mode for ranged character');
+        
+        // Find all enemy groups in the scene
+        const enemyGroups = [];
+        this.scene.traverse(object => {
+            if (object.userData && object.userData.type === 'enemy') {
+                enemyGroups.push(object);
+            }
+        });
+        
+        // For close range, use a wider angle (similar to melee)
+        const requiredDot = 0.3; // About 90 degrees cone
+        
+        enemyGroups.forEach(enemyGroup => {
+            const distance = enemyGroup.position.distanceTo(origin);
+            
+            if (distance <= range) {
+                // Check if enemy is in the correct angle
+                const toEnemy = enemyGroup.position.clone().sub(origin).normalize();
+                const dot = toEnemy.dot(this.hero.direction);
+                
+                if (dot > requiredDot) {
+                    // Get the enemy instance from userData
+                    const enemy = enemyGroup.userData.enemyRef;
+                    if (enemy) {
+                        // Calculate final damage
+                        const finalDamage = Math.floor(this.baseDamage * damageMultiplier);
+                        
+                        console.log(`Close-range attack hit enemy at ${distance.toFixed(2)} units for ${finalDamage} damage`);
+                        enemy.takeDamage(finalDamage);
+                        
+                        // Create impact effect at enemy position
+                        this.createImpactEffect(enemyGroup.position.clone());
+                    }
+                }
+            }
+        });
     }
 
     update(delta) {
@@ -544,13 +710,24 @@ export default class Attack {
         const origin = this.hero.group.position;
         const enemiesInRange = [];
         
+        // Define different attack ranges based on attack type
+        let autoAttackRange;
+        if (this.attackType === 'melee') {
+            // For melee, use a slightly extended range for auto-attack
+            autoAttackRange = 3.5; // Extended melee range
+        } else {
+            // For ranged, use a longer range
+            autoAttackRange = 10.0; // Extended ranged attack
+        }
+        
         // Find all enemy groups in the scene
         this.scene.traverse(object => {
             if (object.userData && object.userData.type === 'enemy') {
                 const distance = object.position.distanceTo(origin);
-                if (distance <= this.attackRange * 1.5) { // Slightly larger range for auto-attack
+                if (distance <= autoAttackRange) {
                     enemiesInRange.push({
                         enemy: object.userData.enemyRef,
+                        object: object,
                         distance: distance
                     });
                 }
@@ -562,15 +739,41 @@ export default class Attack {
         
         // Attack the closest enemy if any are in range
         if (enemiesInRange.length > 0) {
-            // Check if enemy is in front of hero (within a wider cone for auto-attack)
-            const closestEnemy = enemiesInRange[0].enemy;
-            const enemyPos = closestEnemy.group.position;
+            // Different angle requirements based on distance and attack type
+            const closestEnemy = enemiesInRange[0];
+            const enemyPos = closestEnemy.object.position;
             const toEnemy = new THREE.Vector3().subVectors(enemyPos, origin).normalize();
             const dot = toEnemy.dot(this.hero.direction);
             
-            // More forgiving angle for auto-attack (wider cone, about 90 degrees)
-            if (dot > 0.1) {
+            let requiredDot;
+            
+            if (this.attackType === 'melee') {
+                // Melee attacks have different angle requirements based on distance
+                if (closestEnemy.distance <= 1.0) {
+                    requiredDot = 0.0; // Almost any direction at very close range
+                } else if (closestEnemy.distance <= 2.0) {
+                    requiredDot = 0.3; // Wider angle at medium range
+                } else {
+                    requiredDot = 0.5; // Narrower angle at extended range
+                }
+            } else {
+                // Ranged attacks have a more forgiving angle at all ranges
+                requiredDot = 0.3; // About 70 degrees cone
+            }
+            
+            if (dot > requiredDot) {
+                // If enemy is in the correct angle, attack
+                console.log(`Auto-attacking enemy at distance ${closestEnemy.distance.toFixed(2)}`);
                 this.startAttack();
+                
+                // If we're using a ranged attack, turn to face the enemy more directly
+                if (this.attackType === 'ranged' && this.hero.lookAt) {
+                    // Add a slight offset to the y position to aim at the enemy's center
+                    const targetPos = enemyPos.clone();
+                    targetPos.y += 1.0; // Aim at center mass
+                    this.hero.lookAt(targetPos);
+                }
+                
                 return true;
             }
         }

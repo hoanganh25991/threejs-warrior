@@ -1,9 +1,15 @@
 import { config } from "../config/config.js";
+import CharacterInfo from "./character-info.js";
 
 export default class HUD {
     constructor(hero) {
         this.hero = hero;
         this.init();
+        
+        // Initialize character info UI if hero is available
+        if (hero) {
+            this.characterInfo = new CharacterInfo(hero);
+        }
     }
 
     init() {
@@ -192,5 +198,15 @@ export default class HUD {
 
         // Update score
         this.scoreDisplay.textContent = `Score: ${data.hero.score || 0}`;
+        
+        // Update hero reference for character info if needed
+        if (this.hero !== data.hero) {
+            this.hero = data.hero;
+            if (!this.characterInfo && this.hero) {
+                this.characterInfo = new CharacterInfo(this.hero);
+            } else if (this.characterInfo) {
+                this.characterInfo.hero = this.hero;
+            }
+        }
     }
 }

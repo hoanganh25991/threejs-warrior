@@ -91,6 +91,7 @@
                     <div id="xp-bar-container">
                         <div id="xp-bar"></div>
                     </div>
+                    <button id="class-info-button">Character Info</button>
                 </div>
             </div>
             
@@ -110,6 +111,98 @@
             
             <!-- Message Container -->
             <div id="message-container"></div>
+            
+            <!-- Character Class Info Modal -->
+            <div id="class-info-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-button">&times;</span>
+                    <h2 id="class-name">Character Class</h2>
+                    
+                    <div class="info-section">
+                        <h3>Basic Info</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Level:</span>
+                                <span id="class-level" class="info-value">1</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Experience:</span>
+                                <span id="class-exp" class="info-value">0/100</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Skill Points:</span>
+                                <span id="class-skill-points" class="info-value">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Attribute Points:</span>
+                                <span id="class-attr-points" class="info-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h3>Attributes</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Health:</span>
+                                <span id="class-health" class="info-value">100/100</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Mana:</span>
+                                <span id="class-mana" class="info-value">100/100</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Strength:</span>
+                                <span id="class-strength" class="info-value">10</span>
+                                <button class="attr-increase-btn" data-attr="strength">+</button>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Dexterity:</span>
+                                <span id="class-dexterity" class="info-value">10</span>
+                                <button class="attr-increase-btn" data-attr="dexterity">+</button>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Intelligence:</span>
+                                <span id="class-intelligence" class="info-value">10</span>
+                                <button class="attr-increase-btn" data-attr="intelligence">+</button>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Armor:</span>
+                                <span id="class-armor" class="info-value">5</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h3>Combat Stats</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Attack Power:</span>
+                                <span id="class-attack-power" class="info-value">10</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Spell Power:</span>
+                                <span id="class-spell-power" class="info-value">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Crit Chance:</span>
+                                <span id="class-crit-chance" class="info-value">5%</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Crit Multiplier:</span>
+                                <span id="class-crit-multi" class="info-value">1.5x</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h3>Skills</h3>
+                        <div id="skills-container" class="skills-grid">
+                            <!-- Skills will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
