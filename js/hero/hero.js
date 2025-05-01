@@ -1094,15 +1094,6 @@ export default class Hero {
       this.wings.visible = false;
       this.wingsVisible = false;
       this.isFlying = false;
-
-      console.log(
-        "Space pressed, y-pos:",
-        this.group.position.y.toFixed(2),
-        "velocity:",
-        this.velocity.y.toFixed(2),
-        "flying:",
-        this.isFlying
-      );
     }
 
     // Show/hide wings based on flying state
