@@ -120,9 +120,12 @@ export default class Hero {
   }
 
   initializeSkills() {
+    console.log(`Initializing skills for hero type: ${this.heroType}`);
+    
     // Initialize skills based on hero type
     switch (this.heroType) {
       case 'dragon-knight':
+        console.log('Setting up Dragon Knight skills');
         this.skills.set('Y', new DragonBreath(this));
         this.skills.set('U', new FlameStrike(this));
         this.skills.set('I', new DragonTail(this));
@@ -131,6 +134,7 @@ export default class Hero {
         this.skills.set('K', new DragonRush(this));
         break;
       case 'crystal-maiden':
+        console.log('Setting up Crystal Maiden skills');
         this.skills.set('Y', new FrostNova(this));
         this.skills.set('U', new IceBlast(this));
         this.skills.set('I', new GlacialBarrier(this));
@@ -139,6 +143,7 @@ export default class Hero {
         this.skills.set('K', new IceShards(this));
         break;
       case 'axe':
+        console.log('Setting up Axe skills');
         this.skills.set('Y', new BerserkersCall(this));
         this.skills.set('U', new BattleHunger(this));
         this.skills.set('I', new CounterHelix(this));
@@ -147,8 +152,7 @@ export default class Hero {
         this.skills.set('K', new BerserkersRage(this));
         break;
       case 'lina':
-        // Placeholder for Lina skills - these would need to be implemented
-        // For now, we'll create generic skill objects
+        console.log('Setting up Lina skills (generic placeholders)');
         this.skills.set('Y', this.createGenericSkill('Dragon Slave', 40, 100, 'fire'));
         this.skills.set('U', this.createGenericSkill('Light Strike Array', 60, 120, 'fire'));
         this.skills.set('I', this.createGenericSkill('Fiery Soul', 50, 0, 'buff'));
@@ -156,7 +160,15 @@ export default class Hero {
         this.skills.set('J', this.createGenericSkill('Flame Cloak', 70, 0, 'buff'));
         this.skills.set('K', this.createGenericSkill('Inferno Wave', 80, 150, 'fire'));
         break;
-      // Add more hero types and their skills here
+      default:
+        console.log(`Unknown hero type: ${this.heroType}, no skills assigned`);
+        break;
+    }
+    
+    // Log the skills that were set up
+    console.log('Skills initialized:');
+    for (const [key, skill] of this.skills) {
+      console.log(`- Key ${key}: ${skill.name || 'Unnamed skill'}`);
     }
     
     // If we have a skill tree, initialize skills from it
@@ -256,10 +268,25 @@ export default class Hero {
   }
 
   useSkill(key) {
+    console.log(`Attempting to use skill with key: ${key}`);
     const skill = this.skills.get(key);
-    if (skill && skill.canUse()) {
+    
+    if (!skill) {
+      console.log(`No skill found for key: ${key}`);
+      return;
+    }
+    
+    if (!skill.canUse) {
+      console.log(`Skill for key ${key} doesn't have canUse method`);
+      return;
+    }
+    
+    if (skill.canUse()) {
+      console.log(`Activating skill: ${skill.name || key}`);
       skill.activate();
       this.cooldowns.set(key, skill.getCooldownDuration());
+    } else {
+      console.log(`Cannot use skill: ${skill.name || key} (on cooldown or insufficient mana)`);
     }
   }
 
@@ -282,24 +309,24 @@ export default class Hero {
 
   handleInput(input) {
     // Handle basic attack (left mouse click)
-    if (input.mouseButtons.left) {
+    if (input.mouse.buttons[0]) {
       this.attackSystem.startAttack();
     }
 
     // Handle skill activation
-    if (input.keys.Y) this.useSkill('Y');
-    if (input.keys.U) this.useSkill('U');
-    if (input.keys.I) this.useSkill('I');
-    if (input.keys.H) this.useSkill('H');
-    if (input.keys.J) this.useSkill('J');
-    if (input.keys.K) this.useSkill('K');
+    if (input.keys.y) this.useSkill('Y');
+    if (input.keys.u) this.useSkill('U');
+    if (input.keys.i) this.useSkill('I');
+    if (input.keys.h) this.useSkill('H');
+    if (input.keys.j) this.useSkill('J');
+    if (input.keys.k) this.useSkill('K');
     
     // Toggle auto-attack with T key
-    if (input.keys.T && !this.lastTKeyState) {
+    if (input.keys.t && !this.lastTKeyState) {
       this.autoAttackEnabled = !this.autoAttackEnabled;
       this.showMessage(`Auto-attack ${this.autoAttackEnabled ? 'enabled' : 'disabled'}`);
     }
-    this.lastTKeyState = input.keys.T;
+    this.lastTKeyState = input.keys.t;
   }
 
   init() {
@@ -483,6 +510,9 @@ export default class Hero {
     // Handle rotation from mouse and Q/E keys
     if (inputHandler) {
       this.handleRotation(inputHandler);
+      
+      // Process input for skills
+      this.handleInput(inputHandler);
     }
 
     // Apply horizontal velocity from jumping if any
@@ -504,6 +534,9 @@ export default class Hero {
 
     // Handle jumping and flying
     this.handleJumpAndFly(deltaTime, keys);
+
+    // Update skills
+    this.updateSkills(deltaTime);
 
     // Update cooldowns
     this.updateCooldowns(deltaTime);
