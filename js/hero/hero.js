@@ -368,24 +368,119 @@ export default class Hero {
       this.attackSystem.startAttack();
     }
 
-    // Simple direct skill handling without using the skill system
+    // Use hero-specific skills based on hero type
     if (input.keys.y && !this.skillCooldowns?.y) {
-      this.useSimpleSkill('y', 'Fire Blast', 0xff0000);
+      switch(this.heroType) {
+        case 'dragon-knight':
+          this.useSimpleSkill('y', 'Dragon Breath', 0xff4500);
+          break;
+        case 'crystal-maiden':
+          this.useSimpleSkill('y', 'Frost Nova', 0x00ffff);
+          break;
+        case 'axe':
+          this.useSimpleSkill('y', 'Berserker\'s Call', 0xff0000);
+          break;
+        case 'lina':
+          this.useSimpleSkill('y', 'Dragon Slave', 0xff4400);
+          break;
+        default:
+          this.useSimpleSkill('y', 'Fireball', 0xff0000);
+      }
     }
+    
     if (input.keys.u && !this.skillCooldowns?.u) {
-      this.useSimpleSkill('u', 'Ice Spike', 0x00ffff);
+      switch(this.heroType) {
+        case 'dragon-knight':
+          this.useSimpleSkill('u', 'Flame Strike', 0xff8800);
+          break;
+        case 'crystal-maiden':
+          this.useSimpleSkill('u', 'Ice Blast', 0x00ffff);
+          break;
+        case 'axe':
+          this.useSimpleSkill('u', 'Battle Hunger', 0xff6600);
+          break;
+        case 'lina':
+          this.useSimpleSkill('u', 'Light Strike Array', 0xffaa00);
+          break;
+        default:
+          this.useSimpleSkill('u', 'Ice Spike', 0x00ffff);
+      }
     }
+    
     if (input.keys.i && !this.skillCooldowns?.i) {
-      this.useSimpleSkill('i', 'Lightning Strike', 0xffff00);
+      switch(this.heroType) {
+        case 'dragon-knight':
+          this.useSimpleSkill('i', 'Dragon Tail', 0xffaa00);
+          break;
+        case 'crystal-maiden':
+          this.useSimpleSkill('i', 'Glacial Barrier', 0x88ccff);
+          break;
+        case 'axe':
+          this.useSimpleSkill('i', 'Counter Helix', 0xff0000);
+          break;
+        case 'lina':
+          this.useSimpleSkill('i', 'Fiery Soul', 0xff8800);
+          break;
+        default:
+          this.useSimpleSkill('i', 'Thunder Strike', 0xffff00);
+      }
     }
+    
     if (input.keys.h && !this.skillCooldowns?.h) {
-      this.useSimpleSkill('h', 'Healing Wave', 0x00ff00);
+      switch(this.heroType) {
+        case 'dragon-knight':
+          this.useSimpleSkill('h', 'Elder Dragon Form', 0xff0000);
+          break;
+        case 'crystal-maiden':
+          this.useSimpleSkill('h', 'Blizzard', 0xaaddff);
+          break;
+        case 'axe':
+          this.useSimpleSkill('h', 'Culling Blade', 0xff0000);
+          break;
+        case 'lina':
+          this.useSimpleSkill('h', 'Laguna Blade', 0xff00ff);
+          break;
+        default:
+          this.useSimpleSkill('h', 'Healing Wave', 0x00ff00);
+      }
     }
+    
     if (input.keys.j && !this.skillCooldowns?.j) {
-      this.useSimpleSkill('j', 'Shield', 0xffffff);
+      switch(this.heroType) {
+        case 'dragon-knight':
+          this.useSimpleSkill('j', 'Fire Shield', 0xff8800);
+          break;
+        case 'crystal-maiden':
+          this.useSimpleSkill('j', 'Frozen Orb', 0x00ffff);
+          break;
+        case 'axe':
+          this.useSimpleSkill('j', 'Battle Trance', 0xff4400);
+          break;
+        case 'lina':
+          this.useSimpleSkill('j', 'Flame Cloak', 0xff6600);
+          break;
+        default:
+          this.useSimpleSkill('j', 'Shield', 0x4169e1);
+      }
     }
+    
     if (input.keys.k && !this.skillCooldowns?.k) {
-      this.useSimpleSkill('k', 'Dash', 0x0000ff);
+      switch(this.heroType) {
+        case 'dragon-knight':
+          this.useSimpleSkill('k', 'Dragon Rush', 0xff4400);
+          break;
+        case 'crystal-maiden':
+          this.useSimpleSkill('k', 'Ice Shards', 0x88ccff);
+          break;
+        case 'axe':
+          this.useSimpleSkill('k', 'Berserker\'s Rage', 0xff0000);
+          break;
+        case 'lina':
+          this.useSimpleSkill('k', 'Inferno Wave', 0xff4400);
+          break;
+        default:
+          this.useSimpleSkill('k', 'Dash', 0x808080);
+      }
     }
     
     // Toggle auto-attack with T key
@@ -396,43 +491,31 @@ export default class Hero {
     this.lastTKeyState = input.keys.t;
   }
   
-  // Simple skill implementation that doesn't rely on the skill system
+  // Improved skill implementation that uses the SkillManager
   useSimpleSkill(key, name, color) {
-    console.log(`Using simple skill: ${name}`);
+    console.log(`Using skill: ${name}`);
     
     // Show a message
     this.showMessage(`Used ${name}!`);
     
-    // Create a simple visual effect if effects system exists
-    if (this.effects) {
+    // Get hero position and direction
+    const position = new THREE.Vector3().copy(this.group.position);
+    position.y += 1; // Raise to character height
+    const direction = this.direction.clone();
+    
+    // Use the SkillManager if available
+    if (this.skillManager) {
       try {
-        const position = new THREE.Vector3().copy(this.group.position);
-        position.y += 1; // Raise to character height
-        
-        // Create multiple particles for a more impressive effect
-        for (let i = 0; i < 3; i++) {
-          // Create particles at slightly different positions
-          const offset = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.5,
-            (Math.random() - 0.5) * 0.5,
-            (Math.random() - 0.5) * 0.5
-          );
-          const particlePos = position.clone().add(offset);
-          
-          // Create the effect with the specified color
-          this.effects.createEffect('physical', particlePos, {
-            direction: this.direction.clone(),
-            color: color,
-            maxParticles: 50,
-            particleSize: 0.2
-          });
-        }
-        
-        // Also create a simple sphere mesh for immediate visual feedback
-        this.createVisualFeedback(position, color);
+        console.log(`Using SkillManager for skill: ${name}`);
+        this.skillManager.useSkill(name, position, direction);
       } catch (error) {
-        console.error(`Error creating effect: ${error.message}`);
+        console.error(`Error using SkillManager: ${error.message}`);
+        this.createFallbackEffect(position, direction, color);
       }
+    } else {
+      // Fallback if SkillManager is not available
+      console.log(`SkillManager not available, using fallback for: ${name}`);
+      this.createFallbackEffect(position, direction, color);
     }
     
     // Initialize skillCooldowns if it doesn't exist
@@ -447,6 +530,38 @@ export default class Hero {
     setTimeout(() => {
       this.skillCooldowns[key] = false;
     }, 2000);
+  }
+  
+  // Create a fallback effect if SkillManager fails
+  createFallbackEffect(position, direction, color) {
+    // Create a simple visual effect if effects system exists
+    if (this.effects) {
+      try {
+        // Create multiple particles for a more impressive effect
+        for (let i = 0; i < 3; i++) {
+          // Create particles at slightly different positions
+          const offset = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5,
+            (Math.random() - 0.5) * 0.5
+          );
+          const particlePos = position.clone().add(offset);
+          
+          // Create the effect with the specified color
+          this.effects.createEffect('physical', particlePos, {
+            direction: direction,
+            color: color,
+            maxParticles: 50,
+            particleSize: 0.2
+          });
+        }
+        
+        // Also create a simple sphere mesh for immediate visual feedback
+        this.createVisualFeedback(position, color);
+      } catch (error) {
+        console.error(`Error creating fallback effect: ${error.message}`);
+      }
+    }
   }
   
   // Create a simple visual feedback for skills

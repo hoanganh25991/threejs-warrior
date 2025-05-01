@@ -58,6 +58,250 @@ export class SkillManager {
                     shininess: 100
                 });
                 break;
+            case 'Dragon Breath':
+                geometry = new THREE.ConeGeometry(0.7, 2.5, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff4500,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.7,
+                    shininess: 100
+                });
+                break;
+            case 'Flame Strike':
+                geometry = new THREE.CylinderGeometry(0, 1.5, 3, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff8800,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.6,
+                    shininess: 100
+                });
+                break;
+            case 'Dragon Tail':
+                geometry = new THREE.BoxGeometry(0.5, 0.5, 2);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xffaa00,
+                    emissive: 0xff6600,
+                    emissiveIntensity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Elder Dragon Form':
+                geometry = new THREE.SphereGeometry(1.5, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.7,
+                    transparent: true,
+                    opacity: 0.6,
+                    shininess: 100
+                });
+                break;
+            case 'Fire Shield':
+                geometry = new THREE.SphereGeometry(1.3, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff8800,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Dragon Rush':
+                geometry = new THREE.BoxGeometry(0.7, 0.7, 3.5);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff4400,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100
+                });
+                break;
+            case 'Frost Nova':
+                geometry = new THREE.SphereGeometry(0.8, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0x00ffff,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Ice Blast':
+                geometry = new THREE.IcosahedronGeometry(0.7, 1);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0x00ffff,
+                    emissive: 0x0000ff,
+                    emissiveIntensity: 0.6,
+                    shininess: 100
+                });
+                break;
+            case 'Glacial Barrier':
+                geometry = new THREE.SphereGeometry(1.3, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0x88ccff,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.4,
+                    transparent: true,
+                    opacity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Blizzard':
+                geometry = new THREE.CylinderGeometry(1.5, 1.5, 3, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xaaddff,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100
+                });
+                break;
+            case 'Frozen Orb':
+                geometry = new THREE.SphereGeometry(1, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0x00ffff,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.8,
+                    shininess: 100
+                });
+                break;
+            case 'Ice Shards':
+                geometry = new THREE.TetrahedronGeometry(0.6, 1);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0x88ccff,
+                    emissive: 0x0088ff,
+                    emissiveIntensity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Berserker\'s Call':
+                geometry = new THREE.RingGeometry(0.5, 1.5, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100
+                });
+                break;
+            case 'Battle Hunger':
+                geometry = new THREE.SphereGeometry(0.7, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff6600,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Counter Helix':
+                geometry = new THREE.TorusGeometry(1, 0.2, 16, 32);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.7,
+                    transparent: true,
+                    opacity: 0.8,
+                    shininess: 100
+                });
+                break;
+            case 'Culling Blade':
+                geometry = new THREE.ConeGeometry(0.8, 2.5, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.8,
+                    shininess: 100
+                });
+                break;
+            case 'Battle Trance':
+                geometry = new THREE.SphereGeometry(1.2, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff4400,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.6,
+                    shininess: 100
+                });
+                break;
+            case 'Berserker\'s Rage':
+                geometry = new THREE.SphereGeometry(1, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.7,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100
+                });
+                break;
+            case 'Dragon Slave':
+                geometry = new THREE.ConeGeometry(0.6, 2, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff4400,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.6,
+                    shininess: 100
+                });
+                break;
+            case 'Light Strike Array':
+                geometry = new THREE.CylinderGeometry(1.2, 1.2, 0.2, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xffaa00,
+                    emissive: 0xff8800,
+                    emissiveIntensity: 0.7,
+                    transparent: true,
+                    opacity: 0.8,
+                    shininess: 100
+                });
+                break;
+            case 'Fiery Soul':
+                geometry = new THREE.SphereGeometry(1, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff8800,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.6,
+                    shininess: 100
+                });
+                break;
+            case 'Laguna Blade':
+                geometry = new THREE.CylinderGeometry(0.3, 0.3, 3, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff00ff,
+                    emissive: 0xff00ff,
+                    emissiveIntensity: 0.8,
+                    shininess: 100
+                });
+                break;
+            case 'Flame Cloak':
+                geometry = new THREE.SphereGeometry(1.2, 16, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff6600,
+                    emissive: 0xff4400,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.5,
+                    shininess: 100
+                });
+                break;
+            case 'Inferno Wave':
+                geometry = new THREE.RingGeometry(0.5, 2, 16);
+                material = new THREE.MeshPhongMaterial({ 
+                    color: 0xff4400,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.7,
+                    transparent: true,
+                    opacity: 0.7,
+                    shininess: 100
+                });
+                break;
             case 'Ice Spike':
                 geometry = new THREE.ConeGeometry(0.5, 2, 16);
                 material = new THREE.MeshPhongMaterial({ 
@@ -118,7 +362,20 @@ export class SkillManager {
         effect.position.copy(position);
         
         // For projectile skills, orient them in the direction of travel
-        if (['Fireball', 'Ice Spike'].includes(skill.name)) {
+        if ([
+            'Fireball', 
+            'Ice Spike', 
+            'Dragon Breath',
+            'Flame Strike',
+            'Dragon Tail',
+            'Frost Nova',
+            'Ice Blast',
+            'Ice Shards',
+            'Battle Hunger',
+            'Culling Blade',
+            'Dragon Slave',
+            'Laguna Blade'
+        ].includes(skill.name)) {
             effect.lookAt(position.clone().add(direction));
         }
         
@@ -141,24 +398,52 @@ export class SkillManager {
             
             // Handle different skill behaviors
             switch(activeSkill.skill.name) {
+                // Projectile skills
                 case 'Fireball':
                 case 'Ice Spike':
+                case 'Dragon Breath':
+                case 'Flame Strike':
+                case 'Dragon Tail':
+                case 'Frost Nova':
+                case 'Ice Blast':
+                case 'Ice Shards':
+                case 'Battle Hunger':
+                case 'Culling Blade':
+                case 'Dragon Slave':
+                case 'Laguna Blade':
                     // Move projectile
                     this.updateProjectile(activeSkill, deltaTime, enemyManager);
                     break;
+                
+                // Area effect skills
                 case 'Thunder Strike':
+                case 'Light Strike Array':
+                case 'Berserker\'s Call':
+                case 'Counter Helix':
+                case 'Blizzard':
+                case 'Inferno Wave':
                     // Area effect at target location
                     this.updateAreaEffect(activeSkill, deltaTime, enemyManager);
                     break;
+                
+                // Self/buff skills
                 case 'Heal':
-                    // Healing effect (handled by hero class)
-                    this.updateSelfEffect(activeSkill, deltaTime);
-                    break;
                 case 'Shield':
-                    // Shield effect (handled by hero class)
+                case 'Elder Dragon Form':
+                case 'Fire Shield':
+                case 'Glacial Barrier':
+                case 'Frozen Orb':
+                case 'Fiery Soul':
+                case 'Battle Trance':
+                case 'Berserker\'s Rage':
+                case 'Flame Cloak':
+                    // Self effect (handled by hero class)
                     this.updateSelfEffect(activeSkill, deltaTime);
                     break;
+                
+                // Movement skills
                 case 'Dash':
+                case 'Dragon Rush':
                     // Dash effect (handled by hero class)
                     this.updateSelfEffect(activeSkill, deltaTime);
                     break;
