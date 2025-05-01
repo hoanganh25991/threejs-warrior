@@ -276,35 +276,63 @@ export default class Hero {
       return;
     }
     
+    // Debug: Log the skill object to see its structure
+    console.log('Skill object:', skill);
+    
     if (!skill.canUse) {
       console.log(`Skill for key ${key} doesn't have canUse method`);
       return;
     }
     
-    if (skill.canUse()) {
-      console.log(`Activating skill: ${skill.name || key}`);
-      skill.activate();
-      
-      // Set cooldown - handle different ways cooldown might be specified
-      let cooldownDuration = 5.0; // Default cooldown
-      
-      if (typeof skill.getCooldownDuration === 'function') {
-        cooldownDuration = skill.getCooldownDuration();
-      } else if (skill.cooldown !== undefined) {
-        cooldownDuration = skill.cooldown;
+    try {
+      if (skill.canUse()) {
+        console.log(`Activating skill: ${skill.name || key}`);
+        
+        try {
+          skill.activate();
+        } catch (error) {
+          console.error(`Error activating skill: ${error.message}`);
+        }
+        
+        // Set cooldown - handle different ways cooldown might be specified
+        let cooldownDuration = 5.0; // Default cooldown
+        
+        try {
+          if (typeof skill.getCooldownDuration === 'function') {
+            console.log('Using getCooldownDuration method');
+            cooldownDuration = skill.getCooldownDuration();
+          } else if (skill.cooldown !== undefined) {
+            console.log('Using cooldown property:', skill.cooldown);
+            cooldownDuration = skill.cooldown;
+          } else {
+            console.log('Using default cooldown');
+          }
+        } catch (error) {
+          console.error(`Error getting cooldown: ${error.message}`);
+        }
+        
+        console.log(`Setting cooldown for ${key} to ${cooldownDuration} seconds`);
+        this.cooldowns.set(key, cooldownDuration);
+      } else {
+        console.log(`Cannot use skill: ${skill.name || key} (on cooldown or insufficient mana)`);
       }
-      
-      console.log(`Setting cooldown for ${key} to ${cooldownDuration} seconds`);
-      this.cooldowns.set(key, cooldownDuration);
-    } else {
-      console.log(`Cannot use skill: ${skill.name || key} (on cooldown or insufficient mana)`);
+    } catch (error) {
+      console.error(`Error in useSkill: ${error.message}`);
+      // Set a default cooldown to prevent further errors
+      this.cooldowns.set(key, 5.0);
     }
   }
 
   updateSkills(delta) {
     // Update all skills
     for (const [key, skill] of this.skills) {
-      skill.update(delta);
+      try {
+        if (typeof skill.update === 'function') {
+          skill.update(delta);
+        }
+      } catch (error) {
+        console.error(`Error updating skill ${key}: ${error.message}`);
+      }
     }
 
     // Update cooldowns
@@ -315,13 +343,23 @@ export default class Hero {
     }
 
     // Update attack system
-    this.attackSystem.update(delta);
+    try {
+      this.attackSystem.update(delta);
+    } catch (error) {
+      console.error(`Error updating attack system: ${error.message}`);
+    }
   }
 
   handleInput(input) {
     // Handle basic attack (left mouse click)
     if (input.mouse.buttons[0]) {
       this.attackSystem.startAttack();
+    }
+
+    // Check if skills are initialized
+    if (this.skills.size === 0) {
+      console.log("Skills not initialized, initializing now...");
+      this.initializeSkills();
     }
 
     // Handle skill activation
@@ -439,58 +477,141 @@ export default class Hero {
   }
 
   createGenericSkill(name, manaCost, damage, damageType) {
-    return {
-      name: name,
-      manaCost: manaCost,
-      damage: damage,
-      damageType: damageType,
-      cooldown: 5.0, // Store cooldown value
+    // Create a class that extends Skill
+    class GenericSkill {
+      constructor(hero) {
+        this.hero = hero;
+        this.scene = hero.scene;
+        this.name = name;
+        this.manaCost = manaCost;
+        this.damage = damage;
+        this.damageType = damageType;
+        this.cooldown = 0; // Current cooldown (starts at 0)
+        this.isActive = false;
+        this.particles = [];
+      }
       
-      // Skill methods
-      canUse: () => {
-        return this.mana >= manaCost && 
-               (!this.cooldowns.has(name) || this.cooldowns.get(name) <= 0);
-      },
+      canUse() {
+        return this.cooldown <= 0 && this.hero.mana >= this.manaCost;
+      }
       
-      activate: () => {
-        if (this.mana >= manaCost) {
-          // Deduct mana
-          this.mana -= manaCost;
-          
-          console.log(`Using skill: ${name}, Damage: ${damage}`);
-          
-          // Play sound effect
-          if (this.soundManager) {
-            this.soundManager.playSound('skill-cast');
-          }
-          
-          // Create visual effect
-          if (this.effects) {
-            // Different effect based on damage type
-            const effectType = damageType === 'fire' ? 'fire' : 
-                              damageType === 'buff' ? 'buff' : 'physical';
-            const position = new THREE.Vector3().copy(this.group.position);
-            position.y += 1; // Adjust to be at character height
-            
-            this.effects.createEffect(effectType, position, {
-              direction: this.direction.clone(),
-              color: damageType === 'fire' ? 0xff4400 : 0xffffff
-            });
-          }
-          
-          return true;
+      activate() {
+        if (!this.canUse()) return false;
+        
+        this.isActive = true;
+        this.hero.mana -= this.manaCost;
+        
+        console.log(`Using skill: ${this.name}, Damage: ${this.damage}`);
+        
+        // Play sound effect
+        if (this.hero.soundManager) {
+          this.hero.soundManager.playSound('skill-cast');
         }
-        return false;
-      },
+        
+        // Create visual effect
+        if (this.hero.effects) {
+          // Different effect based on damage type
+          const effectType = this.damageType === 'fire' ? 'fire' : 
+                            this.damageType === 'buff' ? 'buff' : 'physical';
+          const position = new THREE.Vector3().copy(this.hero.group.position);
+          position.y += 1; // Adjust to be at character height
+          
+          this.hero.effects.createEffect(effectType, position, {
+            direction: this.hero.direction.clone(),
+            color: this.damageType === 'fire' ? 0xff4400 : 0xffffff
+          });
+        }
+        
+        return true;
+      }
       
-      update: (delta) => {
-        // Nothing to update for generic skills
-      },
+      update(delta) {
+        if (this.cooldown > 0) {
+          this.cooldown -= delta;
+        }
+        
+        if (this.isActive) {
+          this.updateEffect(delta);
+        }
+        
+        // Update particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const particle = this.particles[i];
+          particle.life -= delta;
+          
+          if (particle.life <= 0) {
+            this.scene.remove(particle.mesh);
+            this.particles.splice(i, 1);
+          } else {
+            this.updateParticle(particle, delta);
+          }
+        }
+      }
       
-      getCooldownDuration: () => {
+      updateParticle(particle, delta) {
+        particle.mesh.position.add(particle.velocity.clone().multiplyScalar(delta));
+        particle.velocity.y -= 9.8 * delta; // Apply gravity
+        
+        // Fade out
+        if (particle.mesh.material.opacity !== undefined) {
+          particle.mesh.material.opacity = particle.life;
+        }
+      }
+      
+      getCooldownDuration() {
         return 5.0; // Default cooldown of 5 seconds
       }
-    };
+      
+      createParticle(position, color = 0xffffff, size = 0.1, life = 1.0) {
+        const geometry = new THREE.SphereGeometry(size, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ color });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.copy(position);
+
+        this.scene.add(mesh);
+        
+        const particle = {
+            mesh,
+            life,
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 2,
+                Math.random() * 2,
+                (Math.random() - 0.5) * 2
+            )
+        };
+
+        this.particles.push(particle);
+        return particle;
+      }
+      
+      createEffect() {
+        // Generic effect creation
+        const origin = this.hero.group.position.clone();
+        origin.y += 1; // Adjust to head level
+        
+        // Create some particles
+        for (let i = 0; i < 10; i++) {
+          const offset = new THREE.Vector3(
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2
+          );
+          
+          const position = origin.clone().add(offset);
+          
+          const color = this.damageType === 'fire' ? 0xff4400 : 
+                       this.damageType === 'buff' ? 0xffff00 : 0xffffff;
+          
+          this.createParticle(position, color, 0.2, 1.0);
+        }
+      }
+      
+      updateEffect(delta) {
+        // Generic effect update - nothing to do
+      }
+    }
+    
+    return new GenericSkill(this);
   }
   
   // This method is no longer needed as we're using initializeSkills instead
