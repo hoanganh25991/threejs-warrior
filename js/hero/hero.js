@@ -368,118 +368,65 @@ export default class Hero {
       this.attackSystem.startAttack();
     }
 
-    // Use hero-specific skills based on hero type
+    // Use the proper skill objects from the skills Map
+    // This will use our enhanced skill implementations
     if (input.keys.y && !this.skillCooldowns?.y) {
-      switch(this.heroType) {
-        case 'dragon-knight':
-          this.useSimpleSkill('y', 'Dragon Breath', 0xff4500);
-          break;
-        case 'crystal-maiden':
-          this.useSimpleSkill('y', 'Frost Nova', 0x00ffff);
-          break;
-        case 'axe':
-          this.useSimpleSkill('y', 'Berserker\'s Call', 0xff0000);
-          break;
-        case 'lina':
-          this.useSimpleSkill('y', 'Dragon Slave', 0xff4400);
-          break;
-        default:
-          this.useSimpleSkill('y', 'Fireball', 0xff0000);
+      if (this.skills.has('y')) {
+        console.log("Using skill mapped to Y key");
+        this.useSkill('y');
+      } else {
+        console.log("No skill mapped to Y key, using fallback");
+        this.useSimpleSkill('y', 'Fireball', 0xff0000);
       }
     }
     
     if (input.keys.u && !this.skillCooldowns?.u) {
-      switch(this.heroType) {
-        case 'dragon-knight':
-          this.useSimpleSkill('u', 'Flame Strike', 0xff8800);
-          break;
-        case 'crystal-maiden':
-          this.useSimpleSkill('u', 'Ice Blast', 0x00ffff);
-          break;
-        case 'axe':
-          this.useSimpleSkill('u', 'Battle Hunger', 0xff6600);
-          break;
-        case 'lina':
-          this.useSimpleSkill('u', 'Light Strike Array', 0xffaa00);
-          break;
-        default:
-          this.useSimpleSkill('u', 'Ice Spike', 0x00ffff);
+      if (this.skills.has('u')) {
+        console.log("Using skill mapped to U key");
+        this.useSkill('u');
+      } else {
+        console.log("No skill mapped to U key, using fallback");
+        this.useSimpleSkill('u', 'Ice Spike', 0x00ffff);
       }
     }
     
     if (input.keys.i && !this.skillCooldowns?.i) {
-      switch(this.heroType) {
-        case 'dragon-knight':
-          this.useSimpleSkill('i', 'Dragon Tail', 0xffaa00);
-          break;
-        case 'crystal-maiden':
-          this.useSimpleSkill('i', 'Glacial Barrier', 0x88ccff);
-          break;
-        case 'axe':
-          this.useSimpleSkill('i', 'Counter Helix', 0xff0000);
-          break;
-        case 'lina':
-          this.useSimpleSkill('i', 'Fiery Soul', 0xff8800);
-          break;
-        default:
-          this.useSimpleSkill('i', 'Thunder Strike', 0xffff00);
+      if (this.skills.has('i')) {
+        console.log("Using skill mapped to I key");
+        this.useSkill('i');
+      } else {
+        console.log("No skill mapped to I key, using fallback");
+        this.useSimpleSkill('i', 'Thunder Strike', 0xffff00);
       }
     }
     
     if (input.keys.h && !this.skillCooldowns?.h) {
-      switch(this.heroType) {
-        case 'dragon-knight':
-          this.useSimpleSkill('h', 'Elder Dragon Form', 0xff0000);
-          break;
-        case 'crystal-maiden':
-          this.useSimpleSkill('h', 'Blizzard', 0xaaddff);
-          break;
-        case 'axe':
-          this.useSimpleSkill('h', 'Culling Blade', 0xff0000);
-          break;
-        case 'lina':
-          this.useSimpleSkill('h', 'Laguna Blade', 0xff00ff);
-          break;
-        default:
-          this.useSimpleSkill('h', 'Healing Wave', 0x00ff00);
+      if (this.skills.has('h')) {
+        console.log("Using skill mapped to H key");
+        this.useSkill('h');
+      } else {
+        console.log("No skill mapped to H key, using fallback");
+        this.useSimpleSkill('h', 'Healing Wave', 0x00ff00);
       }
     }
     
     if (input.keys.j && !this.skillCooldowns?.j) {
-      switch(this.heroType) {
-        case 'dragon-knight':
-          this.useSimpleSkill('j', 'Fire Shield', 0xff8800);
-          break;
-        case 'crystal-maiden':
-          this.useSimpleSkill('j', 'Frozen Orb', 0x00ffff);
-          break;
-        case 'axe':
-          this.useSimpleSkill('j', 'Battle Trance', 0xff4400);
-          break;
-        case 'lina':
-          this.useSimpleSkill('j', 'Flame Cloak', 0xff6600);
-          break;
-        default:
-          this.useSimpleSkill('j', 'Shield', 0x4169e1);
+      if (this.skills.has('j')) {
+        console.log("Using skill mapped to J key");
+        this.useSkill('j');
+      } else {
+        console.log("No skill mapped to J key, using fallback");
+        this.useSimpleSkill('j', 'Shield', 0x4169e1);
       }
     }
     
     if (input.keys.k && !this.skillCooldowns?.k) {
-      switch(this.heroType) {
-        case 'dragon-knight':
-          this.useSimpleSkill('k', 'Dragon Rush', 0xff4400);
-          break;
-        case 'crystal-maiden':
-          this.useSimpleSkill('k', 'Ice Shards', 0x88ccff);
-          break;
-        case 'axe':
-          this.useSimpleSkill('k', 'Berserker\'s Rage', 0xff0000);
-          break;
-        case 'lina':
-          this.useSimpleSkill('k', 'Inferno Wave', 0xff4400);
-          break;
-        default:
-          this.useSimpleSkill('k', 'Dash', 0x808080);
+      if (this.skills.has('k')) {
+        console.log("Using skill mapped to K key");
+        this.useSkill('k');
+      } else {
+        console.log("No skill mapped to K key, using fallback");
+        this.useSimpleSkill('k', 'Dash', 0x808080);
       }
     }
     
@@ -489,6 +436,31 @@ export default class Hero {
       this.showMessage(`Auto-attack ${this.autoAttackEnabled ? 'enabled' : 'disabled'}`);
     }
     this.lastTKeyState = input.keys.t;
+    
+    // After using a skill, set a cooldown to prevent spamming
+    if (input.keys.y || input.keys.u || input.keys.i || input.keys.h || input.keys.j || input.keys.k) {
+      const key = input.keys.y ? 'y' : 
+                 input.keys.u ? 'u' : 
+                 input.keys.i ? 'i' : 
+                 input.keys.h ? 'h' : 
+                 input.keys.j ? 'j' : 
+                 input.keys.k ? 'k' : null;
+                 
+      if (key && !this.skillCooldowns?.[key]) {
+        // Initialize skillCooldowns if it doesn't exist
+        if (!this.skillCooldowns) {
+          this.skillCooldowns = {};
+        }
+        
+        // Set a cooldown
+        this.skillCooldowns[key] = true;
+        
+        // Clear cooldown after 1 second (shorter for better responsiveness)
+        setTimeout(() => {
+          this.skillCooldowns[key] = false;
+        }, 1000);
+      }
+    }
   }
   
   // Improved skill implementation that uses the SkillManager
