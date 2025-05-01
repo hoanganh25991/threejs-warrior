@@ -179,11 +179,19 @@ export default class Enemy {
         // Create a mage enemy
         const body = new THREE.Group();
         
+        // Set userData for all parts to ensure detection
+        body.userData.type = 'enemy';
+        body.userData.enemyRef = this;
+        body.userData.enemyType = 'mage';
+        
         // Body (robe)
         const torsoGeometry = new THREE.ConeGeometry(0.6, 1.8, 8);
         const torsoMaterial = new THREE.MeshPhongMaterial({ color: 0x4B0082 });
         const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
         torso.position.y = 0.9;
+        // Tag for detection
+        torso.userData.type = 'enemy';
+        torso.userData.enemyRef = this;
         body.add(torso);
         
         // Head
@@ -191,6 +199,9 @@ export default class Enemy {
         const headMaterial = new THREE.MeshPhongMaterial({ color: 0xFFE4B5 });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 1.8;
+        // Tag for detection
+        head.userData.type = 'enemy';
+        head.userData.enemyRef = this;
         body.add(head);
         
         // Hat
@@ -198,6 +209,9 @@ export default class Enemy {
         const hatMaterial = new THREE.MeshPhongMaterial({ color: 0x4B0082 });
         const hat = new THREE.Mesh(hatGeometry, hatMaterial);
         hat.position.y = 2.2;
+        // Tag for detection
+        hat.userData.type = 'enemy';
+        hat.userData.enemyRef = this;
         body.add(hat);
         
         // Arms
@@ -206,10 +220,16 @@ export default class Enemy {
         
         const leftArm = new THREE.Mesh(armGeometry, armMaterial);
         leftArm.position.set(-0.4, 1.2, 0);
+        // Tag for detection
+        leftArm.userData.type = 'enemy';
+        leftArm.userData.enemyRef = this;
         body.add(leftArm);
         
         const rightArm = new THREE.Mesh(armGeometry, armMaterial);
         rightArm.position.set(0.4, 1.2, 0);
+        // Tag for detection
+        rightArm.userData.type = 'enemy';
+        rightArm.userData.enemyRef = this;
         body.add(rightArm);
         
         // Staff
@@ -218,6 +238,9 @@ export default class Enemy {
         const staff = new THREE.Mesh(staffGeometry, staffMaterial);
         staff.position.set(0.6, 1, 0);
         staff.rotation.z = Math.PI / 6;
+        // Tag for detection
+        staff.userData.type = 'enemy';
+        staff.userData.enemyRef = this;
         body.add(staff);
         
         // Staff orb
@@ -229,6 +252,9 @@ export default class Enemy {
         });
         const orb = new THREE.Mesh(orbGeometry, orbMaterial);
         orb.position.set(0.85, 1.7, 0);
+        // Tag for detection
+        orb.userData.type = 'enemy';
+        orb.userData.enemyRef = this;
         body.add(orb);
         
         this.model = body;
@@ -313,11 +339,19 @@ export default class Enemy {
         // Create a boss enemy
         const body = new THREE.Group();
         
+        // Set userData for all parts to ensure detection
+        body.userData.type = 'enemy';
+        body.userData.enemyRef = this;
+        body.userData.enemyType = 'boss';
+        
         // Body
         const torsoGeometry = new THREE.BoxGeometry(1.5, 1.8, 1);
         const torsoMaterial = new THREE.MeshPhongMaterial({ color: 0x800000 });
         const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
         torso.position.y = 1.2;
+        // Tag for detection
+        torso.userData.type = 'enemy';
+        torso.userData.enemyRef = this;
         body.add(torso);
         
         // Head
@@ -325,6 +359,9 @@ export default class Enemy {
         const headMaterial = new THREE.MeshPhongMaterial({ color: 0x8B0000 });
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 2.5;
+        // Tag for detection
+        head.userData.type = 'enemy';
+        head.userData.enemyRef = this;
         body.add(head);
         
         // Horns
@@ -334,11 +371,17 @@ export default class Enemy {
         const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
         leftHorn.position.set(-0.3, 2.8, 0);
         leftHorn.rotation.z = -Math.PI / 6;
+        // Tag for detection
+        leftHorn.userData.type = 'enemy';
+        leftHorn.userData.enemyRef = this;
         body.add(leftHorn);
         
         const rightHorn = new THREE.Mesh(hornGeometry, hornMaterial);
         rightHorn.position.set(0.3, 2.8, 0);
         rightHorn.rotation.z = Math.PI / 6;
+        // Tag for detection
+        rightHorn.userData.type = 'enemy';
+        rightHorn.userData.enemyRef = this;
         body.add(rightHorn);
         
         // Arms
@@ -347,10 +390,16 @@ export default class Enemy {
         
         const leftArm = new THREE.Mesh(armGeometry, armMaterial);
         leftArm.position.set(-0.95, 1.2, 0);
+        // Tag for detection
+        leftArm.userData.type = 'enemy';
+        leftArm.userData.enemyRef = this;
         body.add(leftArm);
         
         const rightArm = new THREE.Mesh(armGeometry, armMaterial);
         rightArm.position.set(0.95, 1.2, 0);
+        // Tag for detection
+        rightArm.userData.type = 'enemy';
+        rightArm.userData.enemyRef = this;
         body.add(rightArm);
         
         // Legs
@@ -359,10 +408,16 @@ export default class Enemy {
         
         const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
         leftLeg.position.set(-0.5, 0.5, 0);
+        // Tag for detection
+        leftLeg.userData.type = 'enemy';
+        leftLeg.userData.enemyRef = this;
         body.add(leftLeg);
         
         const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
         rightLeg.position.set(0.5, 0.5, 0);
+        // Tag for detection
+        rightLeg.userData.type = 'enemy';
+        rightLeg.userData.enemyRef = this;
         body.add(rightLeg);
         
         // Weapon - Giant Axe
@@ -373,11 +428,17 @@ export default class Enemy {
         const axeHandle = new THREE.Mesh(axeHandleGeometry, axeMaterial);
         axeHandle.position.set(1.2, 1.5, 0);
         axeHandle.rotation.z = Math.PI / 6;
+        // Tag for detection
+        axeHandle.userData.type = 'enemy';
+        axeHandle.userData.enemyRef = this;
         body.add(axeHandle);
         
         const axeHead = new THREE.Mesh(axeHeadGeometry, axeMaterial);
         axeHead.position.set(1.5, 2.3, 0);
         axeHead.rotation.z = Math.PI / 2;
+        // Tag for detection
+        axeHead.userData.type = 'enemy';
+        axeHead.userData.enemyRef = this;
         body.add(axeHead);
         
         // Eyes (glowing)
@@ -390,10 +451,16 @@ export default class Enemy {
         
         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
         leftEye.position.set(-0.2, 2.5, 0.4);
+        // Tag for detection
+        leftEye.userData.type = 'enemy';
+        leftEye.userData.enemyRef = this;
         body.add(leftEye);
         
         const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
         rightEye.position.set(0.2, 2.5, 0.4);
+        // Tag for detection
+        rightEye.userData.type = 'enemy';
+        rightEye.userData.enemyRef = this;
         body.add(rightEye);
         
         this.model = body;
@@ -401,6 +468,46 @@ export default class Enemy {
         
         // Make boss larger
         this.model.scale.set(1.5, 1.5, 1.5);
+        
+        // Create a special health bar for the boss
+        this.createBossHealthBar();
+    }
+    
+    createBossHealthBar() {
+        // Create a larger, more visible health bar for the boss
+        const healthBarWidth = 2.5;
+        const healthBarHeight = 0.2;
+        
+        // Background bar (black)
+        const bgGeometry = new THREE.PlaneGeometry(healthBarWidth, healthBarHeight);
+        const bgMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide
+        });
+        this.healthBarBg = new THREE.Mesh(bgGeometry, bgMaterial);
+        this.healthBarBg.position.y = 4.5; // Position above the boss
+        this.group.add(this.healthBarBg);
+        
+        // Health bar (red)
+        const healthGeometry = new THREE.PlaneGeometry(healthBarWidth, healthBarHeight);
+        const healthMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF0000,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+        this.healthBar = new THREE.Mesh(healthGeometry, healthMaterial);
+        this.healthBar.position.y = 4.5; // Same position as background
+        this.group.add(this.healthBar);
+        
+        // Make the health bar always face the camera
+        this.healthBarBg.lookAt(0, 0, 0);
+        this.healthBar.lookAt(0, 0, 0);
+        
+        // Update the health bar initially
+        this.updateHealthBar();
     }
 
     // Model paths are no longer needed as we're creating models with Three.js
@@ -437,8 +544,47 @@ export default class Enemy {
 
     updateHealthBar() {
         const healthPercent = this.health / this.maxHealth;
-        this.healthBarFill.scale.x = Math.max(0, healthPercent);
-        this.healthBarFill.position.x = (healthPercent - 1) / 2;
+        
+        // Update regular health bar if it exists
+        if (this.healthBarFill) {
+            this.healthBarFill.scale.x = Math.max(0, healthPercent);
+            this.healthBarFill.position.x = (healthPercent - 1) / 2;
+        }
+        
+        // Update boss health bar if it exists
+        if (this.healthBar && this.enemyType === 'boss') {
+            // Scale the health bar based on current health
+            this.healthBar.scale.x = Math.max(0, healthPercent);
+            
+            // Adjust position to keep the bar aligned to the left
+            const originalWidth = 2.5; // Width from createBossHealthBar
+            const offset = (originalWidth * (1 - healthPercent)) / 2;
+            this.healthBar.position.x = -offset;
+            
+            // Make health bar always face the camera if there is one
+            if (this.scene.camera) {
+                this.healthBarBg.lookAt(this.scene.camera.position);
+                this.healthBar.lookAt(this.scene.camera.position);
+            }
+            
+            // Update color based on health percentage
+            if (healthPercent < 0.3) {
+                // Low health - bright red and pulsing
+                this.healthBar.material.color.setHex(0xFF0000);
+                
+                // Add pulsing effect for low health
+                const pulseIntensity = 0.7 + Math.sin(Date.now() * 0.01) * 0.3;
+                this.healthBar.material.opacity = pulseIntensity;
+            } else if (healthPercent < 0.6) {
+                // Medium health - orange
+                this.healthBar.material.color.setHex(0xFF6600);
+                this.healthBar.material.opacity = 0.9;
+            } else {
+                // High health - bright red
+                this.healthBar.material.color.setHex(0xFF0000);
+                this.healthBar.material.opacity = 0.9;
+            }
+        }
     }
 
     update(delta) {
