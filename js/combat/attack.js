@@ -381,38 +381,76 @@ export default class Attack {
 
     handleMeleeAttack() {
         const origin = this.hero.group.position;
-        const enemies = this.scene.getObjectsByProperty('type', 'enemy');
-
-        enemies.forEach(enemy => {
-            const distance = enemy.position.distanceTo(origin);
+        
+        // Find all enemy groups in the scene
+        const enemyGroups = [];
+        this.scene.traverse(object => {
+            if (object.userData && object.userData.type === 'enemy') {
+                enemyGroups.push(object);
+            }
+        });
+        
+        console.log(`Found ${enemyGroups.length} enemies for melee attack check`);
+        
+        enemyGroups.forEach(enemyGroup => {
+            const distance = enemyGroup.position.distanceTo(origin);
             if (distance <= this.attackRange) {
                 // Check if enemy is in front of hero
-                const toEnemy = enemy.position.clone().sub(origin).normalize();
+                const toEnemy = enemyGroup.position.clone().sub(origin).normalize();
                 const dot = toEnemy.dot(this.hero.direction);
                 
                 if (dot > 0.5) { // Within ~60 degree cone
-                    enemy.takeDamage(this.baseDamage);
+                    // Get the enemy instance from userData
+                    const enemy = enemyGroup.userData.enemyRef;
+                    if (enemy) {
+                        console.log(`Dealing ${this.baseDamage} damage to enemy`);
+                        enemy.takeDamage(this.baseDamage);
+                    }
                 }
             }
         });
     }
 
     handleRangedAttack() {
-        const origin = this.hero.group.position;
+        const origin = this.hero.group.position.clone();
+        origin.y += 1; // Adjust to be at weapon height
         const direction = this.hero.direction.clone();
+        
+        // Create a raycaster for detecting hits
         const raycaster = new THREE.Raycaster(origin, direction);
-        const enemies = this.scene.getObjectsByProperty('type', 'enemy');
-
-        // Convert enemies to their meshes for raycaster
-        const enemyMeshes = enemies.map(enemy => enemy.mesh || enemy);
-        const intersects = raycaster.intersectObjects(enemyMeshes);
-
+        
+        // Find all enemy groups and their children for raycasting
+        const enemyObjects = [];
+        const enemyMap = new Map(); // Map objects to their enemy instances
+        
+        this.scene.traverse(object => {
+            if (object.userData && object.userData.type === 'enemy') {
+                // Store the group itself
+                enemyObjects.push(object);
+                enemyMap.set(object, object.userData.enemyRef);
+                
+                // Also include all children of the enemy group
+                object.traverse(child => {
+                    if (child.isMesh) {
+                        enemyObjects.push(child);
+                        enemyMap.set(child, object.userData.enemyRef);
+                    }
+                });
+            }
+        });
+        
+        console.log(`Found ${enemyObjects.length} enemy objects for ranged attack check`);
+        
+        // Check for intersections
+        const intersects = raycaster.intersectObjects(enemyObjects);
+        
         if (intersects.length > 0 && intersects[0].distance <= this.attackRange) {
-            const hitEnemy = enemies.find(enemy => 
-                enemy.mesh === intersects[0].object || enemy === intersects[0].object
-            );
-            if (hitEnemy) {
-                hitEnemy.takeDamage(this.baseDamage);
+            const hitObject = intersects[0].object;
+            const enemy = enemyMap.get(hitObject);
+            
+            if (enemy) {
+                console.log(`Ranged attack hit enemy at distance ${intersects[0].distance}`);
+                enemy.takeDamage(this.baseDamage);
             }
         }
     }

@@ -126,6 +126,10 @@ export default class Hero {
   init() {
     // Create a group to hold the hero and allow for rotation
     this.group = new THREE.Group();
+    this.type = 'hero'; // Set type for detection
+    this.group.userData.type = 'hero'; // Set type in userData for raycasting
+    this.group.userData.heroRef = this; // Store reference to this hero instance
+    this.group.userData.isHero = true; // Additional flag for detection
     this.scene.add(this.group);
     
     // Initialize skills based on hero type
@@ -1636,8 +1640,12 @@ export default class Hero {
   }
 
   takeDamage(amount) {
+    console.log(`Hero taking ${amount} damage, current health: ${this.health}`);
     this.health = Math.max(0, this.health - amount);
     this.updateUI();
+    
+    // Play damage effect
+    this.showDamageEffect(amount);
 
     // Check if dead
     if (this.health <= 0) {
@@ -1683,6 +1691,79 @@ export default class Hero {
     this.showMessage("You have died!");
 
     // In a full implementation, we would handle respawning, game over, etc.
+  }
+  
+  showDamageEffect(amount) {
+    // Create damage number sprite
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = 'Bold 32px Arial';
+    context.fillStyle = 'white';
+    context.fillText(Math.round(amount).toString(), 0, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(material);
+
+    // Position above hero
+    sprite.position.copy(this.group.position);
+    sprite.position.y += 2;
+    this.scene.add(sprite);
+
+    // Animate and remove
+    const startY = sprite.position.y;
+    const startTime = Date.now();
+    const duration = 1000;
+
+    const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = elapsed / duration;
+
+        if (progress < 1) {
+            sprite.position.y = startY + progress;
+            sprite.material.opacity = 1 - progress;
+            requestAnimationFrame(animate);
+        } else {
+            this.scene.remove(sprite);
+        }
+    };
+    animate();
+    
+    // Flash the hero red
+    if (this.group.children.length > 0) {
+      const heroModel = this.group.children[0];
+      
+      // Store original materials
+      const originalMaterials = [];
+      heroModel.traverse(child => {
+        if (child.material) {
+          originalMaterials.push({
+            object: child,
+            material: child.material.clone()
+          });
+          
+          // Set to red
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => {
+              mat.color.set(0xff0000);
+              mat.emissive = new THREE.Color(0xff0000);
+              mat.emissiveIntensity = 0.5;
+            });
+          } else {
+            child.material.color.set(0xff0000);
+            child.material.emissive = new THREE.Color(0xff0000);
+            child.material.emissiveIntensity = 0.5;
+          }
+        }
+      });
+      
+      // Reset after a short delay
+      setTimeout(() => {
+        originalMaterials.forEach(item => {
+          item.object.material = item.material;
+        });
+      }, 200);
+    }
   }
 
   updateUI() {

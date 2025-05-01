@@ -20,6 +20,8 @@ export default class Enemy {
         // Create group for enemy
         this.group = new THREE.Group();
         this.group.position.copy(position);
+        this.group.userData.type = 'enemy'; // Set type in userData for raycasting
+        this.group.userData.enemyRef = this; // Store reference to this enemy instance
         this.scene.add(this.group);
 
         // Initialize state
@@ -471,59 +473,131 @@ export default class Enemy {
     }
 
     updateIdle() {
-        // Look for targets in detection range
-        const heroes = this.scene.getObjectsByProperty('type', 'hero');
-        for (const hero of heroes) {
-            const distance = this.group.position.distanceTo(hero.group.position);
+        // Look for hero in detection range
+        let hero = null;
+        
+        // Find the hero in the scene
+        this.scene.traverse(object => {
+            if (object.userData && object.userData.type === 'hero') {
+                hero = object.userData.heroRef;
+            }
+        });
+        
+        // If no hero found, try to find the hero object directly
+        if (!hero) {
+            this.scene.traverse(object => {
+                if (object.type === 'hero' || 
+                    (object.userData && object.userData.isHero)) {
+                    hero = object;
+                }
+            });
+        }
+        
+        if (hero) {
+            const heroPosition = hero.group ? hero.group.position : hero.position;
+            const distance = this.group.position.distanceTo(heroPosition);
+            
             if (distance <= this.detectionRange) {
+                console.log(`Enemy detected hero at distance ${distance}`);
                 this.target = hero;
                 this.setState('chase');
-                break;
             }
         }
     }
 
     updateChase(delta) {
-        if (!this.target || this.target.health <= 0) {
+        if (!this.target) {
             this.setState('idle');
             return;
         }
-
-        const distance = this.group.position.distanceTo(this.target.group.position);
-
+        
+        // Check if target is still valid
+        if (typeof this.target.health !== 'undefined' && this.target.health <= 0) {
+            this.setState('idle');
+            return;
+        }
+        
+        // Get target position based on what's available
+        const targetPosition = this.getTargetPosition();
+        if (!targetPosition) {
+            this.setState('idle');
+            return;
+        }
+        
+        const distance = this.group.position.distanceTo(targetPosition);
+        
         if (distance <= this.attackRange) {
             this.setState('attack');
         } else {
             // Move towards target
             const direction = new THREE.Vector3()
-                .subVectors(this.target.group.position, this.group.position)
+                .subVectors(targetPosition, this.group.position)
                 .normalize();
             
             this.group.position.add(direction.multiplyScalar(this.speed * delta));
-            this.group.lookAt(this.target.group.position);
+            this.group.lookAt(targetPosition);
         }
     }
 
     updateAttack() {
-        if (!this.target || this.target.health <= 0) {
+        if (!this.target) {
             this.setState('idle');
             return;
         }
-
-        const distance = this.group.position.distanceTo(this.target.group.position);
-
+        
+        // Check if target is still valid
+        if (typeof this.target.health !== 'undefined' && this.target.health <= 0) {
+            this.setState('idle');
+            return;
+        }
+        
+        // Get target position based on what's available
+        const targetPosition = this.getTargetPosition();
+        if (!targetPosition) {
+            this.setState('idle');
+            return;
+        }
+        
+        const distance = this.group.position.distanceTo(targetPosition);
+        
         if (distance > this.attackRange) {
             this.setState('chase');
         } else if (this.attackCooldown <= 0) {
             this.attack();
         }
     }
+    
+    getTargetPosition() {
+        // Try different ways to get the target position
+        if (this.target.group && this.target.group.position) {
+            return this.target.group.position;
+        } else if (this.target.position) {
+            return this.target.position;
+        } else if (this.target.getPosition) {
+            return this.target.getPosition();
+        }
+        
+        // If we can't find a position, return null
+        return null;
+    }
 
     attack() {
         if (!this.target) return;
 
-        // Deal damage to target
-        this.target.takeDamage(this.damage);
+        console.log(`Enemy attacking target with ${this.damage} damage`);
+        
+        // Deal damage to target - handle different ways the target might take damage
+        if (typeof this.target.takeDamage === 'function') {
+            this.target.takeDamage(this.damage);
+        } else if (this.target.health !== undefined) {
+            // Direct manipulation if takeDamage not available
+            this.target.health = Math.max(0, this.target.health - this.damage);
+            
+            // If the target has an updateUI method, call it
+            if (typeof this.target.updateUI === 'function') {
+                this.target.updateUI();
+            }
+        }
 
         // Reset attack cooldown
         this.attackCooldown = 1 / this.attackSpeed;
