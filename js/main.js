@@ -18,6 +18,7 @@ import Crafting from "./crafting/crafting.js";
 import CharacterClass from "./rpg/character-class.js";
 import SkillTree from "./rpg/skill-tree.js";
 import HUD from "./ui/hud.js";
+import CraftingUI from "./ui/craftingUI.js";
 import Boss from "./enemies/boss.js";
 import Attack from "./combat/attack.js";
 import Terrain from "./terrain/terrain.js";
@@ -331,6 +332,9 @@ class Game {
 
     // Initialize combat system
     this.attack = new Attack(this.hero);
+    
+    // Initialize crafting UI
+    this.craftingUI = new CraftingUI(this.hero);
 
     // Add debug info for collision detection if debug mode is enabled
     if (config.game.debug) {
