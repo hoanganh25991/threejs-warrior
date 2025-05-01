@@ -86,31 +86,33 @@ export class InputHandler {
         const canvas = document.getElementById('game-canvas');
         if (canvas) {
             canvas.addEventListener('click', this.requestPointerLock.bind(this));
-            
-            // Add instructions for pointer lock
-            const instructions = document.createElement('div');
-            instructions.id = 'pointer-lock-instructions';
-            instructions.innerHTML = 'Click to capture mouse and control look direction<br>Press ESC to release mouse';
-            instructions.style.position = 'absolute';
-            instructions.style.top = '10px';
-            instructions.style.width = '100%';
-            instructions.style.textAlign = 'center';
-            instructions.style.color = 'white';
-            instructions.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            instructions.style.padding = '10px';
-            instructions.style.zIndex = '100';
-            instructions.style.fontFamily = 'Arial, sans-serif';
-            instructions.style.display = 'none';
-            document.body.appendChild(instructions);
-            
-            // Hide instructions when pointer is locked
-            document.addEventListener('pointerlockchange', () => {
-                if (document.pointerLockElement === canvas) {
-                    instructions.style.display = 'none';
-                } else {
-                    instructions.style.display = 'block';
-                }
-            });
+            if (config.game.debug) {
+                // Add instructions for pointer lock
+                const instructions = document.createElement('div');
+                instructions.id = 'pointer-lock-instructions';
+                instructions.innerHTML = 'Click to capture mouse and control look direction<br>Press ESC to release mouse';
+                instructions.style.position = 'fixed';
+                instructions.style.top = '10px';
+                instructions.style.width = '100%';
+                instructions.style.textAlign = 'center';
+                instructions.style.color = 'white';
+                instructions.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                instructions.style.padding = '10px';
+                instructions.style.zIndex = '100';
+                instructions.style.fontFamily = 'Arial, sans-serif';
+                instructions.style.display = 'none';
+                instructions.style.zIndex = '1';
+                document.body.appendChild(instructions);
+                
+                // Hide instructions when pointer is locked
+                document.addEventListener('pointerlockchange', () => {
+                    if (document.pointerLockElement === canvas) {
+                        instructions.style.display = 'none';
+                    } else {
+                        instructions.style.display = 'block';
+                    }
+                });
+            }
         }
     }
     
