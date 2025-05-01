@@ -321,6 +321,7 @@ export class SkillManager {
                 });
                 break;
             case 'Heal':
+            case 'Healing Wave':
                 geometry = new THREE.TorusGeometry(1, 0.2, 16, 32);
                 material = new THREE.MeshPhongMaterial({ 
                     color: 0x00ff00,

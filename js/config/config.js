@@ -333,6 +333,13 @@ export const config = {
             manaCost: 25,
             cooldown: 8
         },
+        healingWave: {
+            name: "Healing Wave",
+            healAmount: 60,
+            areaOfEffect: 5,
+            manaCost: 35,
+            cooldown: 12
+        },
         // J key skill
         shield: {
             name: "Shield",
