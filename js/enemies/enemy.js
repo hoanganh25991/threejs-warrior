@@ -724,44 +724,100 @@ export default class Enemy {
             this.die();
         }
 
-        // Create damage number
-        this.showDamageNumber(amount);
+        // Show blood effect instead of damage numbers
+        this.showBloodEffect();
     }
 
-    showDamageNumber(amount) {
-        // Create damage number sprite
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        context.font = 'Bold 32px Arial';
-        context.fillStyle = 'red';
-        context.fillText(Math.round(amount).toString(), 0, 32);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.SpriteMaterial({ map: texture });
-        const sprite = new THREE.Sprite(material);
-
-        // Position above enemy
-        sprite.position.copy(this.group.position);
-        sprite.position.y += 2;
-        this.scene.add(sprite);
-
-        // Animate and remove
-        const startY = sprite.position.y;
-        const startTime = Date.now();
-        const duration = 1000;
-
+    showBloodEffect() {
+        // Create blood particle system
+        const particleCount = 15; // Slightly fewer particles for enemies
+        const particles = [];
+        const bloodGroup = new THREE.Group();
+        
+        // Create blood particles
+        for (let i = 0; i < particleCount; i++) {
+            // Random size for particles
+            const size = 0.02 + Math.random() * 0.04;
+            const geometry = new THREE.SphereGeometry(size, 6, 6);
+            
+            // Dark red color with slight variation
+            const hue = 0.98 + Math.random() * 0.04; // Red with slight variation
+            const saturation = 0.8 + Math.random() * 0.2;
+            const lightness = 0.2 + Math.random() * 0.2; // Darker red for blood
+            
+            const color = new THREE.Color().setHSL(hue, saturation, lightness);
+            
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const particle = new THREE.Mesh(geometry, material);
+            
+            // Random position around the enemy
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            const radius = 0.2 + Math.random() * 0.3;
+            
+            particle.position.x = radius * Math.sin(phi) * Math.cos(theta);
+            particle.position.y = 1 + radius * Math.sin(phi) * Math.sin(theta); // Position at mid-height
+            particle.position.z = radius * Math.cos(phi);
+            
+            // Random velocity
+            const speed = 0.01 + Math.random() * 0.03;
+            const direction = new THREE.Vector3(
+                (Math.random() - 0.5) * 2,
+                -0.5 - Math.random(), // Mostly downward
+                (Math.random() - 0.5) * 2
+            ).normalize();
+            
+            particles.push({
+                mesh: particle,
+                velocity: direction.multiplyScalar(speed),
+                gravity: 0.001 + Math.random() * 0.002,
+                life: 1.0
+            });
+            
+            bloodGroup.add(particle);
+        }
+        
+        // Position the blood effect at the enemy
+        bloodGroup.position.copy(this.group.position);
+        this.scene.add(bloodGroup);
+        
+        // Animate blood particles
         const animate = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = elapsed / duration;
-
-            if (progress < 1) {
-                sprite.position.y = startY + progress;
-                sprite.material.opacity = 1 - progress;
-                requestAnimationFrame(animate);
+            let allDead = true;
+            
+            particles.forEach(particle => {
+                // Apply gravity
+                particle.velocity.y -= particle.gravity;
+                
+                // Move particle
+                particle.mesh.position.add(particle.velocity);
+                
+                // Reduce life
+                particle.life -= 0.02;
+                particle.mesh.material.opacity = particle.life;
+                
+                if (particle.life > 0) {
+                    allDead = false;
+                }
+            });
+            
+            if (allDead) {
+                // Clean up
+                this.scene.remove(bloodGroup);
+                particles.forEach(particle => {
+                    particle.mesh.geometry.dispose();
+                    particle.mesh.material.dispose();
+                });
             } else {
-                this.scene.remove(sprite);
+                requestAnimationFrame(animate);
             }
         };
+        
         animate();
     }
 

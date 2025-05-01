@@ -45,6 +45,9 @@ export default class Hero {
 
     // Initialize attack system
     this.attackSystem = new Attack(this);
+    
+    // Enable auto-attack by default
+    this.autoAttackEnabled = true;
 
     // Set attack type based on hero type
     switch (heroType) {
@@ -121,6 +124,13 @@ export default class Hero {
     if (input.keys.H) this.useSkill('H');
     if (input.keys.J) this.useSkill('J');
     if (input.keys.K) this.useSkill('K');
+    
+    // Toggle auto-attack with T key
+    if (input.keys.T && !this.lastTKeyState) {
+      this.autoAttackEnabled = !this.autoAttackEnabled;
+      this.showMessage(`Auto-attack ${this.autoAttackEnabled ? 'enabled' : 'disabled'}`);
+    }
+    this.lastTKeyState = input.keys.T;
   }
 
   init() {
@@ -1644,8 +1654,8 @@ export default class Hero {
     this.health = Math.max(0, this.health - amount);
     this.updateUI();
     
-    // Play damage effect
-    this.showDamageEffect(amount);
+    // Play blood effect instead of damage numbers
+    this.showBloodEffect();
 
     // Check if dead
     if (this.health <= 0) {
@@ -1693,77 +1703,97 @@ export default class Hero {
     // In a full implementation, we would handle respawning, game over, etc.
   }
   
-  showDamageEffect(amount) {
-    // Create damage number sprite
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    context.font = 'Bold 32px Arial';
-    context.fillStyle = 'white';
-    context.fillText(Math.round(amount).toString(), 0, 32);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.SpriteMaterial({ map: texture });
-    const sprite = new THREE.Sprite(material);
-
-    // Position above hero
-    sprite.position.copy(this.group.position);
-    sprite.position.y += 2;
-    this.scene.add(sprite);
-
-    // Animate and remove
-    const startY = sprite.position.y;
-    const startTime = Date.now();
-    const duration = 1000;
-
-    const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = elapsed / duration;
-
-        if (progress < 1) {
-            sprite.position.y = startY + progress;
-            sprite.material.opacity = 1 - progress;
-            requestAnimationFrame(animate);
-        } else {
-            this.scene.remove(sprite);
-        }
-    };
-    animate();
+  showBloodEffect() {
+    // Create blood particle system
+    const particleCount = 20;
+    const particles = [];
+    const bloodGroup = new THREE.Group();
     
-    // Flash the hero red
-    if (this.group.children.length > 0) {
-      const heroModel = this.group.children[0];
+    // Create blood particles
+    for (let i = 0; i < particleCount; i++) {
+      // Random size for particles
+      const size = 0.03 + Math.random() * 0.05;
+      const geometry = new THREE.SphereGeometry(size, 6, 6);
       
-      // Store original materials
-      const originalMaterials = [];
-      heroModel.traverse(child => {
-        if (child.material) {
-          originalMaterials.push({
-            object: child,
-            material: child.material.clone()
-          });
-          
-          // Set to red
-          if (Array.isArray(child.material)) {
-            child.material.forEach(mat => {
-              mat.color.set(0xff0000);
-              mat.emissive = new THREE.Color(0xff0000);
-              mat.emissiveIntensity = 0.5;
-            });
-          } else {
-            child.material.color.set(0xff0000);
-            child.material.emissive = new THREE.Color(0xff0000);
-            child.material.emissiveIntensity = 0.5;
-          }
+      // Dark red color with slight variation
+      const hue = 0.98 + Math.random() * 0.04; // Red with slight variation
+      const saturation = 0.8 + Math.random() * 0.2;
+      const lightness = 0.2 + Math.random() * 0.2; // Darker red for blood
+      
+      const color = new THREE.Color().setHSL(hue, saturation, lightness);
+      
+      const material = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.9
+      });
+      
+      const particle = new THREE.Mesh(geometry, material);
+      
+      // Random position around the hero
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const radius = 0.2 + Math.random() * 0.3;
+      
+      particle.position.x = radius * Math.sin(phi) * Math.cos(theta);
+      particle.position.y = 1 + radius * Math.sin(phi) * Math.sin(theta); // Position at mid-height
+      particle.position.z = radius * Math.cos(phi);
+      
+      // Random velocity
+      const speed = 0.01 + Math.random() * 0.03;
+      const direction = new THREE.Vector3(
+        (Math.random() - 0.5) * 2,
+        -0.5 - Math.random(), // Mostly downward
+        (Math.random() - 0.5) * 2
+      ).normalize();
+      
+      particles.push({
+        mesh: particle,
+        velocity: direction.multiplyScalar(speed),
+        gravity: 0.001 + Math.random() * 0.002,
+        life: 1.0
+      });
+      
+      bloodGroup.add(particle);
+    }
+    
+    // Position the blood effect at the hero
+    bloodGroup.position.copy(this.group.position);
+    this.scene.add(bloodGroup);
+    
+    // Animate blood particles
+    const animate = () => {
+      let allDead = true;
+      
+      particles.forEach(particle => {
+        // Apply gravity
+        particle.velocity.y -= particle.gravity;
+        
+        // Move particle
+        particle.mesh.position.add(particle.velocity);
+        
+        // Reduce life
+        particle.life -= 0.02;
+        particle.mesh.material.opacity = particle.life;
+        
+        if (particle.life > 0) {
+          allDead = false;
         }
       });
       
-      // Reset after a short delay
-      setTimeout(() => {
-        originalMaterials.forEach(item => {
-          item.object.material = item.material;
+      if (allDead) {
+        // Clean up
+        this.scene.remove(bloodGroup);
+        particles.forEach(particle => {
+          particle.mesh.geometry.dispose();
+          particle.mesh.material.dispose();
         });
-      }, 200);
-    }
+      } else {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    animate();
   }
 
   updateUI() {

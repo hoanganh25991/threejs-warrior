@@ -166,7 +166,8 @@ export const config = {
             skill3: "i",
             skill4: "h",
             skill5: "j",
-            skill6: "k"
+            skill6: "k",
+            toggleAutoAttack: "t" // Toggle auto-attack
         },
         mouse: {
             look: true,

@@ -69,43 +69,116 @@ export default class Attack {
             }
         }
         
-        // Fallback: Create a simple visual attack animation using the hero's model
-        // Find the hero's weapon or arm to animate
+        // Fallback: Create a more dynamic visual attack animation using the hero's model
         if (this.hero.group) {
             // Create a temporary animation for the attack
             const heroBody = this.hero.group.children[0];
             if (heroBody) {
-                // Find arms to animate
-                let rightArm;
-                heroBody.children.forEach(part => {
+                // Find arms and weapon to animate
+                let rightArm, weapon;
+                
+                // Search for arm and weapon parts
+                heroBody.traverse(part => {
                     // Right arm is usually positioned to the right (positive X) and at mid-height
-                    if (part.position.x > 0.5 && part.position.y > 0.8 && part.position.y < 1.6) {
+                    if (part.position.x > 0.3 && part.position.y > 0.8 && part.position.y < 1.6) {
                         rightArm = part;
+                    }
+                    // Weapon is often positioned in front (negative Z) or to the side
+                    else if ((part.position.z < -0.2 || part.position.x > 0.5) && part.position.y > 0.5) {
+                        weapon = part;
                     }
                 });
                 
-                // If we found an arm, animate it
+                // If we found an arm, animate it with a more complex motion
                 if (rightArm) {
                     // Save original rotation
-                    const originalRotation = rightArm.rotation.x;
+                    const originalRotation = {
+                        x: rightArm.rotation.x || 0,
+                        y: rightArm.rotation.y || 0,
+                        z: rightArm.rotation.z || 0
+                    };
                     
-                    // Swing arm forward
-                    rightArm.rotation.x = -0.8;
+                    // Animation sequence
+                    const animateSwing = () => {
+                        // Wind up (pull back)
+                        rightArm.rotation.x = originalRotation.x + 0.4;
+                        rightArm.rotation.z = originalRotation.z - 0.2;
+                        
+                        setTimeout(() => {
+                            // Swing forward (attack)
+                            rightArm.rotation.x = originalRotation.x - 0.8;
+                            rightArm.rotation.z = originalRotation.z + 0.3;
+                            
+                            // If we have a weapon, animate it too
+                            if (weapon) {
+                                const weaponOriginal = {
+                                    x: weapon.rotation.x || 0,
+                                    y: weapon.rotation.y || 0,
+                                    z: weapon.rotation.z || 0
+                                };
+                                weapon.rotation.x = weaponOriginal.x - 0.5;
+                                weapon.rotation.z = weaponOriginal.z + 0.4;
+                                
+                                setTimeout(() => {
+                                    weapon.rotation.x = weaponOriginal.x;
+                                    weapon.rotation.y = weaponOriginal.y;
+                                    weapon.rotation.z = weaponOriginal.z;
+                                }, 150);
+                            }
+                            
+                            setTimeout(() => {
+                                // Return to original position
+                                rightArm.rotation.x = originalRotation.x;
+                                rightArm.rotation.y = originalRotation.y;
+                                rightArm.rotation.z = originalRotation.z;
+                            }, 200);
+                        }, 100);
+                    };
                     
-                    // Reset after a short delay
-                    setTimeout(() => {
-                        rightArm.rotation.x = originalRotation;
-                    }, 300);
+                    animateSwing();
                 } else {
-                    // If no arm found, animate the whole hero (slight forward tilt)
-                    const originalRotation = heroBody.rotation.x || 0;
-                    heroBody.rotation.x = 0.3;
+                    // If no arm found, animate the whole hero with a more dynamic motion
+                    const originalRotation = {
+                        x: heroBody.rotation.x || 0,
+                        y: heroBody.rotation.y || 0,
+                        z: heroBody.rotation.z || 0
+                    };
                     
-                    // Reset after a short delay
-                    setTimeout(() => {
-                        heroBody.rotation.x = originalRotation;
-                    }, 300);
+                    // Animation sequence
+                    const animateBody = () => {
+                        // Lean back slightly
+                        heroBody.rotation.x = originalRotation.x + 0.2;
+                        
+                        setTimeout(() => {
+                            // Lean forward for attack
+                            heroBody.rotation.x = originalRotation.x - 0.3;
+                            
+                            // Add a slight twist for more dynamic feel
+                            heroBody.rotation.z = originalRotation.z + 0.1;
+                            
+                            setTimeout(() => {
+                                // Return to original position
+                                heroBody.rotation.x = originalRotation.x;
+                                heroBody.rotation.y = originalRotation.y;
+                                heroBody.rotation.z = originalRotation.z;
+                            }, 200);
+                        }, 100);
+                    };
+                    
+                    animateBody();
                 }
+                
+                // Add a slight movement to the hero's position for more impact
+                const originalPosition = this.hero.group.position.clone();
+                
+                // Move slightly forward in the direction the hero is facing
+                const forwardDirection = this.hero.direction.clone().normalize().multiplyScalar(0.2);
+                this.hero.group.position.add(forwardDirection);
+                
+                // Return to original position
+                setTimeout(() => {
+                    this.hero.group.position.copy(originalPosition);
+                }, 250);
             }
         }
     }
@@ -459,5 +532,49 @@ export default class Attack {
         if (this.attackCooldown > 0) {
             this.attackCooldown -= delta;
         }
+        
+        // Auto-attack functionality
+        if (this.hero.autoAttackEnabled && this.canAttack()) {
+            this.tryAutoAttack();
+        }
+    }
+    
+    tryAutoAttack() {
+        // Find the nearest enemy within attack range
+        const origin = this.hero.group.position;
+        const enemiesInRange = [];
+        
+        // Find all enemy groups in the scene
+        this.scene.traverse(object => {
+            if (object.userData && object.userData.type === 'enemy') {
+                const distance = object.position.distanceTo(origin);
+                if (distance <= this.attackRange * 1.5) { // Slightly larger range for auto-attack
+                    enemiesInRange.push({
+                        enemy: object.userData.enemyRef,
+                        distance: distance
+                    });
+                }
+            }
+        });
+        
+        // Sort by distance
+        enemiesInRange.sort((a, b) => a.distance - b.distance);
+        
+        // Attack the closest enemy if any are in range
+        if (enemiesInRange.length > 0) {
+            // Check if enemy is in front of hero (within a wider cone for auto-attack)
+            const closestEnemy = enemiesInRange[0].enemy;
+            const enemyPos = closestEnemy.group.position;
+            const toEnemy = new THREE.Vector3().subVectors(enemyPos, origin).normalize();
+            const dot = toEnemy.dot(this.hero.direction);
+            
+            // More forgiving angle for auto-attack (wider cone, about 90 degrees)
+            if (dot > 0.1) {
+                this.startAttack();
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
