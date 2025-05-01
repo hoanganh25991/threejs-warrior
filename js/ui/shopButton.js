@@ -25,7 +25,7 @@ export default class ShopButton {
         style.textContent = `
             #shop-button {
                 position: fixed;
-                top: 110px;
+                top: 118px;
                 right: 10px;
                 padding: 10px 20px;
                 background-color: #4a2b0f;
