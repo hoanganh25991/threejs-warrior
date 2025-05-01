@@ -154,6 +154,7 @@ export default class Hero {
 
     // Initialize skills based on hero type
     this.initSkills();
+    this.updateUI();
   }
 
   createHeroModel(HeroClass) {
