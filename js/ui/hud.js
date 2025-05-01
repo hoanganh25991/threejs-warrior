@@ -69,10 +69,20 @@ export default class HUD {
 
         keys.forEach(key => {
             const slot = document.createElement('div');
-            slot.className = 'skill-slot';
+            slot.className = 'skill-slot skill-slot-3d';
             slot.innerHTML = `
-                <div class="key-bind">${key}</div>
-                <div class="skill-icon"></div>
+                <div class="skill-3d-container">
+                    <div class="skill-3d-face skill-3d-front">
+                        <div class="key-bind">${key}</div>
+                        <div class="skill-icon"></div>
+                        <div class="skill-glow"></div>
+                    </div>
+                    <div class="skill-3d-face skill-3d-left"></div>
+                    <div class="skill-3d-face skill-3d-right"></div>
+                    <div class="skill-3d-face skill-3d-top"></div>
+                    <div class="skill-3d-face skill-3d-bottom"></div>
+                    <div class="skill-3d-face skill-3d-back"></div>
+                </div>
                 <div class="cooldown"></div>
                 <div class="skill-tooltip">
                     <div class="tooltip-name"></div>
@@ -88,11 +98,23 @@ export default class HUD {
             slot.addEventListener('mouseenter', () => {
                 const tooltip = slot.querySelector('.skill-tooltip');
                 if (tooltip) tooltip.style.display = 'block';
+                
+                // Add 3D rotation effect on hover
+                const container = slot.querySelector('.skill-3d-container');
+                if (container) {
+                    container.style.transform = 'rotateX(15deg) rotateY(15deg)';
+                }
             });
             
             slot.addEventListener('mouseleave', () => {
                 const tooltip = slot.querySelector('.skill-tooltip');
                 if (tooltip) tooltip.style.display = 'none';
+                
+                // Reset 3D rotation on mouse leave
+                const container = slot.querySelector('.skill-3d-container');
+                if (container) {
+                    container.style.transform = 'rotateX(0deg) rotateY(0deg)';
+                }
             });
         });
     }
@@ -141,23 +163,88 @@ export default class HUD {
             .skill-bar {
                 display: flex;
                 justify-content: center;
-                gap: 10px;
+                gap: 15px;
                 margin-top: 20px;
+                perspective: 1000px;
             }
 
             .skill-slot {
-                width: 50px;
-                height: 50px;
-                background: rgba(0, 0, 0, 0.5);
-                border-radius: 5px;
+                width: 60px;
+                height: 60px;
                 position: relative;
                 cursor: pointer;
-                border: 2px solid #444;
-                overflow: hidden;
+                overflow: visible;
             }
 
-            .skill-slot:hover {
+            /* 3D Skill Slot Styling */
+            .skill-slot-3d {
+                transform-style: preserve-3d;
+                perspective: 600px;
+            }
+
+            .skill-3d-container {
+                width: 100%;
+                height: 100%;
+                position: relative;
+                transform-style: preserve-3d;
+                transition: transform 0.3s ease;
+                transform: rotateX(0deg) rotateY(0deg);
+            }
+
+            .skill-3d-face {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                backface-visibility: visible;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            }
+
+            .skill-3d-front {
+                background: rgba(0, 0, 0, 0.7);
+                transform: translateZ(5px);
+                border: 2px solid #666;
+                overflow: hidden;
+                z-index: 1;
+            }
+
+            .skill-3d-back {
+                background: rgba(20, 20, 20, 0.9);
+                transform: translateZ(-5px) rotateY(180deg);
+                border: 1px solid #333;
+            }
+
+            .skill-3d-left {
+                background: rgba(40, 40, 40, 0.8);
+                transform: rotateY(-90deg) translateZ(5px);
+                width: 10px;
+                left: -5px;
+            }
+
+            .skill-3d-right {
+                background: rgba(40, 40, 40, 0.8);
+                transform: rotateY(90deg) translateZ(55px);
+                width: 10px;
+                right: -5px;
+            }
+
+            .skill-3d-top {
+                background: rgba(60, 60, 60, 0.8);
+                transform: rotateX(90deg) translateZ(5px);
+                height: 10px;
+                top: -5px;
+            }
+
+            .skill-3d-bottom {
+                background: rgba(60, 60, 60, 0.8);
+                transform: rotateX(-90deg) translateZ(55px);
+                height: 10px;
+                bottom: -5px;
+            }
+
+            .skill-slot:hover .skill-3d-front {
                 border-color: #888;
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
             }
 
             .key-bind {
@@ -166,10 +253,11 @@ export default class HUD {
                 right: 2px;
                 color: white;
                 font-size: 12px;
-                background: rgba(0, 0, 0, 0.5);
+                background: rgba(0, 0, 0, 0.7);
                 padding: 2px 4px;
                 border-radius: 3px;
                 z-index: 2;
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
             }
 
             .skill-icon {
@@ -179,6 +267,34 @@ export default class HUD {
                 background-position: center;
                 position: relative;
                 z-index: 1;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+            }
+
+            .skill-glow {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 5px;
+                background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0) 70%);
+                z-index: 0;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .skill-slot:hover .skill-glow {
+                opacity: 1;
+                animation: pulse-glow 2s infinite;
+            }
+
+            @keyframes pulse-glow {
+                0% { opacity: 0.3; }
+                50% { opacity: 0.7; }
+                100% { opacity: 0.3; }
             }
 
             .cooldown {
@@ -190,37 +306,44 @@ export default class HUD {
                 background: rgba(0, 0, 0, 0.7);
                 transition: height 0.1s;
                 z-index: 3;
+                border-radius: 0 0 5px 5px;
             }
 
             .skill-tooltip {
                 display: none;
                 position: absolute;
-                bottom: 60px;
+                bottom: 70px;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 200px;
-                background: rgba(0, 0, 0, 0.8);
+                width: 220px;
+                background: rgba(0, 0, 0, 0.9);
                 color: white;
-                padding: 10px;
-                border-radius: 5px;
+                padding: 12px;
+                border-radius: 8px;
                 z-index: 10;
                 pointer-events: none;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(100, 100, 100, 0.5);
             }
 
             .tooltip-name {
                 font-weight: bold;
-                margin-bottom: 5px;
+                margin-bottom: 8px;
                 color: #ffcc00;
+                text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+                font-size: 14px;
             }
 
             .tooltip-description {
                 font-size: 12px;
-                margin-bottom: 5px;
+                margin-bottom: 8px;
+                line-height: 1.4;
             }
 
             .tooltip-cooldown, .tooltip-mana {
                 font-size: 11px;
                 color: #aaa;
+                margin-top: 5px;
             }
 
             .score-display {
@@ -262,40 +385,85 @@ export default class HUD {
                     if (slot) {
                         // Update skill icon based on hero type and skill
                         const iconElement = slot.querySelector('.skill-icon');
+                        const glowElement = slot.querySelector('.skill-glow');
+                        const container = slot.querySelector('.skill-3d-container');
+                        
                         if (iconElement) {
                             // Set background color based on hero type
-                            let bgColor;
+                            let bgColor, glowColor, borderColor;
                             switch (data.hero.heroType) {
                                 case 'dragon-knight':
-                                    bgColor = '#ff6600'; // Orange-red for fire
+                                    bgColor = 'radial-gradient(circle, #ff8800 0%, #cc4400 100%)';
+                                    glowColor = 'rgba(255, 136, 0, 0.5)';
+                                    borderColor = '#ff6600';
                                     break;
                                 case 'crystal-maiden':
-                                    bgColor = '#88ccff'; // Light blue for ice
+                                    bgColor = 'radial-gradient(circle, #aaddff 0%, #0088cc 100%)';
+                                    glowColor = 'rgba(136, 204, 255, 0.5)';
+                                    borderColor = '#88ccff';
                                     break;
                                 case 'lina':
-                                    bgColor = '#ff3300'; // Bright red for fire
+                                    bgColor = 'radial-gradient(circle, #ff5500 0%, #cc0000 100%)';
+                                    glowColor = 'rgba(255, 51, 0, 0.5)';
+                                    borderColor = '#ff3300';
                                     break;
                                 case 'axe':
-                                    bgColor = '#cc0000'; // Dark red for blood
+                                    bgColor = 'radial-gradient(circle, #ff0000 0%, #880000 100%)';
+                                    glowColor = 'rgba(204, 0, 0, 0.5)';
+                                    borderColor = '#cc0000';
                                     break;
                                 default:
-                                    bgColor = '#888888'; // Gray default
+                                    bgColor = 'radial-gradient(circle, #aaaaaa 0%, #555555 100%)';
+                                    glowColor = 'rgba(136, 136, 136, 0.5)';
+                                    borderColor = '#888888';
                             }
                             
                             // Set icon background
-                            iconElement.style.backgroundColor = bgColor;
+                            iconElement.style.background = bgColor;
                             
-                            // Add skill name as text in the icon
-                            if (skill.name && !iconElement.textContent) {
+                            // Set glow color
+                            if (glowElement) {
+                                glowElement.style.boxShadow = `0 0 15px ${glowColor}`;
+                                glowElement.style.background = `radial-gradient(circle, ${glowColor} 0%, rgba(0,0,0,0) 70%)`;
+                            }
+                            
+                            // Set border color for 3D effect
+                            const frontFace = slot.querySelector('.skill-3d-front');
+                            if (frontFace) {
+                                frontFace.style.borderColor = borderColor;
+                            }
+                            
+                            // Add skill name and icon in the icon element
+                            if (skill.name && !iconElement.innerHTML) {
                                 const nameInitial = skill.name.charAt(0);
-                                iconElement.textContent = nameInitial;
-                                iconElement.style.display = 'flex';
-                                iconElement.style.justifyContent = 'center';
-                                iconElement.style.alignItems = 'center';
-                                iconElement.style.fontSize = '24px';
-                                iconElement.style.fontWeight = 'bold';
-                                iconElement.style.color = 'white';
-                                iconElement.style.textShadow = '1px 1px 2px black';
+                                
+                                // Create a more complex 3D-looking icon
+                                iconElement.innerHTML = `
+                                    <div class="skill-icon-inner">
+                                        <div class="skill-icon-symbol">${nameInitial}</div>
+                                        <div class="skill-icon-particles"></div>
+                                    </div>
+                                `;
+                                
+                                // Style the inner elements
+                                const innerIcon = iconElement.querySelector('.skill-icon-inner');
+                                const symbolElement = iconElement.querySelector('.skill-icon-symbol');
+                                
+                                if (innerIcon && symbolElement) {
+                                    innerIcon.style.width = '100%';
+                                    innerIcon.style.height = '100%';
+                                    innerIcon.style.display = 'flex';
+                                    innerIcon.style.justifyContent = 'center';
+                                    innerIcon.style.alignItems = 'center';
+                                    innerIcon.style.position = 'relative';
+                                    
+                                    symbolElement.style.fontSize = '28px';
+                                    symbolElement.style.fontWeight = 'bold';
+                                    symbolElement.style.color = 'white';
+                                    symbolElement.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5)';
+                                    symbolElement.style.zIndex = '2';
+                                    symbolElement.style.transform = 'translateZ(5px)';
+                                }
                             }
                         }
                         
