@@ -208,5 +208,46 @@ export default class HUD {
                 this.characterInfo.hero = this.hero;
             }
         }
+        
+        // Update skill points notification
+        this.updateSkillPointsNotification();
+    }
+    
+    // Add notification for available skill points
+    updateSkillPointsNotification() {
+        if (!this.hero || !this.hero.characterClass) return;
+        
+        const classInfoButton = document.getElementById('class-info-button');
+        if (!classInfoButton) return;
+        
+        // Remove existing notification if any
+        const existingNotification = classInfoButton.querySelector('.skill-points-indicator');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Add notification if skill points are available
+        if (this.hero.characterClass.skillPoints > 0) {
+            const notification = document.createElement('div');
+            notification.className = 'skill-points-indicator';
+            notification.textContent = this.hero.characterClass.skillPoints;
+            notification.style.position = 'absolute';
+            notification.style.top = '-8px';
+            notification.style.right = '-8px';
+            notification.style.backgroundColor = '#f8d000';
+            notification.style.color = '#000';
+            notification.style.borderRadius = '50%';
+            notification.style.width = '20px';
+            notification.style.height = '20px';
+            notification.style.display = 'flex';
+            notification.style.justifyContent = 'center';
+            notification.style.alignItems = 'center';
+            notification.style.fontWeight = 'bold';
+            notification.style.fontSize = '12px';
+            notification.style.animation = 'bounce 1s infinite alternate';
+            
+            classInfoButton.style.position = 'relative';
+            classInfoButton.appendChild(notification);
+        }
     }
 }

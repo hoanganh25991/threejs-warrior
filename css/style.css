@@ -692,8 +692,7 @@ body {
 #mouse-capture-toggle {
     position: fixed;
     top: 10px;
-    display: flex;
-    justify-content: center;
+    right: 10px;
 }
 
 #toggle-mouse-capture {

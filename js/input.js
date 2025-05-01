@@ -153,6 +153,9 @@ export class InputHandler {
     }
 
     updateKeyDisplay() {
+        if (!config.game.debug) {
+            return;
+        }
         // Create or update key display
         let keyDisplay = document.getElementById('key-display');
         if (!keyDisplay) {

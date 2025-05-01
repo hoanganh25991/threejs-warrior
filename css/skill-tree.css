@@ -1,0 +1,224 @@
+/* Skill Tree Visualization */
+.skill-tree-container {
+    width: 100%;
+    overflow: auto;
+    max-height: 500px;
+    padding: 20px;
+    background-color: rgba(30, 30, 30, 0.7);
+    border-radius: 8px;
+    margin-top: 15px;
+    border: 1px solid #444;
+}
+
+.skill-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.skill-tree-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    position: relative;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+/* Lines connecting skills */
+.skill-tree-connection {
+    position: absolute;
+    background-color: #444;
+    z-index: 0;
+    transition: background-color 0.3s ease;
+}
+
+.skill-tree-connection.active {
+    background-color: #f8d000;
+}
+
+/* Vertical connection */
+.skill-tree-connection.vertical {
+    width: 4px;
+    top: -20px;
+    height: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Horizontal connection */
+.skill-tree-connection.horizontal {
+    height: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.skill-node {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #333;
+    border: 3px solid #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-size: cover;
+    background-position: center;
+    margin: 10px;
+}
+
+.skill-node:hover {
+    transform: scale(1.1);
+    border-color: #f8d000;
+    box-shadow: 0 0 15px rgba(248, 208, 0, 0.5);
+}
+
+.skill-node.unlocked {
+    border-color: #4CAF50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
+
+.skill-node.available {
+    border-color: #f8d000;
+    animation: pulse 1.5s infinite alternate;
+}
+
+.skill-node.locked {
+    filter: grayscale(100%);
+    opacity: 0.7;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 5px rgba(248, 208, 0, 0.5); }
+    100% { box-shadow: 0 0 20px rgba(248, 208, 0, 0.8); }
+}
+
+.skill-icon {
+    width: 60%;
+    height: 60%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.skill-tooltip {
+    position: absolute;
+    width: 250px;
+    background-color: rgba(0, 0, 0, 0.9);
+    border: 1px solid #f8d000;
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    left: 90px;
+    top: 0;
+}
+
+.skill-node:hover .skill-tooltip {
+    opacity: 1;
+}
+
+.skill-tooltip h4 {
+    color: #f8d000;
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+}
+
+.skill-tooltip p {
+    color: #ccc;
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+}
+
+.skill-tooltip .skill-stats {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 8px;
+}
+
+.skill-tooltip .skill-requirements {
+    font-size: 0.8rem;
+    color: #ff6b6b;
+    margin-bottom: 8px;
+}
+
+.skill-tooltip .skill-requirements.met {
+    color: #4CAF50;
+}
+
+.skill-tooltip button {
+    background-color: #f8d000;
+    color: #000;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.skill-tooltip button:hover {
+    background-color: #ff6b00;
+}
+
+.skill-tooltip button:disabled {
+    background-color: #555;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* Skill points notification */
+.skill-points-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #f8d000;
+    color: #000;
+    font-weight: bold;
+    font-size: 0.8rem;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.2); }
+}
+
+/* Class-specific skill tree backgrounds */
+.skill-tree-container.warrior {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../assets/images/backgrounds/warrior-bg.jpg');
+    background-size: cover;
+}
+
+.skill-tree-container.mage {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../assets/images/backgrounds/mage-bg.jpg');
+    background-size: cover;
+}
+
+.skill-tree-container.rogue {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../assets/images/backgrounds/rogue-bg.jpg');
+    background-size: cover;
+}
+
+.skill-tree-container.paladin {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../assets/images/backgrounds/paladin-bg.jpg');
+    background-size: cover;
+}
