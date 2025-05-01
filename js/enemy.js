@@ -65,13 +65,18 @@ export class Enemy {
         
         // Add collision data to the mesh's userData
         this.mesh.userData.collisionType = "box";
-        this.mesh.userData.collisionRadius = 0.9; // Larger collision radius
+        this.mesh.userData.collisionRadius = 1.2; // Increased collision radius
         this.mesh.userData.collisionHeight = 1.5;
         this.mesh.userData.isEnemy = true; // Flag to identify as enemy
         
         // Create a collision box for the enemy
         const boundingBox = new THREE.Box3().setFromObject(this.mesh);
+        // Expand the box slightly to ensure no walking through
+        boundingBox.expandByScalar(0.1);
         this.mesh.userData.collisionBox = boundingBox;
+        
+        // Add a custom property to mark this as an enemy for collision detection
+        this.mesh.isEnemy = true;
         
         this.scene.add(this.mesh);
         

@@ -857,29 +857,41 @@ export default class Hero {
 
       // Check for collisions if collision detector is available
       if (window.collisionDetector) {
-        const collisionResult = window.collisionDetector.checkCollision(
-          this.group.position,
-          movement,
-          moveSpeed
-        );
-
-        if (collisionResult.canMove) {
-          // Only update X and Z position
-          this.group.position.x = collisionResult.newPosition.x;
-          this.group.position.z = collisionResult.newPosition.z;
+        // First, check for direct enemy collisions at the current position
+        // This is a more aggressive check to prevent walking through enemies
+        const directEnemyCollision = this.checkDirectEnemyCollision(newPosition);
+        
+        if (directEnemyCollision) {
+          // If we're about to walk into an enemy, don't move at all
+          if (config.game.debug) {
+            console.log("Direct enemy collision detected - preventing movement");
+          }
         } else {
-          // We hit a solid object, slide along it
-          const slideDirection = new THREE.Vector3(movement.z, 0, -movement.x).normalize();
-          const slideCollision = window.collisionDetector.checkCollision(
+          // No direct enemy collision, proceed with normal collision detection
+          const collisionResult = window.collisionDetector.checkCollision(
             this.group.position,
-            slideDirection,
-            moveSpeed * 0.5
+            movement,
+            moveSpeed
           );
 
-          if (slideCollision.canMove) {
-            // Only update X and Z position when sliding
-            this.group.position.x = slideCollision.newPosition.x;
-            this.group.position.z = slideCollision.newPosition.z;
+          if (collisionResult.canMove) {
+            // Only update X and Z position
+            this.group.position.x = collisionResult.newPosition.x;
+            this.group.position.z = collisionResult.newPosition.z;
+          } else {
+            // We hit a solid object, try to slide along it
+            const slideDirection = new THREE.Vector3(movement.z, 0, -movement.x).normalize();
+            const slideCollision = window.collisionDetector.checkCollision(
+              this.group.position,
+              slideDirection,
+              moveSpeed * 0.5
+            );
+
+            if (slideCollision.canMove) {
+              // Only update X and Z position when sliding
+              this.group.position.x = slideCollision.newPosition.x;
+              this.group.position.z = slideCollision.newPosition.z;
+            }
           }
         }
       } else {
@@ -888,6 +900,54 @@ export default class Hero {
         this.group.position.z = newPosition.z;
       }
     }
+  }
+
+  // Check for direct collisions with enemies
+  checkDirectEnemyCollision(newPosition) {
+    if (!window.collisionDetector || !window.collisionDetector.world || !window.collisionDetector.world.enemyManager) {
+      return false;
+    }
+    
+    const enemies = window.collisionDetector.world.enemyManager.enemies;
+    if (!enemies || enemies.length === 0) {
+      return false;
+    }
+    
+    // Create a sphere around the hero for collision detection
+    const heroRadius = 0.5; // Adjust based on hero size
+    const heroSphere = new THREE.Sphere(newPosition, heroRadius);
+    
+    // Check each enemy for collision
+    for (const enemy of enemies) {
+      if (!enemy.mesh) continue;
+      
+      // Use box collision for enemies if available
+      if (enemy.mesh.userData.collisionBox) {
+        // Update the collision box to match the current position
+        const box = new THREE.Box3().setFromObject(enemy.mesh);
+        
+        // Check if the hero sphere intersects with the enemy's box
+        if (box.intersectsSphere(heroSphere)) {
+          return true;
+        }
+      } else {
+        // Fallback to distance-based collision
+        // Calculate distance to enemy (horizontal only)
+        const dx = newPosition.x - enemy.mesh.position.x;
+        const dz = newPosition.z - enemy.mesh.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        // Enemy collision radius - increased to ensure no walking through
+        const enemyRadius = 1.2; // Further increased for better collision detection
+        
+        // Check if we're colliding with the enemy
+        if (distance < (heroRadius + enemyRadius)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
   }
 
   handleJumpAndFly(deltaTime, keys) {

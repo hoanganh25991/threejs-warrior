@@ -227,6 +227,9 @@ export class CollisionDetector {
                     const box = new THREE.Box3().setFromObject(enemy.mesh);
                     enemy.mesh.userData.collisionBox = box;
                     
+                    // Expand the box slightly to ensure no walking through
+                    box.expandByScalar(0.1);
+                    
                     // Check if the hero sphere intersects with the enemy's box
                     if (box.intersectsSphere(heroSphere)) {
                         collidingObject = {
@@ -243,33 +246,33 @@ export class CollisionDetector {
                         
                         break;
                     }
-                } else {
-                    // Fallback to distance-based collision if no box is defined
-                    // Calculate distance to enemy (horizontal only)
-                    const dx = newPosition.x - enemy.mesh.position.x;
-                    const dz = newPosition.z - enemy.mesh.position.z;
-                    const distance = Math.sqrt(dx * dx + dz * dz);
+                }
+                
+                // Always do distance-based collision as a backup
+                // Calculate distance to enemy (horizontal only)
+                const dx = newPosition.x - enemy.mesh.position.x;
+                const dz = newPosition.z - enemy.mesh.position.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                // Enemy collision radius (increased to ensure no walking through)
+                const enemyRadius = 1.2; // Further increased for better collision detection
+                
+                // Check if we're colliding with the enemy
+                if (distance < (heroRadius + enemyRadius)) {
+                    // Create a collision object for the enemy
+                    collidingObject = {
+                        type: 'enemy',
+                        mesh: enemy.mesh,
+                        isCollidable: true,
+                        isWalkable: false
+                    };
                     
-                    // Enemy collision radius (increased to ensure no walking through)
-                    const enemyRadius = 1.0; // Further increased for better collision detection
-                    
-                    // Check if we're colliding with the enemy
-                    if (distance < (heroRadius + enemyRadius)) {
-                        // Create a collision object for the enemy
-                        collidingObject = {
-                            type: 'enemy',
-                            mesh: enemy.mesh,
-                            isCollidable: true,
-                            isWalkable: false
-                        };
-                        
-                        // Debug logging if enabled
-                        if (this.debug) {
-                            console.log(`Distance collision with enemy detected at ${distance.toFixed(2)}`);
-                        }
-                        
-                        break;
+                    // Debug logging if enabled
+                    if (this.debug) {
+                        console.log(`Distance collision with enemy detected at ${distance.toFixed(2)}`);
                     }
+                    
+                    break;
                 }
             }
         }
@@ -388,6 +391,9 @@ export class CollisionDetector {
                         // Update the collision box to match the current position
                         const box = new THREE.Box3().setFromObject(enemy.mesh);
                         
+                        // Expand the box slightly to ensure no sliding through
+                        box.expandByScalar(0.1);
+                        
                         // Check if the slide sphere intersects with the enemy's box
                         if (box.intersectsSphere(slideHeroSphere)) {
                             canSlide = false;
@@ -399,27 +405,27 @@ export class CollisionDetector {
                             
                             break;
                         }
-                    } else {
-                        // Fallback to distance-based collision
-                        // Calculate distance to enemy (horizontal only)
-                        const dx = slidePosition.x - enemy.mesh.position.x;
-                        const dz = slidePosition.z - enemy.mesh.position.z;
-                        const distance = Math.sqrt(dx * dx + dz * dz);
+                    }
+                    
+                    // Always do distance-based collision as a backup
+                    // Calculate distance to enemy (horizontal only)
+                    const dx = slidePosition.x - enemy.mesh.position.x;
+                    const dz = slidePosition.z - enemy.mesh.position.z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+                    
+                    // Enemy collision radius - increased to ensure no sliding through
+                    const enemyRadius = 1.2; // Further increased for better collision detection
+                    
+                    // Check if sliding would collide with the enemy
+                    if (distance < (heroRadius + enemyRadius)) {
+                        canSlide = false;
                         
-                        // Enemy collision radius - increased to ensure no sliding through
-                        const enemyRadius = 1.0; // Further increased for better collision detection
-                        
-                        // Check if sliding would collide with the enemy
-                        if (distance < (heroRadius + enemyRadius)) {
-                            canSlide = false;
-                            
-                            // Debug logging if enabled
-                            if (this.debug) {
-                                console.log(`Slide distance collision with enemy detected at ${distance.toFixed(2)}`);
-                            }
-                            
-                            break;
+                        // Debug logging if enabled
+                        if (this.debug) {
+                            console.log(`Slide distance collision with enemy detected at ${distance.toFixed(2)}`);
                         }
+                        
+                        break;
                     }
                 }
             }
