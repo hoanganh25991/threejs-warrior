@@ -1,5 +1,5 @@
-import * as THREE from "https://unpkg.com/three@0.157.0/build/three.module.js";
-import { Sky as ThreeSky } from "https://unpkg.com/three@0.157.0/examples/jsm/objects/Sky.js";
+import * as THREE from 'three';
+import { Sky as ThreeSky } from "three/addons/objects/Sky.js";
 
 /**
  * Creates and adds atmospheric sky to the scene

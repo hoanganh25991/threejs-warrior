@@ -1,4 +1,4 @@
-import * as THREE from "https://unpkg.com/three@0.157.0/build/three.module.js";
+import * as THREE from 'three';
 
 /**
  * Creates and adds rocks to the scene
