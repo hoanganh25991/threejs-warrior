@@ -154,19 +154,31 @@ class Game {
     
     // Also add a direct click handler to the hero selection container
     const heroSelection = document.getElementById("hero-selection");
+    console.log("Hero selection container found:", heroSelection);
     if (heroSelection) {
+      // Add a visual indicator to the container
+      heroSelection.style.border = "5px solid blue";
+      
       heroSelection.addEventListener("click", (event) => {
+        console.log("Hero selection container clicked", event.target);
+        
         if (event.target.classList.contains("select-hero-btn")) {
           console.log("Hero button clicked via delegation:", event.target.getAttribute("data-hero"));
+          // alert("Hero button clicked via delegation: " + event.target.getAttribute("data-hero"));
           try {
             this.selectedHero = event.target.getAttribute("data-hero");
             console.log("Selected hero via delegation:", this.selectedHero);
             this.startGame();
           } catch (error) {
             console.error("Error in delegated hero selection:", error);
+            // alert("Error in delegated hero selection: " + error.message);
           }
+        } else {
+          console.log("Click was not on a hero button, but on:", event.target.tagName, event.target.className);
         }
       });
+    } else {
+      console.error("Hero selection container not found!");
     }
 
     // Hide loading screen
@@ -197,9 +209,13 @@ class Game {
       const newButton = button.cloneNode(true);
       button.parentNode.replaceChild(newButton, button);
       
+      // Add a visual indicator to show the button is clickable
+      newButton.style.border = "3px solid red";
+      
       // Add the click event listener
       newButton.addEventListener("click", (event) => {
         console.log("Hero button clicked:", event.target.getAttribute("data-hero"));
+        // alert("Hero button clicked: " + event.target.getAttribute("data-hero"));
         try {
           this.selectedHero = event.target.getAttribute("data-hero");
           console.log("Selected hero:", this.selectedHero);
@@ -207,6 +223,7 @@ class Game {
           console.log("startGame method called");
         } catch (error) {
           console.error("Error in hero selection:", error);
+          // alert("Error in hero selection: " + error.message);
         }
       });
     });
@@ -310,11 +327,12 @@ class Game {
 
   startGame() {
     console.log("startGame method started with hero:", this.selectedHero);
+    // alert("startGame method started with hero: " + this.selectedHero);
     
     // Validate that we have a selected hero
     if (!this.selectedHero) {
       console.error("No hero selected! Cannot start game.");
-      alert("Please select a hero to continue.");
+      // alert("Please select a hero to continue.");
       return;
     }
     
@@ -322,11 +340,15 @@ class Game {
       // Hide hero selection screen
       const heroSelection = document.getElementById("hero-selection");
       console.log("Hero selection element:", heroSelection);
+      // alert("Hero selection element found: " + (heroSelection ? "Yes" : "No"));
+      
       if (heroSelection) {
         heroSelection.classList.add("hidden");
         console.log("Hero selection hidden");
+        // alert("Hero selection hidden");
       } else {
         console.error("Hero selection element not found");
+        // alert("Hero selection element not found");
         // Create a fallback hero selection element if it doesn't exist
         const fallbackHeroSelection = document.createElement("div");
         fallbackHeroSelection.id = "hero-selection";

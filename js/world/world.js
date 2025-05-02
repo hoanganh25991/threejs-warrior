@@ -24,38 +24,44 @@ export default class World {
     this.rocks = [];
 
     // Add skybox (this should be first to be in the background)
-    this.skybox = new Skybox();
+    const skyboxObj = new Skybox();
+    this.skybox = skyboxObj;
     scene.add(this.skybox);
 
     // Add ground
-    this.ground = new Groud();
+    const groundObj = new Groud();
+    this.ground = groundObj;
     scene.add(this.ground);
 
     // Add water
-    this.water = new Water();
-    this.water.position.y = -5; // Place water at proper depth
-    this.water.position.z = -100; // Position water near castle
+    const waterObj = new Water();
+    this.water = waterObj;
+    // Water position is already set in the Water class
     scene.add(this.water);
 
     // Add sky (atmospheric sky)
-    this.sky = new Sky();
+    const skyObj = new Sky();
+    this.sky = skyObj;
     scene.add(this.sky);
 
     // Add mountains
     this.mountains = [];
     for (let i = 0; i < 5; i++) {
-      const mountain = new Moutain();
+      const mountainObj = new Moutain();
+      const mountain = mountainObj;
       this.mountains.push(mountain);
       scene.add(mountain);
     }
 
     // Add castle
-    this.castle = new Castle();
+    const castleObj = new Castle();
+    this.castle = castleObj;
     scene.add(this.castle);
 
     // Add trees
     for (let i = 0; i < 40; ++i) {
-      const tree = new Tree();
+      const treeObj = new Tree();
+      const tree = treeObj;
       scene.add(tree);
       this.interactiveObjects.push({
         mesh: tree,
@@ -67,7 +73,8 @@ export default class World {
 
     // Add rocks
     for (let i = 0; i < 30; ++i) {
-      const rock = new Rock();
+      const rockObj = new Rock();
+      const rock = rockObj;
       scene.add(rock);
       this.interactiveObjects.push({
         mesh: rock,
@@ -78,7 +85,8 @@ export default class World {
     }
 
     // Add stairs to castle
-    this.stairs = new Stairs();
+    const stairsObj = new Stairs();
+    this.stairs = stairsObj;
     this.stairs.position.z = -120;
     this.stairs.position.y = 0;
     scene.add(this.stairs);
@@ -90,7 +98,8 @@ export default class World {
     });
 
     // Add bridge
-    this.bridge = new Bridge();
+    const bridgeObj = new Bridge();
+    this.bridge = bridgeObj;
     this.bridge.position.z = -150;
     this.bridge.position.y = 5;
     scene.add(this.bridge);
