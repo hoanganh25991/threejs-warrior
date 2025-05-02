@@ -157,7 +157,7 @@ class Game {
     console.log("Hero selection container found:", heroSelection);
     if (heroSelection) {
       // Add a visual indicator to the container
-      heroSelection.style.border = "5px solid blue";
+      // heroSelection.style.border = "5px solid blue";
       
       heroSelection.addEventListener("click", (event) => {
         console.log("Hero selection container clicked", event.target);
@@ -210,7 +210,7 @@ class Game {
       button.parentNode.replaceChild(newButton, button);
       
       // Add a visual indicator to show the button is clickable
-      newButton.style.border = "3px solid red";
+      // newButton.style.border = "3px solid red";
       
       // Add the click event listener
       newButton.addEventListener("click", (event) => {
