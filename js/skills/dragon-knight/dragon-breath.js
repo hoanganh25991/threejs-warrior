@@ -10,10 +10,16 @@ export default class DragonBreath extends Skill {
         this.range = 10;
         this.duration = 2.0;
         this.width = 3;
-        this.particleCount = 80; // Increased particle count
+        this.particleCount = 40; // Reduced particle count for better performance
         this.damageType = 'fire';
         this.damageInterval = 0.2; // Apply damage every 0.2 seconds
         this.damageTimer = 0;
+        
+        // Performance settings
+        this.useGPUInstancing = true; // Enable GPU instancing for particles
+        this.useSimplifiedShaders = true; // Use simplified shaders for better performance
+        this.maxLights = 3; // Limit the number of dynamic lights
+        this.lightCount = 0; // Track current light count
         
         // Visual effect elements
         this.dragonHeadMesh = null;
@@ -22,6 +28,11 @@ export default class DragonBreath extends Skill {
         this.fireEmbers = [];
         this.flameWaves = [];
         this.heatDistortion = null;
+        
+        // Instanced meshes for particles
+        this.particleInstances = null;
+        this.particleInstanceCount = 0;
+        this.particleInstanceData = [];
     }
 
     getCooldownDuration() {
@@ -34,14 +45,21 @@ export default class DragonBreath extends Skill {
         origin.y += 1.2; // Position slightly above the hero
         const direction = this.hero.direction.clone();
         
+        // Initialize instanced particles if using GPU instancing
+        if (this.useGPUInstancing) {
+            this.initInstancedParticles();
+        }
+        
         // Create dragon head effect
         this.createDragonHead(origin, direction);
         
-        // Create flame cone
+        // Create flame cone with optimized shader
         this.createFlameCone(origin, direction);
         
-        // Create heat distortion effect
-        this.createHeatDistortion(origin, direction);
+        // Create heat distortion effect (simplified if needed)
+        if (!this.useSimplifiedShaders) {
+            this.createHeatDistortion(origin, direction);
+        }
         
         // Create fire ring at the hero's feet
         this.createFireRing(this.hero.group.position.clone());
@@ -69,8 +87,9 @@ export default class DragonBreath extends Skill {
             lifetime: this.duration,
             canHitMultiple: true, // Can hit multiple enemies
             onHit: (hitEnemies) => {
-                // Create additional effects on hit
-                hitEnemies.forEach(hit => {
+                // Create additional effects on hit (limit for performance)
+                const maxHitEffects = 3;
+                hitEnemies.slice(0, maxHitEffects).forEach(hit => {
                     this.createImpactEffect(hit.position);
                 });
             }
@@ -78,6 +97,58 @@ export default class DragonBreath extends Skill {
         
         // Reset damage timer
         this.damageTimer = 0;
+    }
+    
+    // Initialize instanced particles for better GPU performance
+    initInstancedParticles() {
+        // Clean up any existing instances
+        if (this.particleInstances) {
+            this.scene.remove(this.particleInstances);
+            this.particleInstances.geometry.dispose();
+            this.particleInstances.material.dispose();
+        }
+        
+        // Create a simple geometry for particles
+        const geometry = new THREE.SphereGeometry(0.15, 6, 4);
+        
+        // Create instanced material
+        const material = new THREE.MeshPhongMaterial({
+            color: 0xff6600,
+            emissive: 0xff4400,
+            emissiveIntensity: 0.8,
+            transparent: true,
+            opacity: 0.8,
+            flatShading: true
+        });
+        
+        // Create instanced mesh
+        this.particleInstances = new THREE.InstancedMesh(
+            geometry, 
+            material, 
+            this.particleCount * 2 // Allocate enough instances
+        );
+        
+        // Hide all instances initially
+        const matrix = new THREE.Matrix4();
+        matrix.makeScale(0, 0, 0);
+        
+        for (let i = 0; i < this.particleCount * 2; i++) {
+            this.particleInstances.setMatrixAt(i, matrix);
+            this.particleInstanceData[i] = {
+                active: false,
+                position: new THREE.Vector3(),
+                velocity: new THREE.Vector3(),
+                scale: 0,
+                life: 0,
+                maxLife: 0
+            };
+        }
+        
+        this.particleInstances.instanceMatrix.needsUpdate = true;
+        this.particleInstanceCount = 0;
+        
+        // Add to scene
+        this.scene.add(this.particleInstances);
     }
 
     createDragonHead(origin, direction) {
@@ -177,130 +248,128 @@ export default class DragonBreath extends Skill {
     }
     
     createFlameCone(origin, direction) {
-        // Create a cone geometry for the flame
-        const coneGeometry = new THREE.ConeGeometry(this.width / 2, this.range, 16, 8);
+        // Create a cone geometry for the flame (reduced segments for better performance)
+        const coneGeometry = new THREE.ConeGeometry(this.width / 2, this.range, 12, 6);
         coneGeometry.rotateX(Math.PI / 2); // Rotate to point forward
         
-        // Create a custom shader material for the flame effect
-        const flameMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                color1: { value: new THREE.Color(0xff4400) }, // Orange-red
-                color2: { value: new THREE.Color(0xff9900) }  // Yellow-orange
-            },
-            vertexShader: `
-                varying vec2 vUv;
-                varying vec3 vPosition;
-                
-                void main() {
-                    vUv = uv;
-                    vPosition = position;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                uniform vec3 color1;
-                uniform vec3 color2;
-                varying vec2 vUv;
-                varying vec3 vPosition;
-                
-                // Simplex noise function
-                vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-                vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-                vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-                vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-                
-                float snoise(vec3 v) {
-                    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-                    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+        // Choose between optimized or full-quality shader
+        let flameMaterial;
+        
+        if (this.useSimplifiedShaders) {
+            // Simplified shader for better performance
+            flameMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    color1: { value: new THREE.Color(0xff4400) }, // Orange-red
+                    color2: { value: new THREE.Color(0xff9900) }  // Yellow-orange
+                },
+                vertexShader: `
+                    varying vec2 vUv;
                     
-                    // First corner
-                    vec3 i  = floor(v + dot(v, C.yyy));
-                    vec3 x0 = v - i + dot(i, C.xxx);
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    varying vec2 vUv;
                     
-                    // Other corners
-                    vec3 g = step(x0.yzx, x0.xyz);
-                    vec3 l = 1.0 - g;
-                    vec3 i1 = min(g.xyz, l.zxy);
-                    vec3 i2 = max(g.xyz, l.zxy);
+                    // Fast pseudo-random function
+                    float rand(vec2 co) {
+                        return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+                    }
                     
-                    vec3 x1 = x0 - i1 + C.xxx;
-                    vec3 x2 = x0 - i2 + C.yyy;
-                    vec3 x3 = x0 - D.yyy;
-                    
-                    // Permutations
-                    i = mod289(i);
-                    vec4 p = permute(permute(permute(
-                        i.z + vec4(0.0, i1.z, i2.z, 1.0))
-                        + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-                        + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                    void main() {
+                        // Simple noise based on UV and time
+                        float noise = rand(vUv + time * 0.1) * 0.5 + 0.5;
                         
-                    // Gradients
-                    float n_ = 0.142857142857;
-                    vec3 ns = n_ * D.wyz - D.xzx;
+                        // Mix colors based on noise and position
+                        vec3 color = mix(color1, color2, noise);
+                        
+                        // Fade out at the edges and tip
+                        float edge = 1.0 - length(vUv - vec2(0.5, 0.5)) * 1.5;
+                        float tip = 1.0 - vUv.y;
+                        
+                        // Combine for final opacity
+                        float opacity = edge * tip * 0.8;
+                        
+                        // Add simple flickering
+                        opacity *= 0.7 + 0.3 * sin(time * 10.0);
+                        
+                        gl_FragColor = vec4(color, opacity);
+                    }
+                `,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+        } else {
+            // Full quality shader with optimized simplex noise
+            flameMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    color1: { value: new THREE.Color(0xff4400) }, // Orange-red
+                    color2: { value: new THREE.Color(0xff9900) }  // Yellow-orange
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    varying vec3 vPosition;
                     
-                    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                    void main() {
+                        vUv = uv;
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    varying vec2 vUv;
+                    varying vec3 vPosition;
                     
-                    vec4 x_ = floor(j * ns.z);
-                    vec4 y_ = floor(j - 7.0 * x_);
+                    // Optimized noise function (faster than full simplex)
+                    float noise(vec3 p) {
+                        vec3 i = floor(p);
+                        vec3 f = fract(p);
+                        f = f*f*(3.0-2.0*f);
+                        
+                        vec2 uv = (i.xy+vec2(37.0,17.0)*i.z) + f.xy;
+                        vec2 rg = vec2(
+                            sin(uv.x * 0.1 + time),
+                            sin(uv.y * 0.1 - time)
+                        ) * 0.5 + 0.5;
+                        return mix(rg.x, rg.y, f.z);
+                    }
                     
-                    vec4 x = x_ *ns.x + ns.yyyy;
-                    vec4 y = y_ *ns.x + ns.yyyy;
-                    vec4 h = 1.0 - abs(x) - abs(y);
-                    
-                    vec4 b0 = vec4(x.xy, y.xy);
-                    vec4 b1 = vec4(x.zw, y.zw);
-                    
-                    vec4 s0 = floor(b0)*2.0 + 1.0;
-                    vec4 s1 = floor(b1)*2.0 + 1.0;
-                    vec4 sh = -step(h, vec4(0.0));
-                    
-                    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-                    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-                    
-                    vec3 p0 = vec3(a0.xy, h.x);
-                    vec3 p1 = vec3(a0.zw, h.y);
-                    vec3 p2 = vec3(a1.xy, h.z);
-                    vec3 p3 = vec3(a1.zw, h.w);
-                    
-                    // Normalise gradients
-                    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-                    p0 *= norm.x;
-                    p1 *= norm.y;
-                    p2 *= norm.z;
-                    p3 *= norm.w;
-                    
-                    // Mix final noise value
-                    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-                    m = m * m;
-                    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-                }
-                
-                void main() {
-                    // Create noise based on position and time
-                    float noise = snoise(vec3(vPosition.x * 2.0, vPosition.y * 2.0, vPosition.z * 2.0 + time * 3.0));
-                    
-                    // Mix colors based on noise and position
-                    vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
-                    
-                    // Fade out at the edges and tip
-                    float edge = 1.0 - length(vUv - vec2(0.5, 0.5)) * 1.5;
-                    float tip = 1.0 - vUv.y;
-                    
-                    // Combine for final opacity
-                    float opacity = edge * tip * (0.8 + noise * 0.2);
-                    
-                    // Add flickering
-                    opacity *= 0.7 + 0.3 * sin(time * 20.0 + vPosition.x * 10.0);
-                    
-                    gl_FragColor = vec4(color, opacity);
-                }
-            `,
-            transparent: true,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        });
+                    void main() {
+                        // Create noise based on position and time (simplified)
+                        float noise = noise(vec3(vPosition.x * 1.5, vPosition.y * 1.5, vPosition.z * 1.5 + time * 2.0));
+                        
+                        // Mix colors based on noise and position
+                        vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
+                        
+                        // Fade out at the edges and tip
+                        float edge = 1.0 - length(vUv - vec2(0.5, 0.5)) * 1.5;
+                        float tip = 1.0 - vUv.y;
+                        
+                        // Combine for final opacity
+                        float opacity = edge * tip * (0.8 + noise * 0.2);
+                        
+                        // Add flickering (simplified)
+                        opacity *= 0.7 + 0.3 * sin(time * 10.0);
+                        
+                        gl_FragColor = vec4(color, opacity);
+                    }
+                `,
+                transparent: true,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+        }
         
         // Create the flame cone mesh
         this.flameCone = new THREE.Mesh(coneGeometry, flameMaterial);
@@ -312,8 +381,10 @@ export default class DragonBreath extends Skill {
         // Add to scene
         this.scene.add(this.flameCone);
         
-        // Animate the flame
+        // Use a more efficient animation approach with RAF management
         const startTime = Date.now();
+        let animationFrameId = null;
+        
         const animateFlame = () => {
             if (!this.flameCone) return;
             
@@ -321,25 +392,29 @@ export default class DragonBreath extends Skill {
             this.flameCone.material.uniforms.time.value = elapsed;
             
             if (elapsed < this.duration) {
-                requestAnimationFrame(animateFlame);
+                animationFrameId = requestAnimationFrame(animateFlame);
             } else {
                 // Remove the flame cone after duration
                 this.scene.remove(this.flameCone);
                 this.flameCone.geometry.dispose();
                 this.flameCone.material.dispose();
                 this.flameCone = null;
+                animationFrameId = null;
             }
         };
         
-        animateFlame();
+        animationFrameId = requestAnimationFrame(animateFlame);
+        
+        // Store the animation frame ID for proper cleanup
+        this.flameCone.userData.animationFrameId = animationFrameId;
     }
     
     createHeatDistortion(origin, direction) {
-        // Create a plane for the heat distortion effect
-        const planeGeometry = new THREE.PlaneGeometry(this.width * 1.5, this.range * 1.2, 20, 20);
+        // Create a plane for the heat distortion effect (reduced segments)
+        const planeGeometry = new THREE.PlaneGeometry(this.width * 1.5, this.range * 1.2, 10, 10);
         planeGeometry.rotateX(-Math.PI / 2); // Rotate to be horizontal
         
-        // Create a custom shader material for heat distortion
+        // Create a simplified shader material for heat distortion
         const heatMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 }
@@ -357,8 +432,8 @@ export default class DragonBreath extends Skill {
                 varying vec2 vUv;
                 
                 void main() {
-                    // Create heat distortion pattern
-                    float distortion = sin(vUv.x * 20.0 + time * 5.0) * sin(vUv.y * 20.0 + time * 3.0) * 0.1;
+                    // Create simplified heat distortion pattern
+                    float distortion = sin(vUv.x * 10.0 + time * 3.0) * sin(vUv.y * 10.0 + time * 2.0) * 0.1;
                     
                     // Fade out at edges
                     float edge = 1.0 - length(vUv - vec2(0.5, 0.5)) * 2.0;
@@ -367,13 +442,14 @@ export default class DragonBreath extends Skill {
                     // Fade out based on y position (distance from origin)
                     float fadeY = 1.0 - vUv.y;
                     
-                    float opacity = edge * fadeY * 0.3 * (0.5 + distortion);
+                    float opacity = edge * fadeY * 0.2 * (0.5 + distortion);
                     
                     gl_FragColor = vec4(1.0, 0.6, 0.2, opacity);
                 }
             `,
             transparent: true,
-            depthWrite: false
+            depthWrite: false,
+            blending: THREE.AdditiveBlending // Use additive blending for better performance
         });
         
         // Create the heat distortion mesh
@@ -389,8 +465,10 @@ export default class DragonBreath extends Skill {
         // Add to scene
         this.scene.add(this.heatDistortion);
         
-        // Animate the heat distortion
+        // Animate the heat distortion with better RAF management
         const startTime = Date.now();
+        let animationFrameId = null;
+        
         const animateHeat = () => {
             if (!this.heatDistortion) return;
             
@@ -398,31 +476,36 @@ export default class DragonBreath extends Skill {
             this.heatDistortion.material.uniforms.time.value = elapsed;
             
             if (elapsed < this.duration) {
-                requestAnimationFrame(animateHeat);
+                animationFrameId = requestAnimationFrame(animateHeat);
             } else {
                 // Remove after duration
                 this.scene.remove(this.heatDistortion);
                 this.heatDistortion.geometry.dispose();
                 this.heatDistortion.material.dispose();
                 this.heatDistortion = null;
+                animationFrameId = null;
             }
         };
         
-        animateHeat();
+        animationFrameId = requestAnimationFrame(animateHeat);
+        
+        // Store the animation frame ID for proper cleanup
+        if (this.heatDistortion) {
+            this.heatDistortion.userData.animationFrameId = animationFrameId;
+        }
     }
     
     createFireRing(position) {
-        // Create a ring geometry
-        const ringGeometry = new THREE.TorusGeometry(1.5, 0.3, 16, 32);
+        // Create a ring geometry with reduced segments
+        const ringGeometry = new THREE.TorusGeometry(1.5, 0.3, 12, 24);
         ringGeometry.rotateX(Math.PI / 2); // Lay flat on the ground
         
         // Create a material with fire texture
-        const ringMaterial = new THREE.MeshPhongMaterial({
+        const ringMaterial = new THREE.MeshBasicMaterial({
             color: 0xff6600,
-            emissive: 0xff4400,
-            emissiveIntensity: 0.8,
             transparent: true,
-            opacity: 0.7
+            opacity: 0.7,
+            side: THREE.DoubleSide
         });
         
         // Create the ring mesh
@@ -433,15 +516,20 @@ export default class DragonBreath extends Skill {
         // Add to scene
         this.scene.add(this.fireRing);
         
-        // Add a point light in the center of the ring
-        const ringLight = new THREE.PointLight(0xff6600, 1, 3);
-        ringLight.position.copy(position);
-        ringLight.position.y += 0.5;
-        this.scene.add(ringLight);
-        this.fireRing.userData.light = ringLight;
+        // Add a point light in the center of the ring (only if we haven't reached max lights)
+        if (this.lightCount < this.maxLights) {
+            const ringLight = new THREE.PointLight(0xff6600, 1, 3);
+            ringLight.position.copy(position);
+            ringLight.position.y += 0.5;
+            this.scene.add(ringLight);
+            this.fireRing.userData.light = ringLight;
+            this.lightCount++;
+        }
         
-        // Animate the fire ring
+        // Animate the fire ring with better RAF management
         const startTime = Date.now();
+        let animationFrameId = null;
+        
         const animateRing = () => {
             if (!this.fireRing) return;
             
@@ -455,8 +543,8 @@ export default class DragonBreath extends Skill {
             // Fade out
             this.fireRing.material.opacity = 0.7 * (1 - progress);
             
-            // Rotate
-            this.fireRing.rotation.z += 0.05;
+            // Rotate (reduced rotation speed)
+            this.fireRing.rotation.z += 0.03;
             
             // Update light intensity
             if (this.fireRing.userData.light) {
@@ -464,32 +552,42 @@ export default class DragonBreath extends Skill {
             }
             
             if (progress < 1) {
-                requestAnimationFrame(animateRing);
+                animationFrameId = requestAnimationFrame(animateRing);
             } else {
                 // Remove after duration
                 this.scene.remove(this.fireRing);
                 if (this.fireRing.userData.light) {
                     this.scene.remove(this.fireRing.userData.light);
+                    this.lightCount--;
                 }
                 this.fireRing.geometry.dispose();
                 this.fireRing.material.dispose();
                 this.fireRing = null;
+                animationFrameId = null;
             }
         };
         
-        animateRing();
+        animationFrameId = requestAnimationFrame(animateRing);
+        
+        // Store the animation frame ID for proper cleanup
+        if (this.fireRing) {
+            this.fireRing.userData.animationFrameId = animationFrameId;
+        }
     }
     
     createFlameWave(origin, direction) {
-        // Create a wave that travels along the ground
-        const waveGeometry = new THREE.PlaneGeometry(this.width, 1, 10, 1);
+        // Limit the number of flame waves for performance
+        if (this.flameWaves.length >= 2) {
+            return; // Don't create more than 2 waves at a time
+        }
+        
+        // Create a wave that travels along the ground (simplified geometry)
+        const waveGeometry = new THREE.PlaneGeometry(this.width, 1, 4, 1);
         waveGeometry.rotateX(-Math.PI / 2); // Lay flat
         
-        // Create a material for the flame wave
-        const waveMaterial = new THREE.MeshPhongMaterial({
+        // Create a material for the flame wave (using BasicMaterial for better performance)
+        const waveMaterial = new THREE.MeshBasicMaterial({
             color: 0xff9900,
-            emissive: 0xff6600,
-            emissiveIntensity: 1,
             transparent: true,
             opacity: 0.8,
             side: THREE.DoubleSide
@@ -507,8 +605,10 @@ export default class DragonBreath extends Skill {
         this.scene.add(wave);
         this.flameWaves.push(wave);
         
-        // Animate the wave
+        // Animate the wave with better RAF management
         const startTime = Date.now();
+        let animationFrameId = null;
+        
         const animateWave = () => {
             if (!wave || !this.flameWaves.includes(wave)) return;
             
@@ -521,14 +621,18 @@ export default class DragonBreath extends Skill {
                     direction.clone().multiplyScalar(progress * this.range)
                 );
                 wave.position.copy(newPos);
-                wave.position.y = 0.1 + Math.sin(elapsed * 10) * 0.1; // Add bobbing motion
+                
+                // Simplified bobbing motion (less frequent calculations)
+                if (elapsed % 0.1 < 0.05) {
+                    wave.position.y = 0.1 + Math.sin(elapsed * 5) * 0.1;
+                }
                 
                 // Scale based on distance
                 const scaleX = 1 + progress * 2;
                 const scaleZ = 1 + progress * 0.5;
                 wave.scale.set(scaleX, 1, scaleZ);
                 
-                requestAnimationFrame(animateWave);
+                animationFrameId = requestAnimationFrame(animateWave);
             } else {
                 // Remove wave
                 this.scene.remove(wave);
@@ -538,15 +642,19 @@ export default class DragonBreath extends Skill {
                 if (index > -1) {
                     this.flameWaves.splice(index, 1);
                 }
+                animationFrameId = null;
             }
         };
         
-        animateWave();
+        animationFrameId = requestAnimationFrame(animateWave);
         
-        // Create additional waves at intervals
-        if (this.duration > 0.5) {
+        // Store the animation frame ID for proper cleanup
+        wave.userData.animationFrameId = animationFrameId;
+        
+        // Create additional waves at intervals (only if we don't have too many already)
+        if (this.duration > 0.5 && this.flameWaves.length < 2) {
             setTimeout(() => {
-                if (this.isActive) {
+                if (this.isActive && this.flameWaves.length < 2) {
                     this.createFlameWave(
                         this.hero.group.position.clone().add(new THREE.Vector3(0, 1.2, 0)),
                         this.hero.direction.clone()
@@ -557,8 +665,16 @@ export default class DragonBreath extends Skill {
     }
     
     createBreathParticles(origin, direction) {
-        // Create main breath particles
-        for (let i = 0; i < this.particleCount; i++) {
+        // Use GPU instancing if enabled
+        if (this.useGPUInstancing && this.particleInstances) {
+            this.createInstancedBreathParticles(origin, direction);
+            return;
+        }
+        
+        // Create main breath particles (traditional method as fallback)
+        const particleCount = Math.floor(this.particleCount * 0.7); // Reduce count for better performance
+        
+        for (let i = 0; i < particleCount; i++) {
             // Calculate random angle within cone
             const angle = (Math.random() - 0.5) * this.width;
             const particleDir = direction.clone()
@@ -572,21 +688,21 @@ export default class DragonBreath extends Skill {
                 particleDir.clone().multiplyScalar(distance)
             );
             
-            // Randomize particle type
-            const particleType = Math.floor(Math.random() * 5);
+            // Simplify particle types for better performance
+            const particleType = Math.floor(Math.random() * 3); // Reduced variety
             
             // Create particle with fire color
             const hue = 0.05 + Math.random() * 0.05; // Orange-red hue
             const color = new THREE.Color().setHSL(hue, 1, 0.5 + Math.random() * 0.5);
             
             // Create particle with different sizes
-            const size = 0.1 + Math.random() * 0.3;
+            const size = 0.1 + Math.random() * 0.2;
             
             // Create particle with random lifetime
-            const life = 0.5 + Math.random() * 1.5;
+            const life = 0.5 + Math.random() * 1.0;
             
-            // Create particle with light for some particles
-            const addLight = Math.random() < 0.1; // 10% chance to add light
+            // Create particle with light for some particles (limit lights)
+            const addLight = this.lightCount < this.maxLights && Math.random() < 0.05; // 5% chance to add light
             
             const particle = this.createParticle(
                 position,
@@ -599,6 +715,10 @@ export default class DragonBreath extends Skill {
                     noGravity: Math.random() < 0.7 // 70% chance to have no gravity
                 }
             );
+            
+            if (addLight) {
+                this.lightCount++;
+            }
             
             // Add forward velocity in cone shape with some variation
             particle.velocity.copy(particleDir)
@@ -614,9 +734,108 @@ export default class DragonBreath extends Skill {
         }
     }
     
+    // Create breath particles using GPU instancing for better performance
+    createInstancedBreathParticles(origin, direction) {
+        // Reset instance matrix if needed
+        if (!this.particleInstances) return;
+        
+        const matrix = new THREE.Matrix4();
+        const quaternion = new THREE.Quaternion();
+        const color = new THREE.Color();
+        
+        // Create particles
+        for (let i = 0; i < this.particleCount; i++) {
+            // Find an available instance slot
+            let instanceIndex = -1;
+            for (let j = 0; j < this.particleInstanceData.length; j++) {
+                if (!this.particleInstanceData[j].active) {
+                    instanceIndex = j;
+                    break;
+                }
+            }
+            
+            // Skip if no slots available
+            if (instanceIndex === -1) continue;
+            
+            // Calculate random angle within cone
+            const angle = (Math.random() - 0.5) * this.width;
+            const particleDir = direction.clone()
+                .applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+            
+            // Calculate random distance from origin
+            const distance = Math.random() * 2;
+            
+            // Calculate position
+            const position = origin.clone().add(
+                particleDir.clone().multiplyScalar(distance)
+            );
+            
+            // Set random size
+            const size = 0.1 + Math.random() * 0.2;
+            
+            // Set random lifetime
+            const life = 0.5 + Math.random() * 1.0;
+            
+            // Set random rotation
+            quaternion.setFromAxisAngle(
+                new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(),
+                Math.random() * Math.PI * 2
+            );
+            
+            // Set velocity
+            const velocity = particleDir.clone().multiplyScalar(8 + Math.random() * 7);
+            velocity.x += (Math.random() - 0.5) * 3;
+            velocity.y += (Math.random() - 0.5) * 3;
+            velocity.z += (Math.random() - 0.5) * 3;
+            
+            // Update instance data
+            this.particleInstanceData[instanceIndex] = {
+                active: true,
+                position: position.clone(),
+                velocity: velocity,
+                scale: size,
+                rotation: quaternion.clone(),
+                life: life,
+                maxLife: life,
+                noGravity: Math.random() < 0.7
+            };
+            
+            // Set matrix
+            matrix.compose(
+                position,
+                quaternion,
+                new THREE.Vector3(size, size, size)
+            );
+            
+            // Apply to instance
+            this.particleInstances.setMatrixAt(instanceIndex, matrix);
+            
+            // Set color (orange-red variations)
+            const hue = 0.05 + Math.random() * 0.05;
+            color.setHSL(hue, 1, 0.5 + Math.random() * 0.5);
+            this.particleInstances.setColorAt(instanceIndex, color);
+        }
+        
+        // Update instance matrices
+        this.particleInstances.instanceMatrix.needsUpdate = true;
+        
+        // Update instance colors if available
+        if (this.particleInstances.instanceColor) {
+            this.particleInstances.instanceColor.needsUpdate = true;
+        }
+    }
+    
     createImpactEffect(position) {
-        // Create a burst of particles at impact point
-        for (let i = 0; i < 15; i++) {
+        // Create a burst of particles at impact point (reduced count)
+        const particleCount = 8; // Reduced from 15
+        
+        // Use instanced particles if available
+        if (this.useGPUInstancing && this.particleInstances) {
+            this.createInstancedImpactEffect(position);
+            return;
+        }
+        
+        for (let i = 0; i < particleCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const radius = Math.random() * 0.5;
             
@@ -630,13 +849,20 @@ export default class DragonBreath extends Skill {
             const hue = 0.05 + Math.random() * 0.05;
             const color = new THREE.Color().setHSL(hue, 1, 0.5 + Math.random() * 0.5);
             
+            // Only add light if we haven't reached the limit
+            const addLight = this.lightCount < this.maxLights && Math.random() < 0.1;
+            
             const particle = this.createParticle(
                 particlePos,
                 color,
                 0.1 + Math.random() * 0.2,
                 0.3 + Math.random() * 0.5,
-                { addLight: Math.random() < 0.2 }
+                { addLight: addLight }
             );
+            
+            if (addLight) {
+                this.lightCount++;
+            }
             
             // Add outward velocity
             const outDirection = new THREE.Vector3(
@@ -648,12 +874,10 @@ export default class DragonBreath extends Skill {
             particle.velocity.copy(outDirection.multiplyScalar(2 + Math.random() * 3));
         }
         
-        // Create a small explosion effect
-        const explosionGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-        const explosionMaterial = new THREE.MeshPhongMaterial({
+        // Create a small explosion effect (simplified geometry)
+        const explosionGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const explosionMaterial = new THREE.MeshBasicMaterial({
             color: 0xff9900,
-            emissive: 0xff6600,
-            emissiveIntensity: 1,
             transparent: true,
             opacity: 0.8
         });
@@ -662,13 +886,19 @@ export default class DragonBreath extends Skill {
         explosion.position.copy(position);
         this.scene.add(explosion);
         
-        // Add a point light
-        const light = new THREE.PointLight(0xff6600, 2, 3);
-        light.position.copy(position);
-        this.scene.add(light);
+        // Add a point light (only if we haven't reached the limit)
+        let light = null;
+        if (this.lightCount < this.maxLights) {
+            light = new THREE.PointLight(0xff6600, 2, 3);
+            light.position.copy(position);
+            this.scene.add(light);
+            this.lightCount++;
+        }
         
-        // Animate explosion
+        // Animate explosion with better RAF management
         const startTime = Date.now();
+        let animationFrameId = null;
+        
         const animateExplosion = () => {
             const elapsed = (Date.now() - startTime) / 1000;
             const progress = elapsed / 0.3; // 0.3 second animation
@@ -680,19 +910,169 @@ export default class DragonBreath extends Skill {
                 explosion.material.opacity = 0.8 * (1 - progress);
                 
                 // Reduce light intensity
-                light.intensity = 2 * (1 - progress);
+                if (light) {
+                    light.intensity = 2 * (1 - progress);
+                }
                 
-                requestAnimationFrame(animateExplosion);
+                animationFrameId = requestAnimationFrame(animateExplosion);
             } else {
                 // Remove explosion
                 this.scene.remove(explosion);
-                this.scene.remove(light);
+                if (light) {
+                    this.scene.remove(light);
+                    this.lightCount--;
+                }
                 explosion.geometry.dispose();
                 explosion.material.dispose();
+                animationFrameId = null;
             }
         };
         
-        animateExplosion();
+        animationFrameId = requestAnimationFrame(animateExplosion);
+    }
+    
+    // Create impact effect using instanced particles
+    createInstancedImpactEffect(position) {
+        if (!this.particleInstances) return;
+        
+        const matrix = new THREE.Matrix4();
+        const quaternion = new THREE.Quaternion();
+        const color = new THREE.Color();
+        const particleCount = 8;
+        
+        for (let i = 0; i < particleCount; i++) {
+            // Find an available instance slot
+            let instanceIndex = -1;
+            for (let j = 0; j < this.particleInstanceData.length; j++) {
+                if (!this.particleInstanceData[j].active) {
+                    instanceIndex = j;
+                    break;
+                }
+            }
+            
+            // Skip if no slots available
+            if (instanceIndex === -1) continue;
+            
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 0.5;
+            
+            const particlePos = new THREE.Vector3(
+                position.x + Math.cos(angle) * radius,
+                position.y + Math.random() * 1,
+                position.z + Math.sin(angle) * radius
+            );
+            
+            // Set random size
+            const size = 0.1 + Math.random() * 0.2;
+            
+            // Set random lifetime
+            const life = 0.3 + Math.random() * 0.5;
+            
+            // Set random rotation
+            quaternion.setFromAxisAngle(
+                new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(),
+                Math.random() * Math.PI * 2
+            );
+            
+            // Set outward velocity
+            const outDirection = new THREE.Vector3(
+                Math.cos(angle),
+                0.5 + Math.random(),
+                Math.sin(angle)
+            );
+            const velocity = outDirection.multiplyScalar(2 + Math.random() * 3);
+            
+            // Update instance data
+            this.particleInstanceData[instanceIndex] = {
+                active: true,
+                position: particlePos.clone(),
+                velocity: velocity,
+                scale: size,
+                rotation: quaternion.clone(),
+                life: life,
+                maxLife: life,
+                noGravity: false
+            };
+            
+            // Set matrix
+            matrix.compose(
+                particlePos,
+                quaternion,
+                new THREE.Vector3(size, size, size)
+            );
+            
+            // Apply to instance
+            this.particleInstances.setMatrixAt(instanceIndex, matrix);
+            
+            // Set color (orange-red variations)
+            const hue = 0.05 + Math.random() * 0.05;
+            color.setHSL(hue, 1, 0.5 + Math.random() * 0.5);
+            this.particleInstances.setColorAt(instanceIndex, color);
+        }
+        
+        // Update instance matrices
+        this.particleInstances.instanceMatrix.needsUpdate = true;
+        
+        // Update instance colors if available
+        if (this.particleInstances.instanceColor) {
+            this.particleInstances.instanceColor.needsUpdate = true;
+        }
+        
+        // Create a small explosion effect
+        const explosionGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+        const explosionMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff9900,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
+        explosion.position.copy(position);
+        this.scene.add(explosion);
+        
+        // Add a point light (only if we haven't reached the limit)
+        let light = null;
+        if (this.lightCount < this.maxLights) {
+            light = new THREE.PointLight(0xff6600, 2, 3);
+            light.position.copy(position);
+            this.scene.add(light);
+            this.lightCount++;
+        }
+        
+        // Animate explosion
+        const startTime = Date.now();
+        let animationFrameId = null;
+        
+        const animateExplosion = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const progress = elapsed / 0.3; // 0.3 second animation
+            
+            if (progress < 1) {
+                // Scale up and fade out
+                const scale = 1 + progress * 2;
+                explosion.scale.set(scale, scale, scale);
+                explosion.material.opacity = 0.8 * (1 - progress);
+                
+                // Reduce light intensity
+                if (light) {
+                    light.intensity = 2 * (1 - progress);
+                }
+                
+                animationFrameId = requestAnimationFrame(animateExplosion);
+            } else {
+                // Remove explosion
+                this.scene.remove(explosion);
+                if (light) {
+                    this.scene.remove(light);
+                    this.lightCount--;
+                }
+                explosion.geometry.dispose();
+                explosion.material.dispose();
+                animationFrameId = null;
+            }
+        };
+        
+        animationFrameId = requestAnimationFrame(animateExplosion);
     }
 
     updateEffect(delta) {
@@ -728,6 +1108,11 @@ export default class DragonBreath extends Skill {
             }
         }
         
+        // Update instanced particles if using GPU instancing
+        if (this.useGPUInstancing && this.particleInstances) {
+            this.updateInstancedParticles(delta);
+        }
+        
         // Update damage timer
         this.damageTimer += delta;
         
@@ -740,14 +1125,76 @@ export default class DragonBreath extends Skill {
         }
     }
     
+    // Update instanced particles for better GPU performance
+    updateInstancedParticles(delta) {
+        if (!this.particleInstances) return;
+        
+        const matrix = new THREE.Matrix4();
+        const position = new THREE.Vector3();
+        const quaternion = new THREE.Quaternion();
+        const scale = new THREE.Vector3();
+        
+        // Update each active particle
+        for (let i = 0; i < this.particleInstanceData.length; i++) {
+            const particle = this.particleInstanceData[i];
+            if (!particle || !particle.active) continue;
+            
+            // Update life
+            particle.life -= delta;
+            
+            // If particle is dead, deactivate it
+            if (particle.life <= 0) {
+                particle.active = false;
+                
+                // Hide the particle by scaling to 0
+                matrix.makeScale(0, 0, 0);
+                this.particleInstances.setMatrixAt(i, matrix);
+                continue;
+            }
+            
+            // Update position based on velocity
+            particle.position.addScaledVector(particle.velocity, delta);
+            
+            // Apply gravity if not specified otherwise
+            if (!particle.noGravity) {
+                particle.velocity.y -= 9.8 * delta;
+            }
+            
+            // Calculate life percentage
+            const lifePercent = particle.life / particle.maxLife;
+            
+            // Update scale - shrink as it gets older
+            const newScale = particle.scale * (0.5 + lifePercent * 0.5);
+            
+            // Update matrix
+            matrix.compose(
+                particle.position,
+                particle.rotation,
+                new THREE.Vector3(newScale, newScale, newScale)
+            );
+            
+            // Apply to instance
+            this.particleInstances.setMatrixAt(i, matrix);
+        }
+        
+        // Update instance matrices
+        this.particleInstances.instanceMatrix.needsUpdate = true;
+    }
+    
     createAdditionalParticles() {
         // Create additional particles for continuous effect
         const origin = this.hero.group.position.clone();
         origin.y += 1.2;
         const direction = this.hero.direction.clone();
         
+        // Use GPU instancing if enabled
+        if (this.useGPUInstancing && this.particleInstances) {
+            this.createInstancedAdditionalParticles(origin, direction);
+            return;
+        }
+        
         // Create fewer particles for the continuous effect
-        const particleCount = Math.floor(this.particleCount / 4);
+        const particleCount = Math.floor(this.particleCount / 6); // Further reduced for better performance
         
         for (let i = 0; i < particleCount; i++) {
             const angle = (Math.random() - 0.5) * this.width;
@@ -762,8 +1209,8 @@ export default class DragonBreath extends Skill {
                 particleDir.clone().multiplyScalar(distance)
             );
             
-            // Randomize particle type
-            const particleType = Math.floor(Math.random() * 5);
+            // Simplify particle types
+            const particleType = Math.floor(Math.random() * 3);
             
             // Create particle with fire color
             const hue = 0.05 + Math.random() * 0.05;
@@ -791,8 +1238,10 @@ export default class DragonBreath extends Skill {
             particle.velocity.z += (Math.random() - 0.5) * 2;
         }
         
-        // Create ember particles that float upward
-        for (let i = 0; i < 5; i++) {
+        // Create ember particles that float upward (reduced count)
+        const emberCount = this.lightCount < this.maxLights ? 2 : 0; // Only create embers if we have light capacity
+        
+        for (let i = 0; i < emberCount; i++) {
             const angle = (Math.random() - 0.5) * this.width;
             const particleDir = direction.clone()
                 .applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
@@ -818,6 +1267,8 @@ export default class DragonBreath extends Skill {
                 }
             );
             
+            this.lightCount++;
+            
             // Add upward velocity
             ember.velocity.set(
                 (Math.random() - 0.5) * 2,
@@ -830,8 +1281,110 @@ export default class DragonBreath extends Skill {
         }
     }
     
+    // Create additional particles using GPU instancing
+    createInstancedAdditionalParticles(origin, direction) {
+        if (!this.particleInstances) return;
+        
+        const matrix = new THREE.Matrix4();
+        const quaternion = new THREE.Quaternion();
+        const color = new THREE.Color();
+        
+        // Create fewer particles for the continuous effect
+        const particleCount = Math.floor(this.particleCount / 6);
+        
+        for (let i = 0; i < particleCount; i++) {
+            // Find an available instance slot
+            let instanceIndex = -1;
+            for (let j = 0; j < this.particleInstanceData.length; j++) {
+                if (!this.particleInstanceData[j].active) {
+                    instanceIndex = j;
+                    break;
+                }
+            }
+            
+            // Skip if no slots available
+            if (instanceIndex === -1) continue;
+            
+            const angle = (Math.random() - 0.5) * this.width;
+            const particleDir = direction.clone()
+                .applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+            
+            // Calculate distance along the cone
+            const distance = Math.random() * this.range;
+            
+            // Calculate position
+            const position = origin.clone().add(
+                particleDir.clone().multiplyScalar(distance)
+            );
+            
+            // Set random size
+            const size = 0.1 + Math.random() * 0.2;
+            
+            // Set random lifetime
+            const life = 0.3 + Math.random() * 0.5;
+            
+            // Set random rotation
+            quaternion.setFromAxisAngle(
+                new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(),
+                Math.random() * Math.PI * 2
+            );
+            
+            // Set velocity
+            const velocity = particleDir.clone().multiplyScalar(3 + Math.random() * 3);
+            velocity.x += (Math.random() - 0.5) * 2;
+            velocity.y += (Math.random() - 0.5) * 2;
+            velocity.z += (Math.random() - 0.5) * 2;
+            
+            // Update instance data
+            this.particleInstanceData[instanceIndex] = {
+                active: true,
+                position: position.clone(),
+                velocity: velocity,
+                scale: size,
+                rotation: quaternion.clone(),
+                life: life,
+                maxLife: life,
+                noGravity: true
+            };
+            
+            // Set matrix
+            matrix.compose(
+                position,
+                quaternion,
+                new THREE.Vector3(size, size, size)
+            );
+            
+            // Apply to instance
+            this.particleInstances.setMatrixAt(instanceIndex, matrix);
+            
+            // Set color (orange-red variations)
+            const hue = 0.05 + Math.random() * 0.05;
+            color.setHSL(hue, 1, 0.5 + Math.random() * 0.5);
+            this.particleInstances.setColorAt(instanceIndex, color);
+        }
+        
+        // Update instance matrices
+        this.particleInstances.instanceMatrix.needsUpdate = true;
+        
+        // Update instance colors if available
+        if (this.particleInstances.instanceColor) {
+            this.particleInstances.instanceColor.needsUpdate = true;
+        }
+    }
+    
     cleanup() {
-        super.cleanup();
+        // Cancel any animation frames first
+        this.cancelAllAnimations();
+        
+        // Clean up instanced particles
+        if (this.particleInstances) {
+            this.scene.remove(this.particleInstances);
+            this.particleInstances.geometry.dispose();
+            this.particleInstances.material.dispose();
+            this.particleInstances = null;
+            this.particleInstanceData = [];
+            this.particleInstanceCount = 0;
+        }
         
         // Clean up dragon head
         if (this.dragonHeadMesh) {
@@ -864,6 +1417,7 @@ export default class DragonBreath extends Skill {
             this.scene.remove(this.fireRing);
             if (this.fireRing.userData.light) {
                 this.scene.remove(this.fireRing.userData.light);
+                this.lightCount--;
             }
             this.fireRing.geometry.dispose();
             this.fireRing.material.dispose();
@@ -878,7 +1432,42 @@ export default class DragonBreath extends Skill {
         });
         this.flameWaves = [];
         
+        // Reset light count
+        this.lightCount = 0;
+        
+        // Call parent cleanup to handle regular particles
+        super.cleanup();
+        
         // Fire embers are cleaned up by the parent class's cleanup method
         this.fireEmbers = [];
+    }
+    
+    // Cancel all animation frames to prevent memory leaks
+    cancelAllAnimations() {
+        // Cancel flame cone animation
+        if (this.flameCone && this.flameCone.userData.animationFrameId) {
+            cancelAnimationFrame(this.flameCone.userData.animationFrameId);
+            this.flameCone.userData.animationFrameId = null;
+        }
+        
+        // Cancel heat distortion animation
+        if (this.heatDistortion && this.heatDistortion.userData.animationFrameId) {
+            cancelAnimationFrame(this.heatDistortion.userData.animationFrameId);
+            this.heatDistortion.userData.animationFrameId = null;
+        }
+        
+        // Cancel fire ring animation
+        if (this.fireRing && this.fireRing.userData.animationFrameId) {
+            cancelAnimationFrame(this.fireRing.userData.animationFrameId);
+            this.fireRing.userData.animationFrameId = null;
+        }
+        
+        // Cancel flame wave animations
+        this.flameWaves.forEach(wave => {
+            if (wave.userData.animationFrameId) {
+                cancelAnimationFrame(wave.userData.animationFrameId);
+                wave.userData.animationFrameId = null;
+            }
+        });
     }
 }

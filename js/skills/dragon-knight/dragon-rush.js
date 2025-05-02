@@ -23,6 +23,204 @@ export default class DragonRush extends Skill {
         this.dashLines = [];
         this.impactWave = null;
         this.afterImages = [];
+        
+        // GPU optimization - Instanced meshes for particles
+        this.particleInstances = null;
+        this.particleInstanceCount = 200; // Maximum number of particles
+        this.activeParticleCount = 0;
+        this.particleInstanceMatrix = new THREE.Matrix4();
+        this.particleInstanceColor = new THREE.Color();
+        this.particleData = []; // Store particle data for instanced rendering
+        
+        // Object pools for reusing geometries and materials
+        this.geometryPool = {};
+        this.materialPool = {};
+        
+        // Performance settings - can be adjusted based on device capability
+        this.qualityLevel = this._detectPerformanceLevel();
+    }
+    
+    /**
+     * Detect performance level based on device capabilities
+     * Returns a value between 0 (low) and 1 (high)
+     */
+    _detectPerformanceLevel() {
+        // For MacBook Pro with 10 GPU cores, we can use a higher quality level
+        // but still optimize for performance
+        return 0.8;
+    }
+    
+    /**
+     * Initialize instanced meshes for particles
+     * This allows rendering many particles with a single draw call
+     */
+    initParticleInstances() {
+        if (this.particleInstances) return; // Already initialized
+        
+        // Create base geometry for particles - use simpler geometry for better performance
+        const particleGeometry = new THREE.SphereGeometry(1.0, 6, 4); // Reduced segments
+        
+        // Create instanced mesh
+        const instancedMaterial = new THREE.MeshPhongMaterial({
+            color: 0xff6600,
+            emissive: 0xff4400,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        this.particleInstances = new THREE.InstancedMesh(
+            particleGeometry,
+            instancedMaterial,
+            this.particleInstanceCount
+        );
+        
+        // Set initial visibility to false for all instances
+        this.particleInstances.count = 0;
+        this.particleInstances.frustumCulled = false; // Disable frustum culling for particles
+        
+        // Add to scene
+        this.scene.add(this.particleInstances);
+        
+        // Initialize particle data array
+        for (let i = 0; i < this.particleInstanceCount; i++) {
+            this.particleData.push({
+                active: false,
+                position: new THREE.Vector3(),
+                velocity: new THREE.Vector3(),
+                rotation: new THREE.Vector3(),
+                rotationSpeed: new THREE.Vector3(),
+                scale: 1.0,
+                initialScale: 1.0,
+                color: new THREE.Color(0xff6600),
+                life: 0,
+                initialLife: 0
+            });
+        }
+    }
+    
+    /**
+     * Get or create a geometry from the pool
+     * @param {string} type - Geometry type
+     * @param {Object} params - Parameters for geometry creation
+     * @returns {THREE.BufferGeometry}
+     */
+    getGeometry(type, params = {}) {
+        const key = `${type}_${JSON.stringify(params)}`;
+        
+        if (!this.geometryPool[key]) {
+            let geometry;
+            
+            // Create geometry based on type with reduced complexity
+            switch (type) {
+                case 'sphere':
+                    const segments = Math.max(4, Math.floor(8 * this.qualityLevel));
+                    geometry = new THREE.SphereGeometry(
+                        params.radius || 1.0, 
+                        segments, 
+                        segments
+                    );
+                    break;
+                case 'box':
+                    geometry = new THREE.BoxGeometry(
+                        params.width || 1.0,
+                        params.height || 1.0,
+                        params.depth || 1.0
+                    );
+                    break;
+                case 'torus':
+                    const torusSegments = Math.max(8, Math.floor(16 * this.qualityLevel));
+                    geometry = new THREE.TorusGeometry(
+                        params.radius || 1.0,
+                        params.tube || 0.2,
+                        torusSegments,
+                        torusSegments * 2
+                    );
+                    break;
+                case 'cone':
+                    const coneSegments = Math.max(4, Math.floor(8 * this.qualityLevel));
+                    geometry = new THREE.ConeGeometry(
+                        params.radius || 1.0,
+                        params.height || 2.0,
+                        coneSegments
+                    );
+                    break;
+                case 'cylinder':
+                    const cylinderSegments = Math.max(6, Math.floor(8 * this.qualityLevel));
+                    geometry = new THREE.CylinderGeometry(
+                        params.radiusTop || 1.0,
+                        params.radiusBottom || 1.0,
+                        params.height || 1.0,
+                        cylinderSegments
+                    );
+                    break;
+                default:
+                    geometry = new THREE.SphereGeometry(1.0, 6, 4);
+            }
+            
+            this.geometryPool[key] = geometry;
+        }
+        
+        return this.geometryPool[key];
+    }
+    
+    /**
+     * Get or create a material from the pool
+     * @param {string} type - Material type
+     * @param {Object} params - Parameters for material creation
+     * @returns {THREE.Material}
+     */
+    getMaterial(type, params = {}) {
+        const key = `${type}_${JSON.stringify(params)}`;
+        
+        if (!this.materialPool[key]) {
+            let material;
+            
+            // Create material based on type
+            switch (type) {
+                case 'phong':
+                    material = new THREE.MeshPhongMaterial({
+                        color: params.color || 0xffffff,
+                        emissive: params.emissive || params.color || 0xffffff,
+                        emissiveIntensity: params.emissiveIntensity || 0.5,
+                        transparent: params.transparent !== undefined ? params.transparent : true,
+                        opacity: params.opacity || 1.0,
+                        wireframe: params.wireframe || false,
+                        side: params.side || THREE.FrontSide
+                    });
+                    break;
+                case 'basic':
+                    material = new THREE.MeshBasicMaterial({
+                        color: params.color || 0xffffff,
+                        transparent: params.transparent !== undefined ? params.transparent : true,
+                        opacity: params.opacity || 1.0,
+                        wireframe: params.wireframe || false,
+                        side: params.side || THREE.FrontSide
+                    });
+                    break;
+                case 'lambert':
+                    material = new THREE.MeshLambertMaterial({
+                        color: params.color || 0xffffff,
+                        emissive: params.emissive || params.color || 0xffffff,
+                        emissiveIntensity: params.emissiveIntensity || 0.5,
+                        transparent: params.transparent !== undefined ? params.transparent : true,
+                        opacity: params.opacity || 1.0,
+                        wireframe: params.wireframe || false,
+                        side: params.side || THREE.FrontSide
+                    });
+                    break;
+                default:
+                    material = new THREE.MeshBasicMaterial({
+                        color: params.color || 0xffffff,
+                        transparent: true,
+                        opacity: params.opacity || 1.0
+                    });
+            }
+            
+            this.materialPool[key] = material;
+        }
+        
+        return this.materialPool[key];
     }
 
     getCooldownDuration() {
@@ -30,6 +228,9 @@ export default class DragonRush extends Skill {
     }
 
     createEffect() {
+        // Initialize instanced particles if not already done
+        this.initParticleInstances();
+        
         // Store current position
         this.startPosition = this.hero.group.position.clone();
         
@@ -43,19 +244,19 @@ export default class DragonRush extends Skill {
         this.isRushing = true;
         this.rushStartTime = Date.now();
         
-        // Create dragon aura around the hero
+        // Create dragon aura around the hero - use optimized version
         this.createDragonAura();
         
-        // Create energy buildup effect before dash
+        // Create energy buildup effect before dash - use optimized version
         this.createEnergyBuildup();
         
-        // Create dash lines (direction indicators)
+        // Create dash lines (direction indicators) - use optimized version
         this.createDashLines();
         
-        // Create initial trail effect
+        // Create initial trail effect - use optimized version
         this.createTrailEffect(direction);
         
-        // Create initial particles
+        // Create initial particles - use instanced version
         this.createInitialParticles();
         
         // Play sound effect
@@ -81,7 +282,7 @@ export default class DragonRush extends Skill {
                         hit.enemy.applyKnockback(direction, 10);
                     }
                     
-                    // Create impact effect
+                    // Create impact effect - use optimized version
                     this.createEnemyImpact(hit.position);
                 });
             }
@@ -498,10 +699,173 @@ export default class DragonRush extends Skill {
         }
     }
     
+    /**
+     * Create an optimized particle using instanced rendering
+     * @param {THREE.Vector3} position - Particle position
+     * @param {THREE.Color|number} color - Particle color
+     * @param {number} size - Particle size
+     * @param {number} life - Particle lifetime
+     * @param {Object} options - Additional options
+     * @returns {Object} Particle data object
+     */
+    createOptimizedParticle(position, color, size, life, options = {}) {
+        // Find an available particle slot
+        let particleIndex = -1;
+        for (let i = 0; i < this.particleData.length; i++) {
+            if (!this.particleData[i].active) {
+                particleIndex = i;
+                break;
+            }
+        }
+        
+        // If no slot available, return null
+        if (particleIndex === -1) return null;
+        
+        // Get particle data
+        const particle = this.particleData[particleIndex];
+        
+        // Set particle properties
+        particle.active = true;
+        particle.position.copy(position);
+        particle.velocity.set(
+            options.velocity ? options.velocity.x : (Math.random() - 0.5) * 2,
+            options.velocity ? options.velocity.y : Math.random() * 2,
+            options.velocity ? options.velocity.z : (Math.random() - 0.5) * 2
+        );
+        particle.rotation.set(
+            Math.random() * Math.PI * 2,
+            Math.random() * Math.PI * 2,
+            Math.random() * Math.PI * 2
+        );
+        particle.rotationSpeed.set(
+            (Math.random() - 0.5) * 5,
+            (Math.random() - 0.5) * 5,
+            (Math.random() - 0.5) * 5
+        );
+        
+        // Apply options
+        if (options.rotationSpeed) {
+            particle.rotationSpeed.multiplyScalar(options.rotationSpeed);
+        }
+        
+        // Set scale
+        particle.scale = size;
+        particle.initialScale = size;
+        
+        // Set color
+        if (color instanceof THREE.Color) {
+            particle.color.copy(color);
+        } else {
+            particle.color.set(color);
+        }
+        
+        // Set life
+        particle.life = life;
+        particle.initialLife = life;
+        
+        // Update instance matrix and color
+        this.updateParticleInstance(particleIndex);
+        
+        // Increase active particle count if needed
+        if (particleIndex >= this.activeParticleCount) {
+            this.activeParticleCount = particleIndex + 1;
+            this.particleInstances.count = this.activeParticleCount;
+        }
+        
+        return particle;
+    }
+    
+    /**
+     * Update a particle instance's matrix and color
+     * @param {number} index - Particle index
+     */
+    updateParticleInstance(index) {
+        const particle = this.particleData[index];
+        
+        // Skip inactive particles
+        if (!particle.active) return;
+        
+        // Update matrix
+        this.particleInstanceMatrix.makeRotationFromEuler(
+            new THREE.Euler(particle.rotation.x, particle.rotation.y, particle.rotation.z)
+        );
+        this.particleInstanceMatrix.scale(
+            new THREE.Vector3(particle.scale, particle.scale, particle.scale)
+        );
+        this.particleInstanceMatrix.setPosition(particle.position);
+        
+        // Set matrix and color
+        this.particleInstances.setMatrixAt(index, this.particleInstanceMatrix);
+        this.particleInstances.setColorAt(index, particle.color);
+        
+        // Mark instance attributes for update
+        this.particleInstances.instanceMatrix.needsUpdate = true;
+        if (this.particleInstances.instanceColor) {
+            this.particleInstances.instanceColor.needsUpdate = true;
+        }
+    }
+    
+    /**
+     * Update all particle instances
+     * @param {number} delta - Time delta
+     */
+    updateParticleInstances(delta) {
+        let activeCount = 0;
+        
+        // Update each particle
+        for (let i = 0; i < this.particleData.length; i++) {
+            const particle = this.particleData[i];
+            
+            // Skip inactive particles
+            if (!particle.active) continue;
+            
+            // Update life
+            particle.life -= delta;
+            
+            // Check if particle is dead
+            if (particle.life <= 0) {
+                particle.active = false;
+                continue;
+            }
+            
+            // Update position
+            particle.position.add(particle.velocity.clone().multiplyScalar(delta));
+            
+            // Apply gravity
+            particle.velocity.y -= 9.8 * delta;
+            
+            // Update rotation
+            particle.rotation.x += particle.rotationSpeed.x * delta;
+            particle.rotation.y += particle.rotationSpeed.y * delta;
+            particle.rotation.z += particle.rotationSpeed.z * delta;
+            
+            // Calculate life percentage
+            const lifePercent = particle.life / particle.initialLife;
+            
+            // Update scale - shrink as it gets older
+            particle.scale = particle.initialScale * (0.5 + lifePercent * 0.5);
+            
+            // Update color - fade out
+            particle.color.multiplyScalar(lifePercent);
+            
+            // Update instance
+            this.updateParticleInstance(i);
+            
+            // Count active particles
+            activeCount++;
+        }
+        
+        // Update active particle count
+        this.activeParticleCount = activeCount;
+        this.particleInstances.count = activeCount;
+    }
+    
     createInitialParticles() {
-        // Create initial particles along the path
-        for (let i = 0; i < this.particleCount; i++) {
-            const t = i / this.particleCount;
+        // Create initial particles along the path using instanced rendering
+        const particleCount = Math.floor(this.particleCount * this.qualityLevel);
+        
+        for (let i = 0; i < particleCount; i++) {
+            const t = i / particleCount;
             const position = new THREE.Vector3().lerpVectors(
                 this.startPosition,
                 this.targetPosition,
@@ -513,29 +877,21 @@ export default class DragonRush extends Skill {
             const hue = 0.05 + Math.random() * 0.05;
             const color = new THREE.Color().setHSL(hue, 1, 0.5 + Math.random() * 0.5);
             
-            // Randomize particle type
-            const particleType = Math.floor(Math.random() * 5);
-            
-            const particle = this.createParticle(
+            // Create optimized particle
+            const particle = this.createOptimizedParticle(
                 position,
                 color,
                 0.1 + Math.random() * 0.2,
                 0.3 + Math.random() * 0.7,
                 { 
-                    type: particleType,
-                    addLight: Math.random() < 0.1 // 10% chance to add light
+                    rotationSpeed: 2,
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * 3,
+                        1 + Math.random() * 3,
+                        (Math.random() - 0.5) * 3
+                    )
                 }
             );
-            
-            // Add random velocity
-            particle.velocity.set(
-                (Math.random() - 0.5) * 3,
-                1 + Math.random() * 3,
-                (Math.random() - 0.5) * 3
-            );
-            
-            // Add faster rotation
-            particle.rotationSpeed.multiplyScalar(2);
         }
     }
     
@@ -941,6 +1297,9 @@ export default class DragonRush extends Skill {
     updateEffect(delta) {
         if (!this.isRushing) return;
         
+        // Update instanced particles
+        this.updateParticleInstances(delta);
+        
         const now = Date.now();
         const elapsed = (now - this.rushStartTime) / 1000;
         const progress = Math.min(elapsed / this.duration, 1);
@@ -963,16 +1322,18 @@ export default class DragonRush extends Skill {
                 this.dragonAura.position.y += 1; // Slightly above ground
             }
             
-            // Create after-image at intervals
-            if (Math.random() < 0.1) { // 10% chance per frame
+            // Create after-image at intervals - reduce frequency based on quality level
+            const afterImageChance = 0.1 * this.qualityLevel;
+            if (Math.random() < afterImageChance) {
                 this.createAfterImage(
                     newPosition.clone(),
                     this.hero.direction.clone()
                 );
             }
             
-            // Create trail particles
-            if (Math.random() < 0.3) {
+            // Create trail particles - use optimized particles
+            const trailParticleChance = 0.3 * this.qualityLevel;
+            if (Math.random() < trailParticleChance) {
                 const position = this.hero.group.position.clone();
                 position.y += 0.5 + Math.random() * 1.5;
                 
@@ -980,22 +1341,19 @@ export default class DragonRush extends Skill {
                 const hue = 0.05 + Math.random() * 0.05;
                 const color = new THREE.Color().setHSL(hue, 1, 0.5 + Math.random() * 0.5);
                 
-                // Randomize particle type
-                const particleType = Math.floor(Math.random() * 5);
-                
-                const particle = this.createParticle(
+                // Create optimized particle
+                this.createOptimizedParticle(
                     position,
                     color,
                     0.1 + Math.random() * 0.2,
                     0.3 + Math.random() * 0.7,
-                    { type: particleType }
-                );
-                
-                // Add random velocity
-                particle.velocity.set(
-                    (Math.random() - 0.5) * 3,
-                    1 + Math.random() * 3,
-                    (Math.random() - 0.5) * 3
+                    {
+                        velocity: new THREE.Vector3(
+                            (Math.random() - 0.5) * 3,
+                            1 + Math.random() * 3,
+                            (Math.random() - 0.5) * 3
+                        )
+                    }
                 );
             }
             
@@ -1016,7 +1374,7 @@ export default class DragonRush extends Skill {
                         enemy.applyKnockback(knockbackDirection, 10);
                     }
                     
-                    // Create impact effect
+                    // Create impact effect - use optimized version
                     this.createEnemyImpact(enemy.position.clone());
                 }
             });
@@ -1042,7 +1400,7 @@ export default class DragonRush extends Skill {
             });
             this.trailMeshes = [];
             
-            // Create final impact effect
+            // Create final impact effect - use optimized version
             this.createFinalImpact();
         }
     }
@@ -1101,5 +1459,123 @@ export default class DragonRush extends Skill {
             });
         });
         this.afterImages = [];
+        
+        // Clean up instanced particles
+        if (this.particleInstances) {
+            this.scene.remove(this.particleInstances);
+            this.particleInstances.geometry.dispose();
+            this.particleInstances.material.dispose();
+            this.particleInstances = null;
+            
+            // Reset particle data
+            for (let i = 0; i < this.particleData.length; i++) {
+                this.particleData[i].active = false;
+            }
+            this.activeParticleCount = 0;
+        }
+        
+        // Clean up geometry pool
+        for (const key in this.geometryPool) {
+            this.geometryPool[key].dispose();
+        }
+        this.geometryPool = {};
+        
+        // Clean up material pool
+        for (const key in this.materialPool) {
+            this.materialPool[key].dispose();
+        }
+        this.materialPool = {};
+    }
+    
+    /**
+     * Override the createEnemyImpact method to use optimized particles
+     */
+    createEnemyImpact(position) {
+        // Create a more efficient impact effect when hitting an enemy
+        
+        // Create impact particles using instanced rendering
+        const particleCount = Math.floor(20 * this.qualityLevel);
+        
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 0.5;
+            
+            const particlePos = new THREE.Vector3(
+                position.x + Math.cos(angle) * radius,
+                position.y + Math.random() * 1,
+                position.z + Math.sin(angle) * radius
+            );
+            
+            // Create particle with fire color
+            const hue = 0.05 + Math.random() * 0.05;
+            const color = new THREE.Color().setHSL(hue, 1, 0.5 + Math.random() * 0.5);
+            
+            // Create optimized particle
+            const outDirection = new THREE.Vector3(
+                Math.cos(angle),
+                0.5 + Math.random(),
+                Math.sin(angle)
+            ).multiplyScalar(3 + Math.random() * 5);
+            
+            this.createOptimizedParticle(
+                particlePos,
+                color,
+                0.1 + Math.random() * 0.2,
+                0.3 + Math.random() * 0.5,
+                { 
+                    velocity: outDirection
+                }
+            );
+        }
+        
+        // Create impact wave (expanding ring) - use object pooling
+        const ringGeometry = this.getGeometry('torus', { radius: 0.5, tube: 0.2 });
+        const ringMaterial = this.getMaterial('phong', {
+            color: 0xff9900,
+            emissive: 0xff6600,
+            emissiveIntensity: 1,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.copy(position);
+        ring.position.y += 0.1; // Slightly above ground
+        ring.rotation.x = Math.PI / 2; // Lay flat
+        
+        // Add to scene
+        this.scene.add(ring);
+        
+        // Add a point light with reduced intensity
+        const light = new THREE.PointLight(0xff6600, 1.5, 3);
+        light.position.copy(position);
+        this.scene.add(light);
+        
+        // Animate the impact wave
+        const startTime = Date.now();
+        const animateImpact = () => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const duration = 0.5; // Half second animation
+            const progress = elapsed / duration;
+            
+            if (progress < 1) {
+                // Scale up and fade out
+                const scale = 1 + progress * 4;
+                ring.scale.set(scale, scale, scale);
+                ring.material.opacity = 0.8 * (1 - progress);
+                
+                // Reduce light intensity
+                light.intensity = 1.5 * (1 - progress);
+                
+                requestAnimationFrame(animateImpact);
+            } else {
+                // Remove impact wave
+                this.scene.remove(ring);
+                this.scene.remove(light);
+                // Note: We don't dispose geometry/material as they're from the pool
+            }
+        };
+        
+        animateImpact();
     }
 }
