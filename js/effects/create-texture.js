@@ -3,7 +3,8 @@ const fs = require('fs');
 const { createCanvas } = require('canvas');
 
 // Create directory if it doesn't exist
-const dir = '../assets/textures/particles';
+const path = require('path');
+const dir = path.join(__dirname, '../../assets/textures/particles');
 if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -24,8 +25,25 @@ function createParticleTexture(name, color, size = 128) {
   
   // Set gradient colors
   gradient.addColorStop(0, color);
-  gradient.addColorStop(0.5, color.replace(')', ', 0.5)'));
-  gradient.addColorStop(1, color.replace(')', ', 0)'));
+  
+  // Properly modify the color for transparency
+  let midColor, endColor;
+  if (color.startsWith('rgba')) {
+    // If already rgba, replace the last value
+    midColor = color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d\.]+\)/, 'rgba($1, $2, $3, 0.5)');
+    endColor = color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d\.]+\)/, 'rgba($1, $2, $3, 0)');
+  } else if (color.startsWith('rgb')) {
+    // If rgb, convert to rgba
+    midColor = color.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, 'rgba($1, $2, $3, 0.5)');
+    endColor = color.replace(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/, 'rgba($1, $2, $3, 0)');
+  } else {
+    // Fallback for hex or named colors
+    midColor = color;
+    endColor = 'transparent';
+  }
+  
+  gradient.addColorStop(0.5, midColor);
+  gradient.addColorStop(1, endColor);
   
   // Fill with gradient
   ctx.fillStyle = gradient;
@@ -50,5 +68,6 @@ createParticleTexture('explosion', 'rgba(255, 200, 0, 1)');
 createParticleTexture('blood', 'rgba(200, 0, 0, 1)');
 createParticleTexture('water', 'rgba(0, 100, 255, 1)');
 createParticleTexture('levelUp', 'rgba(255, 255, 0, 1)');
+createParticleTexture('raindrop', 'rgba(100, 150, 255, 0.7)');
 
 console.log('All textures created successfully!');

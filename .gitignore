@@ -1,1 +1,4 @@
 enable3d-examples
+node_modules/
+dist/
+*.log
