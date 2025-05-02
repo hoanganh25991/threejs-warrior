@@ -312,9 +312,6 @@ export default class Hero {
     // Get the skill (which now should always exist)
     const skill = this.skills.get(key);
     
-    // Set a cooldown of 5 seconds
-    this.cooldowns.set(key, 5.0);
-    
     // Try to activate the skill
     try {
       // Check if we can use the skill
@@ -325,7 +322,14 @@ export default class Hero {
         
         // Try to activate the skill
         if (typeof skill.activate === 'function') {
-          skill.activate();
+          const activated = skill.activate();
+          
+          // Only set cooldown if the skill was successfully activated
+          if (activated && typeof skill.getCooldownDuration === 'function') {
+            const cooldownDuration = skill.getCooldownDuration();
+            this.cooldowns.set(key, cooldownDuration);
+            console.log(`Set cooldown for ${skill.name}: ${cooldownDuration}s`);
+          }
         }
       } else {
         console.log(`Cannot use skill: ${skill.name || key} (on cooldown or insufficient mana)`);
@@ -390,43 +394,97 @@ export default class Hero {
     // This will use our enhanced skill implementations
     if (input.keys.y) {
       console.log("Y key pressed!");
-      // Always use the simple skill for now to ensure something happens
-      this.useSimpleSkill('y', this.heroType === 'crystal-maiden' ? 'Frost Nova' : 'Fireball', 
+      // Use the proper skill from the skills map
+      if (this.skills.has('y')) {
+        const skill = this.skills.get('y');
+        console.log(`Using skill from map: ${skill.name}`);
+        if (skill.activate) {
+          skill.activate();
+        }
+      } else {
+        // Fallback to simple skill if not found in map
+        this.useSimpleSkill('y', this.heroType === 'crystal-maiden' ? 'Frost Nova' : 'Fireball', 
                           this.heroType === 'crystal-maiden' ? 0x00ffff : 0xff4500);
+      }
     }
     
     if (input.keys.u) {
       console.log("U key pressed!");
-      // Always use the simple skill for now to ensure something happens
-      this.useSimpleSkill('u', this.heroType === 'crystal-maiden' ? 'Ice Blast' : 'Ice Spike', 0x00ffff);
+      // Use the proper skill from the skills map
+      if (this.skills.has('u')) {
+        const skill = this.skills.get('u');
+        console.log(`Using skill from map: ${skill.name}`);
+        if (skill.activate) {
+          skill.activate();
+        }
+      } else {
+        // Fallback to simple skill if not found in map
+        this.useSimpleSkill('u', this.heroType === 'crystal-maiden' ? 'Ice Blast' : 'Ice Spike', 0x00ffff);
+      }
     }
     
     if (input.keys.i) {
       console.log("I key pressed!");
-      // Always use the simple skill for now to ensure something happens
-      this.useSimpleSkill('i', this.heroType === 'crystal-maiden' ? 'Glacial Barrier' : 'Thunder Strike', 
+      // Use the proper skill from the skills map
+      if (this.skills.has('i')) {
+        const skill = this.skills.get('i');
+        console.log(`Using skill from map: ${skill.name}`);
+        if (skill.activate) {
+          skill.activate();
+        }
+      } else {
+        // Fallback to simple skill if not found in map
+        this.useSimpleSkill('i', this.heroType === 'crystal-maiden' ? 'Glacial Barrier' : 'Thunder Strike', 
                           this.heroType === 'crystal-maiden' ? 0x88ccff : 0xffff00);
+      }
     }
     
     if (input.keys.h) {
       console.log("H key pressed!");
-      // Always use the simple skill for now to ensure something happens
-      this.useSimpleSkill('h', this.heroType === 'crystal-maiden' ? 'Blizzard' : 'Healing Wave', 
+      // Use the proper skill from the skills map
+      if (this.skills.has('h')) {
+        const skill = this.skills.get('h');
+        console.log(`Using skill from map: ${skill.name}`);
+        if (skill.activate) {
+          skill.activate();
+        }
+      } else {
+        // Fallback to simple skill if not found in map
+        this.useSimpleSkill('h', this.heroType === 'crystal-maiden' ? 'Blizzard' : 'Healing Wave', 
                           this.heroType === 'crystal-maiden' ? 0xaaddff : 0x00ff00);
+      }
     }
     
     if (input.keys.j) {
       console.log("J key pressed!");
-      // Always use the simple skill for now to ensure something happens
-      this.useSimpleSkill('j', this.heroType === 'crystal-maiden' ? 'Frozen Orb' : 'Shield', 
+      // Use the proper skill from the skills map
+      if (this.skills.has('j')) {
+        const skill = this.skills.get('j');
+        console.log(`Using skill from map: ${skill.name}`);
+        if (skill.activate) {
+          skill.activate();
+        }
+      } else {
+        // Fallback to simple skill if not found in map
+        this.useSimpleSkill('j', this.heroType === 'crystal-maiden' ? 'Frozen Orb' : 'Shield', 
                           this.heroType === 'crystal-maiden' ? 0x00ffff : 0x4169e1);
+      }
     }
     
     if (input.keys.k) {
       console.log("K key pressed!");
-      // Always use the simple skill for now to ensure something happens
-      this.useSimpleSkill('k', this.heroType === 'crystal-maiden' ? 'Ice Shards' : 'Dash', 
+      // Use the proper skill from the skills map
+      if (this.skills.has('k')) {
+        const skill = this.skills.get('k');
+        console.log(`Using skill from map: ${skill.name}`);
+        if (skill.activate) {
+          skill.activate();
+        }
+      } else {
+        // Fallback to simple skill if not found in map
+        this.useSimpleSkill('k', this.heroType === 'crystal-maiden' ? 'Ice Shards' : 'Dash', 
                           this.heroType === 'crystal-maiden' ? 0x88ccff : 0x808080);
+      }
     }
     
     // Toggle auto-attack with T key
