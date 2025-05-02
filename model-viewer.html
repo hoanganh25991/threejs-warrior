@@ -245,10 +245,37 @@
                     <option value="">-- Select a model --</option>
                 </select>
             </div>
+            
+            <h2>Select Skill</h2>
+            <div class="custom-select-wrapper">
+                <div class="custom-select" id="custom-skill-selector">
+                    <div class="custom-select-trigger">-- Select a skill --</div>
+                    <div class="custom-options">
+                        <div class="search-container">
+                            <input type="text" id="skill-search" placeholder="Search skills..." class="search-input-embedded">
+                        </div>
+                        <div class="options-container">
+                            <div class="custom-option" data-value="">-- Select a skill --</div>
+                        <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <select id="skill-selector" style="display: none;">
+                    <option value="">-- Select a skill --</option>
+                </select>
+            </div>
+            
+            <button id="activate-skill-btn" style="display: none;">Activate Skill</button>
             <button id="reset-view-btn">Reset View</button>
+            
             <div class="model-info" id="model-info">
                 <h3>Model Information</h3>
                 <p>No model selected</p>
+            </div>
+            
+            <div class="model-info" id="skill-info" style="display: none;">
+                <h3>Skill Information</h3>
+                <p>No skill selected</p>
             </div>
         </div>
         <div class="viewer">
@@ -267,8 +294,10 @@
 
         // Main variables
         let allModelOptions = []; // Store all model options
+        let allSkillOptions = []; // Store all skill options
         let scene, camera, renderer, controls;
         let currentModel = null;
+        let currentSkillVisualizer = null;
         let netBox = null; // Visual representation of the "net" area
 
         // Model registry - maps file paths to model information
@@ -338,6 +367,20 @@
             'js/hero/lina.js': {},
             'js/hero/wings.js': {},
         };
+        
+        // Skill registry - maps file paths to skill information
+        const skillRegistry = {
+            'js/skills/dragon-knight/dragon-breath.js': {
+                name: 'Dragon Breath',
+                description: 'A cone of fire breath that deals fire damage over time.',
+                hero: 'Dragon Knight'
+            },
+            'js/mock/skill-visualizer.js': {
+                name: 'Skill Visualizer',
+                description: 'A utility for visualizing skills in the model viewer.',
+                isUtility: true
+            }
+        };
 
         // Initialize the scene
         function init() {
@@ -386,6 +429,9 @@
 
             // Populate model selector
             populateModelSelector();
+            
+            // Populate skill selector
+            populateSkillSelector();
 
             // Initialize search functionality
             initializeSearch();
@@ -393,6 +439,7 @@
             // Add event listeners
             window.addEventListener('resize', onWindowResize);
             document.getElementById('reset-view-btn').addEventListener('click', resetView);
+            document.getElementById('activate-skill-btn').addEventListener('click', activateCurrentSkill);
 
             // Start animation loop
             animate();
@@ -657,11 +704,262 @@
             });
         }
 
+        // Populate the skill selector dropdown
+        function populateSkillSelector() {
+            const selector = document.getElementById('skill-selector');
+            const optionsContainer = document.querySelector('#custom-skill-selector .options-container');
+            const customTrigger = document.querySelector('#custom-skill-selector .custom-select-trigger');
+            
+            // Clear existing options except the first one
+            while (selector.options.length > 1) {
+                selector.remove(1);
+            }
+            
+            // Clear custom options except the first one
+            const customOptionElements = optionsContainer.querySelectorAll('.custom-option');
+            for (let i = 1; i < customOptionElements.length; i++) {
+                optionsContainer.removeChild(customOptionElements[i]);
+            }
+            
+            // Add options for each skill in the registry
+            for (const [path, skill] of Object.entries(skillRegistry)) {
+                // Extract filename from path for fallback display
+                const filename = path.split('/').pop().replace('.js', '');
+                
+                // Get name or use filename as fallback
+                const name = skill.name || filename;
+                
+                // Add to hidden select element
+                const option = document.createElement('option');
+                option.value = path;
+                option.textContent = name;
+                selector.appendChild(option);
+                
+                // Add to custom select
+                const customOption = document.createElement('div');
+                customOption.className = 'custom-option';
+                customOption.setAttribute('data-value', path);
+                
+                // Create structured content with name, path, and description
+                let optionHTML = `<span class="custom-option-name">${name}</span>`;
+                optionHTML += `<br/>`;
+                optionHTML += `<span class="custom-option-path">${path}</span>`;
+                
+                if (skill.description) {
+                    optionHTML += `<span class="custom-option-description">${skill.description}</span>`;
+                }
+                
+                if (skill.hero) {
+                    optionHTML += `<span class="custom-option-description">Hero: ${skill.hero}</span>`;
+                }
+                
+                customOption.innerHTML = optionHTML;
+                optionsContainer.appendChild(customOption);
+                
+                // Add click event to custom option
+                customOption.addEventListener('click', function () {
+                    // Update the hidden select value
+                    selector.value = this.getAttribute('data-value');
+                    
+                    // Update the trigger text
+                    customTrigger.textContent = name;
+                    
+                    // Close the dropdown
+                    document.querySelector('#custom-skill-selector').classList.remove('opened');
+                    
+                    // Mark this option as selected
+                    document.querySelectorAll('#custom-skill-selector .custom-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    
+                    // Load the skill automatically
+                    if (this.getAttribute('data-value')) {
+                        loadSelectedSkill();
+                    }
+                });
+            }
+            
+            // Add click event to custom select trigger
+            document.querySelector('#custom-skill-selector .custom-select-trigger').addEventListener('click', function () {
+                const select = document.querySelector('#custom-skill-selector');
+                select.classList.toggle('opened');
+                if (select.classList.contains('opened')) {
+                    // Focus the search input when dropdown opens
+                    document.getElementById('skill-search').focus();
+                }
+            });
+        }
+        
+        // Load the selected skill
+        async function loadSelectedSkill() {
+            const selectedPath = document.getElementById('skill-selector').value;
+            
+            if (!selectedPath) {
+                document.getElementById('skill-info').style.display = 'none';
+                document.getElementById('activate-skill-btn').style.display = 'none';
+                return;
+            }
+            
+            // Get skill info
+            const skillInfo = skillRegistry[selectedPath];
+            
+            try {
+                // Clean up previous skill visualizer if exists
+                if (currentSkillVisualizer) {
+                    currentSkillVisualizer.cleanup();
+                    currentSkillVisualizer = null;
+                }
+                
+                // Dynamically import the skill module
+                const modulePath = `./${selectedPath}`;
+                const skillModule = await import(modulePath);
+                
+                // If this is the skill visualizer utility
+                if (selectedPath === 'js/mock/skill-visualizer.js') {
+                    const SkillVisualizer = skillModule.default;
+                    currentSkillVisualizer = new SkillVisualizer(scene);
+                    
+                    // Show skill info
+                    updateSkillInfo(selectedPath, skillInfo, {
+                        name: 'Skill Visualizer',
+                        description: 'Select a specific skill to visualize'
+                    });
+                    
+                    // Hide activate button for the visualizer itself
+                    document.getElementById('activate-skill-btn').style.display = 'none';
+                } 
+                // If this is a specific skill
+                else {
+                    // First load the skill visualizer if not already loaded
+                    if (!currentSkillVisualizer) {
+                        const visualizerModule = await import('./js/mock/skill-visualizer.js');
+                        const SkillVisualizer = visualizerModule.default;
+                        currentSkillVisualizer = new SkillVisualizer(scene);
+                    }
+                    
+                    // Now load the specific skill
+                    const SkillClass = skillModule.default;
+                    const skill = currentSkillVisualizer.setSkill(SkillClass);
+                    
+                    // Show skill info
+                    updateSkillInfo(selectedPath, skillInfo, skill);
+                    
+                    // Show activate button
+                    document.getElementById('activate-skill-btn').style.display = 'block';
+                }
+                
+                // Reset camera to view the skill visualizer
+                resetView();
+                
+                console.log(`Loaded skill: ${skillInfo.name}`);
+            } catch (error) {
+                console.error('Error loading skill:', error);
+                alert(`Error loading skill: ${error.message}`);
+            }
+        }
+        
+        // Activate the current skill
+        function activateCurrentSkill() {
+            if (currentSkillVisualizer) {
+                const activated = currentSkillVisualizer.activateSkill();
+                if (activated) {
+                    console.log('Skill activated');
+                    
+                    // Update skill info to show active state
+                    const selectedPath = document.getElementById('skill-selector').value;
+                    const skillInfo = skillRegistry[selectedPath];
+                    updateSkillInfo(selectedPath, skillInfo, currentSkillVisualizer.getSkillInfo());
+                } else {
+                    console.log('Could not activate skill (on cooldown or insufficient mana)');
+                }
+            }
+        }
+        
+        // Update the skill information display
+        function updateSkillInfo(path, registryInfo, skillData) {
+            const infoElement = document.getElementById('skill-info');
+            infoElement.style.display = 'block';
+            
+            let html = `<h3>${registryInfo.name || 'Skill Information'}</h3>`;
+            
+            if (registryInfo.description) {
+                html += `<p>${registryInfo.description}</p>`;
+            }
+            
+            if (registryInfo.hero) {
+                html += `<p><strong>Hero:</strong> ${registryInfo.hero}</p>`;
+            }
+            
+            if (skillData) {
+                if (skillData.manaCost) {
+                    html += `<p><strong>Mana Cost:</strong> ${skillData.manaCost}</p>`;
+                }
+                
+                if (skillData.damage) {
+                    html += `<p><strong>Damage:</strong> ${skillData.damage}</p>`;
+                }
+                
+                if (skillData.range) {
+                    html += `<p><strong>Range:</strong> ${skillData.range}</p>`;
+                }
+                
+                if (skillData.duration) {
+                    html += `<p><strong>Duration:</strong> ${skillData.duration}s</p>`;
+                }
+                
+                if (skillData.cooldown !== undefined) {
+                    html += `<p><strong>Cooldown:</strong> ${Math.max(0, skillData.cooldown).toFixed(1)}s</p>`;
+                }
+                
+                if (skillData.damageType) {
+                    html += `<p><strong>Damage Type:</strong> ${skillData.damageType}</p>`;
+                }
+                
+                if (skillData.isActive !== undefined) {
+                    html += `<p><strong>Status:</strong> ${skillData.isActive ? 'Active' : 'Inactive'}</p>`;
+                }
+                
+                if (skillData.canUse !== undefined) {
+                    html += `<p><strong>Can Use:</strong> ${skillData.canUse ? 'Yes' : 'No'}</p>`;
+                }
+            }
+            
+            infoElement.innerHTML = html;
+        }
+        
+        // Filter skill options based on search input
+        function filterSkillOptions(searchText) {
+            const optionsContainer = document.querySelector('#custom-skill-selector .options-container');
+            const options = Array.from(optionsContainer.children);
+            
+            options.forEach(option => {
+                const optionName = option.querySelector('.custom-option-name')?.textContent.toLowerCase() || '';
+                const optionPath = option.querySelector('.custom-option-path')?.textContent.toLowerCase() || '';
+                const optionDesc = option.querySelector('.custom-option-description')?.textContent.toLowerCase() || '';
+                const searchLower = searchText.toLowerCase();
+                
+                if (searchText === '' || 
+                    optionName.includes(searchLower) || 
+                    optionPath.includes(searchLower) || 
+                    optionDesc.includes(searchLower)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+        
         // Initialize search functionality
         function initializeSearch() {
-            const searchInput = document.getElementById('model-search');
-            searchInput.addEventListener('input', (e) => {
+            const modelSearchInput = document.getElementById('model-search');
+            modelSearchInput.addEventListener('input', (e) => {
                 filterModelOptions(e.target.value);
+            });
+            
+            const skillSearchInput = document.getElementById('skill-search');
+            skillSearchInput.addEventListener('input', (e) => {
+                filterSkillOptions(e.target.value);
             });
         }
 
@@ -816,13 +1114,28 @@
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
+            
+            // Calculate delta time (approximate for 60fps)
+            const delta = 0.016;
 
             // Update controls
             controls.update();
 
             // Update any animated models
             if (currentModel && currentModel.update) {
-                currentModel.update(0.016); // Approximate for 60fps
+                currentModel.update(delta);
+            }
+            
+            // Update skill visualizer
+            if (currentSkillVisualizer) {
+                currentSkillVisualizer.update(delta);
+                
+                // Update skill info if a skill is selected
+                const selectedPath = document.getElementById('skill-selector').value;
+                if (selectedPath && selectedPath !== 'js/mock/skill-visualizer.js') {
+                    const skillInfo = skillRegistry[selectedPath];
+                    updateSkillInfo(selectedPath, skillInfo, currentSkillVisualizer.getSkillInfo());
+                }
             }
 
             // Render the scene

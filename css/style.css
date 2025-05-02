@@ -154,6 +154,23 @@ body {
     transition: all 0.3s ease;
 }
 
+/* Hero specific images */
+.hero-image.axe {
+    background-image: url('../assets/images/heros/axe.jpg');
+}
+
+.hero-image.crystal-maiden {
+    background-image: url('../assets/images/heros/crystal-maiden.jpg');
+}
+
+.hero-image.lich {
+    background-image: url('../assets/images/heros/lich.jpg');
+}
+
+.hero-image.storm-spirit {
+    background-image: url('../assets/images/heros/storm-spirit.jpg');
+}
+
 .hero-card:hover .hero-image {
     border-color: #f8d000;
     box-shadow: 0 0 15px rgba(248, 208, 0, 0.5);

@@ -1035,27 +1035,7 @@ export default class Hero {
     return new GenericSkill(this);
   }
   
-  // This method is no longer needed as we're using initializeSkills instead
-  // Keeping it commented out for reference
-  /*
-  initSkills() {
-    // Assign skills based on hero type
-    // In a full implementation, each hero would have unique skills
-    this.skills = {
-      y: config.skills.fireball,
-      u: config.skills.iceSpike,
-      i: config.skills.thunderStrike,
-      h: config.skills.heal,
-      j: config.skills.shield,
-      k: config.skills.dash,
-    };
-
-    // Initialize cooldowns
-    for (const key in this.skills) {
-      this.cooldowns[key] = 0;
-    }
-  }
-  */
+  // initializeSkills method is used instead
 
   update(deltaTime, keys, inputHandler) {
     // Handle rotation from mouse and Q/E keys
@@ -2114,52 +2094,23 @@ export default class Hero {
       this.isFlying = false;
     }
 
-    // Show/hide wings based on flying state
-    if (this.wings) {
-      // Debug logging for wings
-      if (this.debug) {
-        console.log(
-          "Wings check - Height:",
-          this.group.position.y.toFixed(2),
-          "Flying height threshold:",
-          2,
-          "Max flying height:",
-          config.player.maxFlyingHeight || 200,
-          "Wings visible:",
-          this.wingsVisible,
-          "Is flying:",
-          this.isFlying
-        );
-      }
-
-      // Show wings when flying
-      if (this.isFlying && !this.onGround) {
-        if (!this.wingsVisible) {
-          this.wings.visible = true;
-          this.wingsVisible = true;
-          this.wings.scale.set(0.5, 0.5, 0.5);
-          this.animateWings();
-        }
-
-        // Flap wings with varying intensity
-        const flapIntensity = keys[" "] ? 1.5 : 1.0;
-        this.flapWings(deltaTime, flapIntensity);
-
-        // Set wing state based on movement
-        if (keys[" "]) {
-          this.setWingState("flying");
-        } else if (Math.abs(this.velocity.y) > 5) {
-          this.setWingState("gliding");
-        } else {
-          this.setWingState("hovering");
-        }
-      } else if (this.wingsVisible || this.onGround) {
-        // Hide wings and reset flying state when landing
-        this.wings.visible = false;
-        this.wingsVisible = false;
-        this.isFlying = false;
-      }
+    // Debug logging for wings
+    if (this.wings && this.debug) {
+      console.log(
+        "Wings check - Height:",
+        this.group.position.y.toFixed(2),
+        "Flying height threshold:",
+        2,
+        "Max flying height:",
+        config.player.maxFlyingHeight || 200,
+        "Wings visible:",
+        this.wingsVisible,
+        "Is flying:",
+        this.isFlying
+      );
     }
+    
+    // Wing visibility and animation is handled in the earlier code
   }
 
   setWingState(state) {
@@ -2536,6 +2487,8 @@ export default class Hero {
     
     // Show a message
     this.showMessage(`Gained ${amount} experience!`);
+    
+    this.updateUI();
   }
   
   levelUp() {
@@ -2957,33 +2910,7 @@ export default class Hero {
     this.updateUI();
   }
 
-  gainExperience(amount) {
-    this.experience += amount;
-
-    // Check for level up
-    if (this.experience >= this.nextLevelExp) {
-      this.levelUp();
-    }
-
-    this.updateUI();
-  }
-
-  levelUp() {
-    this.level++;
-    this.experience -= this.nextLevelExp;
-    this.nextLevelExp *= config.player.experience.levelUpMultiplier;
-
-    // Increase stats
-    this.maxHealth *= 1.2;
-    this.health = this.maxHealth;
-    this.maxMana *= 1.2;
-    this.mana = this.maxMana;
-
-    // Show level up message
-    this.showMessage(`Level Up! You are now level ${this.level}`);
-
-    this.updateUI();
-  }
+  // gainExperience and levelUp methods are already defined above
 
   die() {
     // Handle player death

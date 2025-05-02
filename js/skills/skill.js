@@ -1,6 +1,18 @@
 import * as THREE from 'three';
 import { config } from '../config/config.js';
-import CollisionSystem from '../combat/collision.js';
+
+// Dynamically import the appropriate collision system
+// Use mock collision system if we're in the model viewer
+let CollisionSystem;
+try {
+    // First try to import the mock collision system (for model viewer)
+    CollisionSystem = (await import('../mock/mock-collision.js')).default;
+    console.log('Using mock collision system for model viewer');
+} catch (e) {
+    // Fall back to the real collision system
+    CollisionSystem = (await import('../combat/collision.js')).default;
+    console.log('Using real collision system');
+}
 
 export default class Skill {
     constructor(hero) {
