@@ -6,6 +6,8 @@ import { Water as ThreeWater } from "three/addons/objects/Water.js";
  */
 export default class Water extends THREE.Object3D {
   constructor() {
+    // Call the parent constructor
+    super();
 
     // Create water
     const waterGeometry = new THREE.PlaneGeometry(1000, 1000);

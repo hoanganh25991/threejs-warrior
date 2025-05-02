@@ -5,6 +5,8 @@ import * as THREE from 'three';
  */
 export default class Groud extends THREE.Object3D {
   constructor() {
+    // Call the parent constructor
+    super();
 
     // Create a more detailed ground with texture
     const groundSize = 1000;
