@@ -31,7 +31,7 @@ import BerserkersRage from "../skills/axe/berserkers-rage.js";
 
 import SoundManager from "../audio/sound-manager.js";
 import Attack from "../combat/attack.js";
-import * as THREE from 'https://unpkg.com/three@0.157.0/build/three.module.js';
+import * as THREE from 'three';
 import { config } from "../config/config.js";
 
 export default class Hero {

@@ -136,13 +136,38 @@ class Game {
     }
 
     // Add hero selection event listeners
+    console.log("Looking for hero selection buttons...");
     const heroButtons = document.querySelectorAll(".select-hero-btn");
-    heroButtons.forEach((button) => {
-      button.addEventListener("click", (event) => {
-        this.selectedHero = event.target.getAttribute("data-hero");
-        this.startGame();
+    console.log("Found hero buttons:", heroButtons.length);
+    
+    if (heroButtons.length === 0) {
+      console.error("No hero buttons found! DOM might not be fully loaded.");
+      // Add a fallback to try again after a short delay
+      setTimeout(() => {
+        const retryButtons = document.querySelectorAll(".select-hero-btn");
+        console.log("Retry found hero buttons:", retryButtons.length);
+        this.setupHeroButtons(retryButtons);
+      }, 500);
+    } else {
+      this.setupHeroButtons(heroButtons);
+    }
+    
+    // Also add a direct click handler to the hero selection container
+    const heroSelection = document.getElementById("hero-selection");
+    if (heroSelection) {
+      heroSelection.addEventListener("click", (event) => {
+        if (event.target.classList.contains("select-hero-btn")) {
+          console.log("Hero button clicked via delegation:", event.target.getAttribute("data-hero"));
+          try {
+            this.selectedHero = event.target.getAttribute("data-hero");
+            console.log("Selected hero via delegation:", this.selectedHero);
+            this.startGame();
+          } catch (error) {
+            console.error("Error in delegated hero selection:", error);
+          }
+        }
       });
-    });
+    }
 
     // Hide loading screen
     setTimeout(() => {
@@ -163,6 +188,28 @@ class Game {
         loadingScreen.classList.add("hidden");
       }
     }
+  }
+  
+  setupHeroButtons(buttons) {
+    console.log("Setting up hero buttons:", buttons.length);
+    buttons.forEach((button) => {
+      // Remove any existing click listeners to avoid duplicates
+      const newButton = button.cloneNode(true);
+      button.parentNode.replaceChild(newButton, button);
+      
+      // Add the click event listener
+      newButton.addEventListener("click", (event) => {
+        console.log("Hero button clicked:", event.target.getAttribute("data-hero"));
+        try {
+          this.selectedHero = event.target.getAttribute("data-hero");
+          console.log("Selected hero:", this.selectedHero);
+          this.startGame();
+          console.log("startGame method called");
+        } catch (error) {
+          console.error("Error in hero selection:", error);
+        }
+      });
+    });
   }
 
   addLights() {
@@ -262,124 +309,163 @@ class Game {
   }
 
   startGame() {
-    // Hide hero selection screen
-    document.getElementById("hero-selection").classList.add("hidden");
-
-    // Show game UI
-    document.getElementById("game-ui").classList.remove("hidden");
+    console.log("startGame method started with hero:", this.selectedHero);
     
-    // Check if shop modal exists in the DOM at game start
-    console.log('Shop modal in DOM at game start:', document.getElementById('shop-modal'));
-
-    // Initialize input handler
-    this.inputHandler = new InputHandler();
-    window.inputHandler = this.inputHandler;
+    // Validate that we have a selected hero
+    if (!this.selectedHero) {
+      console.error("No hero selected! Cannot start game.");
+      alert("Please select a hero to continue.");
+      return;
+    }
     
-    // Initialize mouse capture manager
-    this.mouseCaptureManager = new MouseCaptureManager(this.inputHandler);
-    window.mouseCaptureManager = this.mouseCaptureManager;
-
-    // Initialize game systems
-    this.skillManager = new SkillManager(this.scene);
-    this.enemyManager = new EnemyManager(this.scene);
-    this.collisionDetector = new CollisionDetector(this.world);
-    window.collisionDetector = this.collisionDetector;
-
-    // Initialize effect system
-    this.effects = new Effects(this.scene);
-    
-    // Disable shadows for effects
-    this.scene.traverse((object) => {
-      if (object instanceof THREE.Points) {
-        object.castShadow = false;
-        object.receiveShadow = false;
-      }
-    });
-
-    // Initialize terrain system
     try {
-      this.terrain = new Terrain(this.scene, {
-        width: 1000,
-        height: 1000,
-        segmentsW: 100,
-        segmentsH: 100,
-        maxHeight: 50,
-        minHeight: -50,
-        textures: {
-          diffuse: '/assets/textures/terrain/grass_diffuse.jpg',
-          normal: '/assets/textures/terrain/grass_normal.jpg'
-        },
-        materialOptions: {
-          wireframe: false,
-          flatShading: false
+      // Hide hero selection screen
+      const heroSelection = document.getElementById("hero-selection");
+      console.log("Hero selection element:", heroSelection);
+      if (heroSelection) {
+        heroSelection.classList.add("hidden");
+        console.log("Hero selection hidden");
+      } else {
+        console.error("Hero selection element not found");
+        // Create a fallback hero selection element if it doesn't exist
+        const fallbackHeroSelection = document.createElement("div");
+        fallbackHeroSelection.id = "hero-selection";
+        fallbackHeroSelection.classList.add("hidden");
+        document.body.appendChild(fallbackHeroSelection);
+      }
+
+      // Show game UI
+      const gameUI = document.getElementById("game-ui");
+      console.log("Game UI element:", gameUI);
+      if (gameUI) {
+        gameUI.classList.remove("hidden");
+        console.log("Game UI shown");
+      } else {
+        console.error("Game UI element not found");
+        // Create a fallback game UI if it doesn't exist
+        const fallbackGameUI = document.createElement("div");
+        fallbackGameUI.id = "game-ui";
+        document.body.appendChild(fallbackGameUI);
+        console.log("Created fallback game UI");
+      }
+      
+      // Check if shop modal exists in the DOM at game start
+      console.log('Shop modal in DOM at game start:', document.getElementById('shop-modal'));
+      
+      // Initialize input handler
+      this.inputHandler = new InputHandler();
+      window.inputHandler = this.inputHandler;
+      
+      // Initialize mouse capture manager
+      this.mouseCaptureManager = new MouseCaptureManager(this.inputHandler);
+      window.mouseCaptureManager = this.mouseCaptureManager;
+
+      // Initialize game systems
+      this.skillManager = new SkillManager(this.scene);
+      this.enemyManager = new EnemyManager(this.scene);
+      this.collisionDetector = new CollisionDetector(this.world);
+      window.collisionDetector = this.collisionDetector;
+
+      // Initialize effect system
+      this.effects = new Effects(this.scene);
+      
+      // Disable shadows for effects
+      this.scene.traverse((object) => {
+        if (object instanceof THREE.Points) {
+          object.castShadow = false;
+          object.receiveShadow = false;
         }
       });
+
+      // Initialize terrain system
+      try {
+        this.terrain = new Terrain(this.scene, {
+          width: 1000,
+          height: 1000,
+          segmentsW: 100,
+          segmentsH: 100,
+          maxHeight: 50,
+          minHeight: -50,
+          textures: {
+            diffuse: '/assets/textures/terrain/grass_diffuse.jpg',
+            normal: '/assets/textures/terrain/grass_normal.jpg'
+          },
+          materialOptions: {
+            wireframe: false,
+            flatShading: false
+          }
+        });
+      } catch (error) {
+        console.warn("Failed to initialize terrain:", error);
+        this.terrain = null;
+      }
+
+      // Initialize RPG systems
+      this.shop = new Shop(this.scene, this.effects);
+      this.crafting = new Crafting();
+      this.characterClass = new CharacterClass(this.selectedHero);
+      this.skillTree = new SkillTree(this.selectedHero);
+
+      // Initialize UI
+      this.hud = new HUD();
+      
+      // Play background music
+      if (this.soundManager) {
+        this.soundManager.playSound('background-music', { loop: true });
+      }
+
+      // Create hero with all systems connected
+      this.hero = new Hero(this.scene, this.selectedHero, {
+        skillManager: this.skillManager,
+        effects: this.effects,
+        characterClass: this.characterClass,
+        skillTree: this.skillTree,
+        shop: this.shop,
+        crafting: this.crafting
+      });
+
+      // Initialize combat system
+      this.attack = new Attack(this.hero);
+      
+      // Initialize crafting UI
+      this.craftingUI = new CraftingUI(this.hero);
+      
+      // Check if shop modal exists in the DOM
+      console.log('Shop modal in DOM before ShopUI init:', document.getElementById('shop-modal'));
+      
+      // Initialize shop UI
+      this.shopUI = new ShopUI(this.hero, this.shop);
+      
+      // Initialize shop button
+      this.shopButton = new ShopButton(this.shopUI);
+      
+      // Log shop UI instance
+      console.log('ShopUI initialized:', this.shopUI);
+
+      // Add debug info for collision detection if debug mode is enabled
+      if (config.game.debug) {
+        const collisionDebug = document.createElement("div");
+        collisionDebug.id = "collision-debug";
+        collisionDebug.style.position = "absolute";
+        collisionDebug.style.top = "100px";
+        collisionDebug.style.left = "20px";
+        collisionDebug.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+        collisionDebug.style.color = "white";
+        collisionDebug.style.padding = "10px";
+        collisionDebug.style.borderRadius = "5px";
+        collisionDebug.style.fontFamily = "Arial, sans-serif";
+        collisionDebug.style.zIndex = "1000";
+        collisionDebug.textContent = "Collision Detection: Active";
+        document.body.appendChild(collisionDebug);
+      }
+
+      // Set game as started
+      this.isGameStarted = true;
+      
+      console.log("Game successfully started!");
     } catch (error) {
-      console.warn("Failed to initialize terrain:", error);
-      this.terrain = null;
+      console.error("Error in startGame method:", error);
     }
-
-    // Initialize RPG systems
-    this.shop = new Shop(this.scene, this.effects);
-    this.crafting = new Crafting();
-    this.characterClass = new CharacterClass(this.selectedHero);
-    this.skillTree = new SkillTree(this.selectedHero);
-
-    // Initialize UI
-    this.hud = new HUD();
-    
-    // Play background music
-    if (this.soundManager) {
-      this.soundManager.playSound('background-music', { loop: true });
-    }
-
-    // Create hero with all systems connected
-    this.hero = new Hero(this.scene, this.selectedHero, {
-      skillManager: this.skillManager,
-      effects: this.effects,
-      characterClass: this.characterClass,
-      skillTree: this.skillTree,
-      shop: this.shop,
-      crafting: this.crafting
-    });
-
-    // Initialize combat system
-    this.attack = new Attack(this.hero);
-    
-    // Initialize crafting UI
-    this.craftingUI = new CraftingUI(this.hero);
-    
-    // Check if shop modal exists in the DOM
-    console.log('Shop modal in DOM before ShopUI init:', document.getElementById('shop-modal'));
-    
-    // Initialize shop UI
-    this.shopUI = new ShopUI(this.hero, this.shop);
-    
-    // Initialize shop button
-    this.shopButton = new ShopButton(this.shopUI);
-    
-    // Log shop UI instance
-    console.log('ShopUI initialized:', this.shopUI);
-
-    // Add debug info for collision detection if debug mode is enabled
-    if (config.game.debug) {
-      const collisionDebug = document.createElement("div");
-      collisionDebug.id = "collision-debug";
-      collisionDebug.style.position = "absolute";
-      collisionDebug.style.top = "100px";
-      collisionDebug.style.left = "20px";
-      collisionDebug.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
-      collisionDebug.style.color = "white";
-      collisionDebug.style.padding = "10px";
-      collisionDebug.style.borderRadius = "5px";
-      collisionDebug.style.fontFamily = "Arial, sans-serif";
-      collisionDebug.style.zIndex = "1000";
-      collisionDebug.textContent = "Collision Detection: Active";
-      document.body.appendChild(collisionDebug);
-    }
-
-    // Set game as started
-    this.isGameStarted = true;
   }
 
   onWindowResize() {

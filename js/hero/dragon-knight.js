@@ -1,7 +1,8 @@
-import * as THREE from "https://unpkg.com/three@0.157.0/build/three.module.js";
+import * as THREE from 'three';
 
 export default class DragonKnight extends THREE.Object3D {
   constructor() {
+    super();
     // Create a more complex Dragon Knight model
     const modelGroup = new THREE.Group();
 
