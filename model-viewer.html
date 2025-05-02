@@ -210,6 +210,22 @@
             background-color: #333;
             border-radius: 4px;
         }
+        
+        .mana-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #222;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .mana-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #0066ff;
+            transition: width 0.3s ease;
+        }
 
         .controls-info {
             position: absolute;
@@ -266,6 +282,7 @@
             </div>
             
             <button id="activate-skill-btn" style="display: none;">Activate Skill</button>
+            <button id="restore-mana-btn" style="display: none;">Restore Mana</button>
             <button id="reset-view-btn">Reset View</button>
             
             <div class="model-info" id="model-info">
@@ -276,6 +293,14 @@
             <div class="model-info" id="skill-info" style="display: none;">
                 <h3>Skill Information</h3>
                 <p>No skill selected</p>
+            </div>
+            
+            <div class="model-info" id="mana-info" style="display: none;">
+                <h3>Hero Status</h3>
+                <div class="mana-bar-container">
+                    <div class="mana-bar" id="mana-bar"></div>
+                </div>
+                <p id="mana-text">Mana: 100/100</p>
             </div>
         </div>
         <div class="viewer">
@@ -542,6 +567,7 @@
             window.addEventListener('resize', onWindowResize);
             document.getElementById('reset-view-btn').addEventListener('click', resetView);
             document.getElementById('activate-skill-btn').addEventListener('click', activateCurrentSkill);
+            document.getElementById('restore-mana-btn').addEventListener('click', restoreMana);
 
             // Start animation loop
             animate();
@@ -928,8 +954,10 @@
                         description: 'Select a specific skill to visualize'
                     });
                     
-                    // Hide activate button for the visualizer itself
+                    // Hide activate button and mana display for the visualizer itself
                     document.getElementById('activate-skill-btn').style.display = 'none';
+                    document.getElementById('restore-mana-btn').style.display = 'none';
+                    document.getElementById('mana-info').style.display = 'none';
                 } 
                 // If this is a specific skill
                 else {
@@ -947,8 +975,12 @@
                     // Show skill info
                     updateSkillInfo(selectedPath, skillInfo, skill);
                     
-                    // Show activate button
+                    // Show activate button and restore mana button
                     document.getElementById('activate-skill-btn').style.display = 'block';
+                    document.getElementById('restore-mana-btn').style.display = 'block';
+                    
+                    // Update mana display
+                    updateManaDisplay();
                 }
                 
                 // Reset camera to view the skill visualizer
@@ -972,9 +1004,45 @@
                     const selectedPath = document.getElementById('skill-selector').value;
                     const skillInfo = skillRegistry[selectedPath];
                     updateSkillInfo(selectedPath, skillInfo, currentSkillVisualizer.getSkillInfo());
+                    
+                    // Update mana display
+                    updateManaDisplay();
                 } else {
                     console.log('Could not activate skill (on cooldown or insufficient mana)');
+                    alert('Could not activate skill (on cooldown or insufficient mana)');
                 }
+            }
+        }
+        
+        // Restore hero mana
+        function restoreMana() {
+            if (currentSkillVisualizer) {
+                currentSkillVisualizer.hero.restoreMana();
+                updateManaDisplay();
+                
+                // Update skill info
+                const selectedPath = document.getElementById('skill-selector').value;
+                if (selectedPath && selectedPath !== 'js/mock/skill-visualizer.js') {
+                    const skillInfo = skillRegistry[selectedPath];
+                    updateSkillInfo(selectedPath, skillInfo, currentSkillVisualizer.getSkillInfo());
+                }
+            }
+        }
+        
+        // Update mana display
+        function updateManaDisplay() {
+            if (currentSkillVisualizer) {
+                const hero = currentSkillVisualizer.hero;
+                const manaPercent = (hero.mana / hero.maxMana) * 100;
+                
+                // Update mana bar
+                document.getElementById('mana-bar').style.width = `${manaPercent}%`;
+                
+                // Update mana text
+                document.getElementById('mana-text').textContent = `Mana: ${hero.mana}/${hero.maxMana}`;
+                
+                // Show mana info
+                document.getElementById('mana-info').style.display = 'block';
             }
         }
         
@@ -1237,6 +1305,9 @@
                 if (selectedPath && selectedPath !== 'js/mock/skill-visualizer.js') {
                     const skillInfo = skillRegistry[selectedPath];
                     updateSkillInfo(selectedPath, skillInfo, currentSkillVisualizer.getSkillInfo());
+                    
+                    // Update mana display
+                    updateManaDisplay();
                 }
             }
 
