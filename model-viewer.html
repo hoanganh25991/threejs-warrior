@@ -370,11 +370,113 @@
         
         // Skill registry - maps file paths to skill information
         const skillRegistry = {
+            // Dragon Knight Skills
             'js/skills/dragon-knight/dragon-breath.js': {
                 name: 'Dragon Breath',
                 description: 'A cone of fire breath that deals fire damage over time.',
                 hero: 'Dragon Knight'
             },
+            'js/skills/dragon-knight/dragon-rush.js': {
+                name: 'Dragon Rush',
+                description: 'A charging attack that deals damage to enemies in a line.',
+                hero: 'Dragon Knight'
+            },
+            'js/skills/dragon-knight/dragon-tail.js': {
+                name: 'Dragon Tail',
+                description: 'A stunning attack that immobilizes the target.',
+                hero: 'Dragon Knight'
+            },
+            'js/skills/dragon-knight/elder-dragon-form.js': {
+                name: 'Elder Dragon Form',
+                description: 'Transform into a powerful dragon with enhanced abilities.',
+                hero: 'Dragon Knight'
+            },
+            'js/skills/dragon-knight/fire-shield.js': {
+                name: 'Fire Shield',
+                description: 'A protective barrier that reduces incoming damage and reflects damage to attackers.',
+                hero: 'Dragon Knight'
+            },
+            'js/skills/dragon-knight/flame-strike.js': {
+                name: 'Flame Strike',
+                description: 'A powerful fire attack that damages enemies in an area.',
+                hero: 'Dragon Knight'
+            },
+            'js/skills/dragon-knight/inferno.js': {
+                name: 'Inferno',
+                description: 'Summons a massive fire storm that deals heavy damage in a large area.',
+                hero: 'Dragon Knight'
+            },
+            
+            // Crystal Maiden Skills
+            'js/skills/crystal-maiden/blizzard.js': {
+                name: 'Blizzard',
+                description: 'Summons a powerful ice storm that damages and slows enemies in an area.',
+                hero: 'Crystal Maiden'
+            },
+            'js/skills/crystal-maiden/frost-armor.js': {
+                name: 'Frost Armor',
+                description: 'Covers the hero in protective ice that reduces damage and slows attackers.',
+                hero: 'Crystal Maiden'
+            },
+            'js/skills/crystal-maiden/frost-nova.js': {
+                name: 'Frost Nova',
+                description: 'Creates an explosion of ice that damages and slows nearby enemies.',
+                hero: 'Crystal Maiden'
+            },
+            'js/skills/crystal-maiden/frozen-orb.js': {
+                name: 'Frozen Orb',
+                description: 'Launches an orb of ice that damages enemies it passes through.',
+                hero: 'Crystal Maiden'
+            },
+            'js/skills/crystal-maiden/glacial-barrier.js': {
+                name: 'Glacial Barrier',
+                description: 'Creates a wall of ice that blocks enemy movement and projectiles.',
+                hero: 'Crystal Maiden'
+            },
+            'js/skills/crystal-maiden/ice-blast.js': {
+                name: 'Ice Blast',
+                description: 'Fires a powerful blast of ice that freezes and damages the target.',
+                hero: 'Crystal Maiden'
+            },
+            'js/skills/crystal-maiden/ice-shards.js': {
+                name: 'Ice Shards',
+                description: 'Launches sharp ice projectiles that damage and slow enemies.',
+                hero: 'Crystal Maiden'
+            },
+            
+            // Axe Skills
+            'js/skills/axe/battle-hunger.js': {
+                name: 'Battle Hunger',
+                description: 'Inflicts a target with hunger, dealing damage over time until they kill a unit.',
+                hero: 'Axe'
+            },
+            'js/skills/axe/battle-trance.js': {
+                name: 'Battle Trance',
+                description: 'Enters a battle trance, increasing attack speed and movement speed.',
+                hero: 'Axe'
+            },
+            'js/skills/axe/berserkers-call.js': {
+                name: 'Berserker\'s Call',
+                description: 'Forces nearby enemies to attack Axe while increasing his armor.',
+                hero: 'Axe'
+            },
+            'js/skills/axe/berserkers-rage.js': {
+                name: 'Berserker\'s Rage',
+                description: 'Increases damage as health decreases, becoming more powerful when near death.',
+                hero: 'Axe'
+            },
+            'js/skills/axe/counter-helix.js': {
+                name: 'Counter Helix',
+                description: 'Automatically counterattacks when hit, dealing damage to all nearby enemies.',
+                hero: 'Axe'
+            },
+            'js/skills/axe/culling-blade.js': {
+                name: 'Culling Blade',
+                description: 'Instantly kills an enemy below a health threshold and grants movement speed to allies.',
+                hero: 'Axe'
+            },
+            
+            // Utility
             'js/mock/skill-visualizer.js': {
                 name: 'Skill Visualizer',
                 description: 'A utility for visualizing skills in the model viewer.',
