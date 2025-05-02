@@ -203,6 +203,18 @@
         button:hover {
             background-color: #3a8de0;
         }
+        
+        button:disabled {
+            background-color: #2a5d90;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        #activate-skill-btn:disabled {
+            background-color: #00aa00;
+            color: white;
+            opacity: 1;
+        }
 
         .model-info {
             margin-top: 20px;
@@ -235,6 +247,19 @@
             padding: 10px;
             border-radius: 4px;
             font-size: 12px;
+        }
+        
+        .active-skill {
+            color: #00ff00;
+            font-weight: bold;
+            background-color: rgba(0, 255, 0, 0.1);
+            padding: 5px;
+            border-radius: 4px;
+            border-left: 3px solid #00ff00;
+        }
+        
+        .inactive-skill {
+            color: #aaaaaa;
         }
     </style>
 </head>
@@ -975,8 +1000,11 @@
                     // Show skill info
                     updateSkillInfo(selectedPath, skillInfo, skill);
                     
-                    // Show activate button and restore mana button
-                    document.getElementById('activate-skill-btn').style.display = 'block';
+                    // Reset and show activate button and restore mana button
+                    const activateBtn = document.getElementById('activate-skill-btn');
+                    activateBtn.textContent = 'Activate Skill';
+                    activateBtn.disabled = false;
+                    activateBtn.style.display = 'block';
                     document.getElementById('restore-mana-btn').style.display = 'block';
                     
                     // Update mana display
@@ -1007,6 +1035,23 @@
                     
                     // Update mana display
                     updateManaDisplay();
+                    
+                    // Change button text to show skill is active
+                    const activateBtn = document.getElementById('activate-skill-btn');
+                    activateBtn.textContent = 'Skill Active';
+                    activateBtn.disabled = true;
+                    
+                    // Set a timer to reset the button when the skill effect ends
+                    const skill = currentSkillVisualizer.getCurrentSkill();
+                    if (skill && skill.duration) {
+                        setTimeout(() => {
+                            activateBtn.textContent = 'Activate Skill';
+                            activateBtn.disabled = false;
+                            
+                            // Update skill info again after effect ends
+                            updateSkillInfo(selectedPath, skillInfo, currentSkillVisualizer.getSkillInfo());
+                        }, skill.duration * 1000);
+                    }
                 } else {
                     console.log('Could not activate skill (on cooldown or insufficient mana)');
                     alert('Could not activate skill (on cooldown or insufficient mana)');
@@ -1087,7 +1132,8 @@
                 }
                 
                 if (skillData.isActive !== undefined) {
-                    html += `<p><strong>Status:</strong> ${skillData.isActive ? 'Active' : 'Inactive'}</p>`;
+                    const statusClass = skillData.isActive ? 'active-skill' : 'inactive-skill';
+                    html += `<p class="${statusClass}"><strong>Status:</strong> ${skillData.isActive ? 'ACTIVE' : 'Inactive'}</p>`;
                 }
                 
                 if (skillData.canUse !== undefined) {

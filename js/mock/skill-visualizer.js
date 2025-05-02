@@ -145,6 +145,10 @@ export default class SkillVisualizer {
         };
     }
     
+    getCurrentSkill() {
+        return this.currentSkill;
+    }
+    
     cleanup() {
         // Clean up skill
         if (this.currentSkill) {

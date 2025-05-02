@@ -7,6 +7,18 @@ export const config = {
         debug: false  // Enable debug mode
     },
     
+    // Performance settings
+    performance: {
+        useGPUAcceleration: true,  // Enable GPU acceleration
+        lowPolyMode: true,         // Use low-poly models for better performance
+        useInstancing: true,       // Use instanced meshes for similar objects
+        maxActiveSkills: 50,       // Limit the number of active skills
+        maxParticles: 1000,        // Limit the number of particles
+        shadowQuality: 'low',      // Shadow quality: 'off', 'low', 'medium', 'high'
+        effectDetail: 'low',       // Effect detail: 'low', 'medium', 'high'
+        throttleSkillUpdates: true // Throttle skill updates for better performance
+    },
+    
     // Camera settings
     camera: {
         fov: 75,

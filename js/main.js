@@ -84,18 +84,36 @@ class Game {
       config.camera.initialPosition.z
     );
 
-    // Create renderer
+    // Create renderer with performance settings
     this.renderer = new THREE.WebGLRenderer({
       canvas: document.getElementById("game-canvas"),
-      antialias: true,
+      antialias: config.performance?.useGPUAcceleration !== false, // Only use antialias if GPU acceleration is enabled
+      powerPreference: "high-performance", // Request high-performance GPU
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     
-    // Setup shadow map
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.shadowMap.autoUpdate = false;
+    // Apply GPU acceleration hints
+    if (config.performance?.useGPUAcceleration !== false) {
+      this.renderer.physicallyCorrectLights = false; // Disable physically correct lighting for performance
+      this.renderer.outputEncoding = THREE.LinearEncoding; // Use linear encoding for performance
+    }
+    
+    // Setup shadow map based on quality settings
+    const shadowQuality = config.performance?.shadowQuality || 'low';
+    this.renderer.shadowMap.enabled = shadowQuality !== 'off';
+    
+    if (shadowQuality === 'high') {
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.shadowMap.autoUpdate = true;
+    } else if (shadowQuality === 'medium') {
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+      this.renderer.shadowMap.autoUpdate = false;
+    } else {
+      this.renderer.shadowMap.type = THREE.BasicShadowMap;
+      this.renderer.shadowMap.autoUpdate = false;
+    }
+    
     this.renderer.shadowMap.needsUpdate = true;
 
     // Add lights
@@ -382,8 +400,18 @@ class Game {
       this.mouseCaptureManager = new MouseCaptureManager(this.inputHandler);
       window.mouseCaptureManager = this.mouseCaptureManager;
 
-      // Initialize game systems
+      // Initialize game systems with performance settings
       this.skillManager = new SkillManager(this.scene);
+      // Apply performance settings to skill manager
+      if (config.performance) {
+        this.skillManager.useInstancing = config.performance.useInstancing !== false;
+        this.skillManager.lowPolyMode = config.performance.lowPolyMode !== false;
+        this.skillManager.maxActiveSkills = config.performance.maxActiveSkills || 50;
+        if (config.performance.throttleSkillUpdates) {
+          this.skillManager.updateInterval = 1/30; // Throttle to 30 FPS for better performance
+        }
+      }
+      
       this.enemyManager = new EnemyManager(this.scene);
       this.collisionDetector = new CollisionDetector(this.world);
       window.collisionDetector = this.collisionDetector;
@@ -753,28 +781,60 @@ class Game {
     requestAnimationFrame(this.animate.bind(this));
 
     const deltaTime = this.clock.getDelta();
+    
+    // Limit deltaTime to prevent large jumps if frame rate drops
+    const cappedDeltaTime = Math.min(deltaTime, 0.1); // Cap at 100ms (10 FPS)
 
     // Update controls
     this.controls.update();
 
-    // Update game
-    this.update(deltaTime);
+    // Update game with capped delta time
+    this.update(cappedDeltaTime);
 
-    // Update shadows only for non-particle objects
-    this.scene.traverse((obj) => {
-      if (obj instanceof THREE.Points) {
-        obj.castShadow = false;
-        obj.receiveShadow = false;
-      }
-    });
-
-    // Update shadow map
+    // Only update shadows when needed and not every frame
     if (this.renderer.shadowMap.needsUpdate) {
+      // Update shadows only for non-particle objects
+      this.scene.traverse((obj) => {
+        if (obj instanceof THREE.Points) {
+          obj.castShadow = false;
+          obj.receiveShadow = false;
+        }
+      });
+      
       this.renderer.shadowMap.needsUpdate = false;
     }
 
     // Render scene
     this.renderer.render(this.scene, this.camera);
+    
+    // Monitor performance if debug mode is enabled
+    if (config.game.debug) {
+      this.monitorPerformance();
+    }
+  }
+  
+  // Performance monitoring
+  monitorPerformance() {
+    if (!this.stats) {
+      this.stats = {
+        frameCount: 0,
+        lastTime: performance.now(),
+        fps: 0
+      };
+    }
+    
+    this.stats.frameCount++;
+    const now = performance.now();
+    const elapsed = now - this.stats.lastTime;
+    
+    // Update FPS counter once per second
+    if (elapsed >= 1000) {
+      this.stats.fps = Math.round((this.stats.frameCount * 1000) / elapsed);
+      console.log(`FPS: ${this.stats.fps}, Active Skills: ${this.skillManager ? this.skillManager.activeSkills.length : 0}`);
+      
+      this.stats.frameCount = 0;
+      this.stats.lastTime = now;
+    }
   }
 }
 
