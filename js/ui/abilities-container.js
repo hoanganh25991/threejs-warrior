@@ -13,15 +13,10 @@ export default class AbilitiesContainer {
 
     init() {
         this.container = document.getElementById('abilities-container');
-        if (!this.container) {
-            console.error('❌ Abilities container not found in DOM');
-            return;
-        }
+        if (!this.container) return;
 
         this.createSkillButtons();
         this.updateSkills();
-        
-        console.log('✅ Abilities container initialized');
     }
 
     createSkillButtons() {
@@ -71,12 +66,7 @@ export default class AbilitiesContainer {
     }
 
     castSkill(skillKey) {
-        console.log(`🎯 Touch button pressed for skill: ${skillKey}`);
-        
-        if (!this.gameInstance) {
-            console.error('❌ Game instance not available');
-            return;
-        }
+        if (!this.gameInstance) return;
 
         // Get the button for visual feedback
         const button = this.skillButtons.get(skillKey);
@@ -92,37 +82,25 @@ export default class AbilitiesContainer {
             }
         }
 
-        // IMPORTANT: Always use lowercase key to match the hero.skills Map keys
-        // The hero.skills Map uses lowercase keys (see hero.js initializeSkills method)
+        // Always use lowercase key to match the hero.skills Map keys
         const normalizedKey = skillKey.toLowerCase();
         
         try {
             if (typeof this.gameInstance.castSkill === 'function') {
-                // Debug log to help diagnose issues
-                console.log(`🔍 Attempting to cast skill with key: "${normalizedKey}"`);
-                
-                // Call the game's castSkill method with the normalized key
                 this.gameInstance.castSkill(normalizedKey);
-                console.log(`✅ Touch skill cast successful: ${skillKey} -> ${normalizedKey}`);
-            } else {
-                console.error('❌ castSkill method not found on game instance');
             }
         } catch (error) {
-            console.error(`❌ Error casting skill ${skillKey}:`, error);
-            console.error('Error details:', error.message);
-            console.error('Stack trace:', error.stack);
+            console.error(`Error casting skill ${skillKey}:`, error);
         }
     }
 
     updateSkills() {
         if (!this.gameInstance?.hero?.skills) {
-            console.log('🔄 Hero or skills not available yet, will retry...');
             setTimeout(() => this.updateSkills(), 1000);
             return;
         }
 
         const heroSkills = this.gameInstance.hero.skills;
-        console.log('🔍 Updating skills display:', heroSkills);
 
         this.skillKeys.forEach(key => {
             const button = this.skillButtons.get(key);

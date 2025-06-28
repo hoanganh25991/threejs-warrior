@@ -801,9 +801,7 @@ class Game {
       for (const key of skillKeys) {
         if (this.inputHandler.isKeyPressed(key)) {
           // Use the same castSkill method for consistency
-          // Make sure to use lowercase key to match the hero.skills Map keys
           const normalizedKey = key.toLowerCase();
-          console.log(`🎮 Keyboard input detected for skill key: ${normalizedKey}`);
           this.castSkill(normalizedKey);
         }
       }
@@ -820,34 +818,15 @@ class Game {
     }
   }
 
-  // Method to cast skill from UI interaction - completely rewritten for robustness
+  // Method to cast skill from UI interaction
   castSkill(skillKey) {
-    console.log(`🎯 Touch skill cast attempt for key: ${skillKey}`);
-    
-    if (!this.hero || !this.skillManager) {
-      console.error('❌ Hero or SkillManager not available');
-      return false;
-    }
+    if (!this.hero || !this.skillManager) return false;
 
     // Normalize the key to lowercase
     const normalizedKey = skillKey.toLowerCase();
-    console.log(`🔑 Normalized key: ${normalizedKey}`);
     
     // Check if hero.skills is a Map (new system) or object (old system)
     const isMapBased = this.hero.skills instanceof Map;
-    console.log(`🔍 Using ${isMapBased ? 'Map-based' : 'Object-based'} skill system`);
-    
-    // Debug available skills
-    console.log('🔍 Available skills:');
-    if (isMapBased) {
-      this.hero.skills.forEach((skill, key) => {
-        console.log(`- Key: "${key}", Name: "${skill.name}"`);
-      });
-    } else {
-      Object.keys(this.hero.skills).forEach(key => {
-        console.log(`- Key: "${key}", Name: "${this.hero.skills[key].name}"`);
-      });
-    }
     
     // Try to find the skill with exact match first
     let skill = null;
@@ -859,21 +838,17 @@ class Game {
     
     // If skill not found, try case-insensitive search
     if (!skill && isMapBased) {
-      // Try to find a case-insensitive match in the Map
       for (const [key, value] of this.hero.skills.entries()) {
         if (key.toLowerCase() === normalizedKey) {
           skill = value;
-          console.log(`🔍 Found skill with case-insensitive match: ${key}`);
           break;
         }
       }
     }
     
-    // If still not found, try with uppercase first letter (for 'K' vs 'k')
+    // If still not found, try with uppercase first letter
     if (!skill) {
       const capitalizedKey = normalizedKey.charAt(0).toUpperCase() + normalizedKey.slice(1);
-      console.log(`🔍 Trying with capitalized key: ${capitalizedKey}`);
-      
       if (isMapBased) {
         skill = this.hero.skills.get(capitalizedKey);
       } else {
@@ -882,12 +857,7 @@ class Game {
     }
     
     // If still not found, give up
-    if (!skill) {
-      console.log(`❌ Skill for key "${normalizedKey}" not found after all attempts`);
-      return false;
-    }
-    
-    console.log(`✅ Found skill: ${skill.name}`);
+    if (!skill) return false;
     
     // Check if skill is on cooldown
     let cooldown = 0;
@@ -897,23 +867,16 @@ class Game {
       cooldown = this.hero.cooldowns[normalizedKey] || 0;
     }
     
-    if (cooldown > 0) {
-      console.log(`⏰ Skill ${skill.name} is on cooldown (${cooldown} remaining)`);
-      return false;
-    }
+    if (cooldown > 0) return false;
 
     // Get skill name
     const skillName = skill.name;
-    console.log(`🚀 Casting skill: ${skillName}`);
 
     // Try to directly activate the skill first (preferred method)
     if (typeof skill.activate === 'function') {
-      console.log(`🔥 Directly activating skill: ${skillName}`);
       const activated = skill.activate();
       
       if (activated) {
-        console.log(`✅ Skill ${skillName} activated successfully via direct method`);
-        
         // Set cooldown
         const cooldownDuration = skill.getCooldownDuration ? skill.getCooldownDuration() : (skill.cooldown || 1);
         if (isMapBased) {
@@ -927,9 +890,6 @@ class Game {
     }
 
     // Fallback to the old method if direct activation failed or isn't available
-    console.log(`⚠️ Falling back to legacy skill activation for: ${skillName}`);
-
-    // Create skill effect using hero's direction
     const heroPosition = this.hero.getPosition().clone();
     heroPosition.y += 1; // Adjust to center of hero
     const heroDirection = this.hero.getDirection();
@@ -952,7 +912,6 @@ class Game {
       this.hero.cooldowns[normalizedKey] = cooldownDuration;
     }
 
-    console.log(`🎉 Successfully cast skill: ${skillName} via touch`);
     return true;
   }
 

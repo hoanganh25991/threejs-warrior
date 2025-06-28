@@ -41,9 +41,6 @@ export default class DragonRush extends Skill {
         
         // Make sure scene is available
         this.scene = hero.scene;
-        
-        // Debug log to verify initialization
-        console.log(`Dragon Rush skill initialized. Scene available: ${!!this.scene}`);
     }
     
     /**
