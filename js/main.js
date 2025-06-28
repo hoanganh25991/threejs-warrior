@@ -139,6 +139,12 @@ class Game {
 
     // Add event listeners
     window.addEventListener("resize", this.onWindowResize.bind(this));
+    
+    // Add fullscreen change event listeners for cross-browser compatibility
+    document.addEventListener("fullscreenchange", this.onFullscreenChange.bind(this));
+    document.addEventListener("mozfullscreenchange", this.onFullscreenChange.bind(this));
+    document.addEventListener("webkitfullscreenchange", this.onFullscreenChange.bind(this));
+    document.addEventListener("msfullscreenchange", this.onFullscreenChange.bind(this));
 
     // Add specific event listener for the canvas to handle jumping
     const canvas = document.getElementById("game-canvas");
@@ -392,6 +398,11 @@ class Game {
         console.log("Created fallback game UI");
       }
       
+      // Request fullscreen after UI setup is complete
+      setTimeout(() => {
+        this.requestFullscreen();
+      }, 100); // Small delay to ensure UI transitions are complete
+      
       // Check if shop modal exists in the DOM at game start
       console.log('Shop modal in DOM at game start:', document.getElementById('shop-modal'));
       
@@ -624,6 +635,57 @@ class Game {
 
     // Update renderer size
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  requestFullscreen() {
+    try {
+      const element = document.documentElement;
+      
+      // Check if fullscreen is supported and not already in fullscreen
+      if (!document.fullscreenElement && 
+          !document.mozFullScreenElement && 
+          !document.webkitFullscreenElement && 
+          !document.msFullscreenElement) {
+        
+        console.log("Requesting fullscreen...");
+        
+        // Try different fullscreen methods for cross-browser compatibility
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.mozRequestFullScreen) { // Firefox
+          element.mozRequestFullScreen();
+        } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
+          element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { // IE/Edge
+          element.msRequestFullscreen();
+        } else {
+          console.warn("Fullscreen API is not supported in this browser");
+        }
+      } else {
+        console.log("Already in fullscreen mode");
+      }
+    } catch (error) {
+      console.error("Error requesting fullscreen:", error);
+    }
+  }
+
+  onFullscreenChange() {
+    const isFullscreen = !!(document.fullscreenElement || 
+                           document.mozFullScreenElement || 
+                           document.webkitFullscreenElement || 
+                           document.msFullscreenElement);
+    
+    console.log("Fullscreen changed:", isFullscreen ? "Entered fullscreen" : "Exited fullscreen");
+    
+    // Update renderer size when entering/exiting fullscreen
+    this.onWindowResize();
+    
+    // You can add additional fullscreen-specific logic here
+    if (isFullscreen) {
+      console.log("Game is now in fullscreen mode");
+    } else {
+      console.log("Game exited fullscreen mode");
+    }
   }
 
   update(deltaTime) {
