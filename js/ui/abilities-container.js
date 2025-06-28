@@ -92,12 +92,16 @@ export default class AbilitiesContainer {
             }
         }
 
-        // Call the exact same castSkill method that keyboard uses
-        // Make sure we pass lowercase key to match keyboard system
+        // IMPORTANT: Always use lowercase key to match the hero.skills Map keys
+        // The hero.skills Map uses lowercase keys (see hero.js initializeSkills method)
         const normalizedKey = skillKey.toLowerCase();
         
         try {
             if (typeof this.gameInstance.castSkill === 'function') {
+                // Debug log to help diagnose issues
+                console.log(`🔍 Attempting to cast skill with key: "${normalizedKey}"`);
+                
+                // Call the game's castSkill method with the normalized key
                 this.gameInstance.castSkill(normalizedKey);
                 console.log(`✅ Touch skill cast successful: ${skillKey} -> ${normalizedKey}`);
             } else {
@@ -105,6 +109,8 @@ export default class AbilitiesContainer {
             }
         } catch (error) {
             console.error(`❌ Error casting skill ${skillKey}:`, error);
+            console.error('Error details:', error.message);
+            console.error('Stack trace:', error.stack);
         }
     }
 

@@ -801,7 +801,10 @@ class Game {
       for (const key of skillKeys) {
         if (this.inputHandler.isKeyPressed(key)) {
           // Use the same castSkill method for consistency
-          this.castSkill(key);
+          // Make sure to use lowercase key to match the hero.skills Map keys
+          const normalizedKey = key.toLowerCase();
+          console.log(`🎮 Keyboard input detected for skill key: ${normalizedKey}`);
+          this.castSkill(normalizedKey);
         }
       }
     }
@@ -902,6 +905,29 @@ class Game {
     // Get skill name
     const skillName = skill.name;
     console.log(`🚀 Casting skill: ${skillName}`);
+
+    // Try to directly activate the skill first (preferred method)
+    if (typeof skill.activate === 'function') {
+      console.log(`🔥 Directly activating skill: ${skillName}`);
+      const activated = skill.activate();
+      
+      if (activated) {
+        console.log(`✅ Skill ${skillName} activated successfully via direct method`);
+        
+        // Set cooldown
+        const cooldownDuration = skill.getCooldownDuration ? skill.getCooldownDuration() : (skill.cooldown || 1);
+        if (isMapBased) {
+          this.hero.cooldowns.set(normalizedKey, cooldownDuration);
+        } else {
+          this.hero.cooldowns[normalizedKey] = cooldownDuration;
+        }
+        
+        return true;
+      }
+    }
+
+    // Fallback to the old method if direct activation failed or isn't available
+    console.log(`⚠️ Falling back to legacy skill activation for: ${skillName}`);
 
     // Create skill effect using hero's direction
     const heroPosition = this.hero.getPosition().clone();

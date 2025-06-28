@@ -38,6 +38,12 @@ export default class DragonRush extends Skill {
         
         // Performance settings - can be adjusted based on device capability
         this.qualityLevel = this._detectPerformanceLevel();
+        
+        // Make sure scene is available
+        this.scene = hero.scene;
+        
+        // Debug log to verify initialization
+        console.log(`Dragon Rush skill initialized. Scene available: ${!!this.scene}`);
     }
     
     /**
