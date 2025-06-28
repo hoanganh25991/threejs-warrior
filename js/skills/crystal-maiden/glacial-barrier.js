@@ -365,9 +365,30 @@ export default class GlacialBarrier extends Skill {
         
         // Remove ice shards
         this.iceShards.forEach(shard => {
-            this.scene.remove(shard);
-            shard.geometry.dispose();
-            shard.material.dispose();
+            // Remove the group from the scene
+            this.scene.remove(shard.group);
+            
+            // Dispose of trunk geometry and material
+            if (shard.trunk) {
+                shard.trunk.geometry.dispose();
+                shard.trunk.material.dispose();
+            }
+            
+            // Dispose of branch geometries and materials
+            if (shard.branches) {
+                shard.branches.forEach(branch => {
+                    branch.geometry.dispose();
+                    branch.material.dispose();
+                });
+            }
+            
+            // Dispose of crystal geometries and materials
+            if (shard.crystals) {
+                shard.crystals.forEach(crystal => {
+                    crystal.geometry.dispose();
+                    crystal.material.dispose();
+                });
+            }
         });
         this.iceShards = [];
         
@@ -439,14 +460,15 @@ export default class GlacialBarrier extends Skill {
             const y = 1.5 * Math.sin(phi) * Math.sin(theta);
             const z = 1.5 * Math.cos(phi);
             
-            shard.position.set(
+            // Use shard.group which is the THREE.js Group object
+            shard.group.position.set(
                 this.hero.group.position.x + x,
                 this.hero.group.position.y + y + 1,
                 this.hero.group.position.z + z
             );
             
             // Point shard outward
-            shard.lookAt(new THREE.Vector3(
+            shard.group.lookAt(new THREE.Vector3(
                 this.hero.group.position.x + x * 2,
                 this.hero.group.position.y + y * 2 + 1,
                 this.hero.group.position.z + z * 2

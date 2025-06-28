@@ -621,7 +621,7 @@ body {
 }
 
 .ability-button.available {
-    border-color: #777;
+    border-color: #555;
 }
 
 .ability-button.on-cooldown {
@@ -640,7 +640,7 @@ body {
 .key-binding {
     font-size: 16px;
     font-weight: bold;
-    color: #fff;
+    color: #fff !important; /* Force white color for all heroes */
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 

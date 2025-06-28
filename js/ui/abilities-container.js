@@ -129,9 +129,9 @@ export default class AbilitiesContainer {
                 tooltip.querySelector('.tooltip-description').textContent = this.getSkillDescription(skill);
                 tooltip.querySelector('.tooltip-mana').textContent = `Mana: ${skill.manaCost || 0}`;
                 
-                // Update visual style based on skill type
-                button.style.borderColor = this.getSkillColor(skill);
-                keyBinding.style.color = this.getSkillColor(skill);
+                // Use consistent styling for all heroes (white text, black background)
+                button.style.borderColor = '#555'; // Consistent border color
+                keyBinding.style.color = '#fff';   // White text for all skills
                 
             } else {
                 // Empty slot
@@ -142,7 +142,7 @@ export default class AbilitiesContainer {
                 tooltip.querySelector('.tooltip-description').textContent = 'No skill assigned';
                 tooltip.querySelector('.tooltip-mana').textContent = 'Mana: 0';
                 
-                button.style.borderColor = '#777';
+                button.style.borderColor = '#333';
                 keyBinding.style.color = '#fff';
             }
         });

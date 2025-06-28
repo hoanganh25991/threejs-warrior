@@ -77,29 +77,6 @@ export default class HUD {
         this.skillBar = document.createElement('div');
         this.skillBar.className = 'skill-bar';
         this.container.appendChild(this.skillBar);
-        
-        // Add debug button for testing skill casting
-        const debugButton = document.createElement('button');
-        debugButton.textContent = 'Test Cast K Skill';
-        debugButton.style.position = 'absolute';
-        debugButton.style.top = '10px';
-        debugButton.style.right = '10px';
-        debugButton.style.zIndex = '9999';
-        debugButton.style.padding = '10px';
-        debugButton.style.background = 'red';
-        debugButton.style.color = 'white';
-        debugButton.style.border = 'none';
-        debugButton.style.borderRadius = '5px';
-        debugButton.style.cursor = 'pointer';
-        
-        debugButton.addEventListener('click', () => {
-            console.log('🧪 Debug button clicked - testing K skill cast');
-            if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
-                window.gameInstance.castSkill('k');
-            }
-        });
-        
-        document.body.appendChild(debugButton);
 
         // Skill slots for Y, U, I, H, J, K keys
         const keys = ['Y', 'U', 'I', 'H', 'J', 'K'];
