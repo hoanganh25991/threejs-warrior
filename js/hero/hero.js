@@ -68,6 +68,9 @@ export default class Hero {
     this.jumpTime = 0;
     this.skills = new Map();
     this.cooldowns = new Map();
+    
+    // Ensure cooldowns stays as a Map
+    this.ensureCooldownsMap();
     this.rotation = new THREE.Euler(0, 0, 0, "YXZ"); // YXZ order for FPS-style rotation
     this.direction = new THREE.Vector3(0, 0, -1); // Forward direction
     
@@ -340,21 +343,37 @@ export default class Hero {
   }
 
   updateSkills(delta) {
+    // Ensure cooldowns Map is properly initialized
+    this.ensureCooldownsMap();
+    
     // Update all skills
-    for (const [key, skill] of this.skills) {
-      try {
-        if (typeof skill.update === 'function') {
-          skill.update(delta);
+    if (this.skills instanceof Map) {
+      for (const [key, skill] of this.skills) {
+        try {
+          if (skill && typeof skill.update === 'function') {
+            skill.update(delta);
+          }
+        } catch (error) {
+          console.error(`Error updating skill ${key}: ${error.message}`);
+          console.error(`Skill object:`, skill);
+          console.error(`Full error:`, error);
         }
-      } catch (error) {
-        console.error(`Error updating skill ${key}: ${error.message}`);
       }
     }
 
     // Update cooldowns
-    for (const [key, cooldown] of this.cooldowns) {
-      if (cooldown > 0) {
-        this.cooldowns.set(key, cooldown - delta);
+    if (this.cooldowns instanceof Map) {
+      try {
+        for (const [key, cooldown] of this.cooldowns) {
+          if (cooldown > 0) {
+            this.cooldowns.set(key, cooldown - delta);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating cooldowns:', error);
+        console.error('Cooldowns state:', this.cooldowns);
+        // Reinitialize cooldowns if there's an error
+        this.ensureCooldownsMap();
       }
     }
 
@@ -363,6 +382,22 @@ export default class Hero {
       this.attackSystem.update(delta);
     } catch (error) {
       console.error(`Error updating attack system: ${error.message}`);
+    }
+  }
+
+  ensureCooldownsMap() {
+    // Ensure cooldowns is always a Map
+    if (!(this.cooldowns instanceof Map)) {
+      console.warn('Cooldowns was not a Map, reinitializing...');
+      const oldCooldowns = this.cooldowns || {};
+      this.cooldowns = new Map();
+      
+      // Migrate old cooldowns if they exist
+      if (typeof oldCooldowns === 'object') {
+        for (const [key, value] of Object.entries(oldCooldowns)) {
+          this.cooldowns.set(key, value);
+        }
+      }
     }
   }
 
@@ -1761,10 +1796,19 @@ export default class Hero {
       moveZ = movementInput.y; // Note: Y from joystick maps to Z in game coordinates
       isMoving = movementInput.magnitude > 0.1;
       
-      // For virtual joystick, we can also use the movement direction for look direction
+      // For virtual joystick, handle rotation based on horizontal component when moving
       if (inputHandler.isUsingVirtualJoystick && inputHandler.isUsingVirtualJoystick() && isMoving) {
-        // Convert movement to look direction change
-        lookDirectionChange = moveX * 2; // Scale for appropriate rotation speed
+        // Only apply rotation if there's significant horizontal movement
+        // This allows for pure forward movement without rotation
+        if (Math.abs(moveX) > 0.3) {
+          // Scale rotation based on horizontal input, but reduce it when moving forward/backward
+          const forwardMovement = Math.abs(moveZ);
+          const rotationIntensity = Math.abs(moveX);
+          
+          // Reduce rotation when moving forward to allow diagonal movement
+          const rotationReduction = forwardMovement > 0.5 ? 0.6 : 1.0;
+          lookDirectionChange = moveX * 1.5 * rotationReduction; // Reduced from 2 to 1.5 and apply reduction
+        }
       } else {
         // Handle keyboard-specific look direction changes
         if (keys.a) {
@@ -2516,20 +2560,20 @@ export default class Hero {
 
   updateCooldowns(deltaTime) {
     // Update all skill cooldowns
-    for (const key in this.cooldowns) {
-      if (this.cooldowns[key] > 0) {
-        this.cooldowns[key] -= deltaTime;
+    for (const [key, cooldown] of this.cooldowns) {
+      if (cooldown > 0) {
+        this.cooldowns.set(key, cooldown - deltaTime);
 
         // Update UI to show cooldown
         const abilityElement = document.getElementById(`ability-${key}`);
         if (abilityElement) {
           abilityElement.style.opacity = 0.5;
           abilityElement.textContent = `${key.toUpperCase()} (${Math.ceil(
-            this.cooldowns[key]
+            this.cooldowns.get(key)
           )}s)`;
         }
-      } else if (this.cooldowns[key] <= 0) {
-        this.cooldowns[key] = 0;
+      } else if (cooldown <= 0) {
+        this.cooldowns.set(key, 0);
 
         // Update UI to show skill is ready
         const abilityElement = document.getElementById(`ability-${key}`);
@@ -2797,8 +2841,8 @@ export default class Hero {
       if (
         keys[key] && 
         this.cooldowns && 
-        this.cooldowns[key] !== undefined && 
-        this.cooldowns[key] <= 0 &&
+        this.cooldowns.has(key) && 
+        this.cooldowns.get(key) <= 0 &&
         typeof this.mana !== 'undefined' && 
         this.skills[key].manaCost !== undefined &&
         this.mana >= this.skills[key].manaCost
@@ -2841,7 +2885,7 @@ export default class Hero {
 
     // Set cooldown
     if (this.cooldowns) {
-      this.cooldowns[key] = skill.cooldown || 5.0;
+      this.cooldowns.set(key, skill.cooldown || 5.0);
     }
 
     // Consume mana if available

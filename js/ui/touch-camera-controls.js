@@ -54,8 +54,7 @@ export class TouchCameraControls {
         indicator.id = 'touch-camera-indicator';
         indicator.innerHTML = `
             <div class="indicator-content">
-                <div class="indicator-icon">📱</div>
-                <div class="indicator-text">Drag to look around</div>
+                <div>Drag to look around</div>
             </div>
         `;
         
@@ -64,41 +63,28 @@ export class TouchCameraControls {
         style.textContent = `
             #touch-camera-indicator {
                 position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 1000;
-                pointer-events: none;
-                opacity: 0.7;
-                transition: opacity 0.3s ease;
-            }
-            
-            .indicator-content {
-                background: rgba(0, 0, 0, 0.7);
-                color: white;
-                padding: 8px 12px;
-                border-radius: 20px;
-                font-size: 12px;
-                font-family: Arial, sans-serif;
-                text-align: center;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(10px);
-            }
-            
-            .indicator-icon {
+                top: 10px;
+                right: 10px;
+                padding: 10px 20px;
+                background-color:transparent;
+                color: #fff;
+                border: 2px solid #6b3e1c;
+                border-radius: 5px;
                 font-size: 16px;
-                margin-bottom: 2px;
-            }
-            
-            .indicator-text {
-                font-size: 10px;
-                opacity: 0.8;
+                cursor: pointer;
+                z-index: 1000;
+                opacity: 0.5;
+                width: 200px;
+                text-align: center;
+                transition: all 0.3s;
+                pointer-events: auto;
             }
             
             #touch-camera-indicator.active {
                 opacity: 1;
             }
             
-            #touch-camera-indicator.active .indicator-content {
+            #touch-camera-indicator.active {
                 background: rgba(248, 208, 0, 0.8);
                 color: black;
                 border-color: rgba(248, 208, 0, 0.6);

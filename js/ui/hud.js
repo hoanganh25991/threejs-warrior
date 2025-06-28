@@ -3,14 +3,28 @@ import CharacterInfo from "./character-info.js";
 
 export default class HUD {
     constructor(hero, gameInstance = null) {
+        console.log('🎯 HUD Constructor called with:', { hero: !!hero, gameInstance: !!gameInstance });
+        console.log('🎮 Game instance details:', gameInstance);
+        console.log('🔍 Game instance type:', typeof gameInstance);
+        console.log('🔍 Game instance constructor:', gameInstance?.constructor?.name);
+        
         this.hero = hero;
         this.gameInstance = gameInstance;
+        
+        // Debug the gameInstance methods right here
+        if (gameInstance) {
+            console.log('🔍 CONSTRUCTOR: gameInstance methods:', Object.getOwnPropertyNames(gameInstance));
+            console.log('🔍 CONSTRUCTOR: gameInstance prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(gameInstance)));
+        }
+        
         this.init();
         
         // Initialize character info UI if hero is available
         if (hero) {
             this.characterInfo = new CharacterInfo(hero, window.mouseCaptureManager);
         }
+        
+        console.log('✅ HUD initialization complete');
     }
 
     init() {
@@ -121,12 +135,26 @@ export default class HUD {
             
             // Add touch/click support for skill casting
             const handleSkillCast = (event) => {
+                console.log(`🚨 DEBUG: handleSkillCast called for skill ${key}`);
                 event.preventDefault();
                 event.stopPropagation();
                 
                 console.log(`🎮 Touch/Click detected on skill ${key}`);
                 console.log('Game instance available:', !!this.gameInstance);
+                console.log('Game instance type:', typeof this.gameInstance);
+                console.log('Game instance:', this.gameInstance);
                 console.log('castSkill method available:', !!this.gameInstance?.castSkill);
+                console.log('castSkill method type:', typeof this.gameInstance?.castSkill);
+                
+                // Check what methods are available on gameInstance
+                console.log('🔍 DEBUG: About to check gameInstance methods...');
+                if (this.gameInstance) {
+                    console.log('✅ gameInstance exists, logging methods...');
+                    console.log('Available methods on gameInstance:', Object.getOwnPropertyNames(this.gameInstance));
+                    console.log('Available methods on gameInstance prototype:', Object.getOwnPropertyNames(Object.getPrototypeOf(this.gameInstance)));
+                } else {
+                    console.log('❌ gameInstance is null/undefined:', this.gameInstance);
+                }
                 
                 // Add pressed state for visual feedback immediately
                 slot.classList.add('pressed');
@@ -134,14 +162,43 @@ export default class HUD {
                 // Cast the skill if game instance is available
                 if (this.gameInstance && this.gameInstance.castSkill) {
                     console.log(`🚀 Calling castSkill with key: ${key.toLowerCase()}`);
-                    this.gameInstance.castSkill(key.toLowerCase());
+                    console.log(`🎯 Key type: ${typeof key}, value: "${key}"`);
+                    
+                    try {
+                        const result = this.gameInstance.castSkill(key.toLowerCase());
+                        console.log(`✅ castSkill result:`, result);
+                    } catch (error) {
+                        console.error(`❌ Error casting skill:`, error);
+                    }
                     
                     // Haptic feedback for successful attempt
                     if (navigator.vibrate) {
                         navigator.vibrate(75);
                     }
+                } else if (this.gameInstance && !this.gameInstance.castSkill) {
+                    console.log('❌ castSkill method not found on game instance');
+                    
+                    // Try alternative method names
+                    const alternativeMethods = ['useSkill', 'activateSkill', 'triggerSkill', 'executeSkill'];
+                    for (const methodName of alternativeMethods) {
+                        if (typeof this.gameInstance[methodName] === 'function') {
+                            console.log(`🔄 Found alternative method: ${methodName}`);
+                            try {
+                                this.gameInstance[methodName](key.toLowerCase());
+                                console.log(`✅ Successfully called ${methodName}`);
+                                return;
+                            } catch (error) {
+                                console.error(`❌ Error calling ${methodName}:`, error);
+                            }
+                        }
+                    }
+                    
+                    // Error haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate([50, 50, 50]);
+                    }
                 } else {
-                    console.error('❌ Game instance or castSkill method not available:', {
+                    console.error('❌ Game instance not available:', {
                         gameInstance: !!this.gameInstance,
                         castSkillMethod: !!this.gameInstance?.castSkill
                     });
@@ -177,11 +234,131 @@ export default class HUD {
                 }
             };
             
+            // Add debugging to see if slot is being created
+            console.log(`✅ Created skill slot for key: ${key}`, slot);
+            console.log(`🎯 Slot classes: ${slot.className}`);
+            console.log(`📍 Slot position in DOM:`, slot.getBoundingClientRect());
+            
+            // Add comprehensive skill casting on click
+            slot.addEventListener('click', (event) => {
+                console.log(`🎯 COMPREHENSIVE CLICK HANDLER for ${key} slot!`);
+                console.log(`🔍 this.gameInstance in click handler:`, this.gameInstance);
+                console.log(`🔍 window.gameInstance:`, window.gameInstance);
+                
+                // ADD THE MISSING DEBUG LOGS HERE
+                console.log(`🎮 Touch/Click detected on skill ${key}`);
+                console.log('Game instance available:', !!this.gameInstance);
+                console.log('Game instance type:', typeof this.gameInstance);
+                console.log('Game instance:', this.gameInstance);
+                console.log('castSkill method available:', !!this.gameInstance?.castSkill);
+                console.log('castSkill method type:', typeof this.gameInstance?.castSkill);
+                
+                // Check what methods are available on gameInstance
+                console.log('🔍 DEBUG: About to check gameInstance methods...');
+                if (this.gameInstance) {
+                    console.log('✅ gameInstance exists, logging methods...');
+                    console.log('Available methods on gameInstance:', Object.getOwnPropertyNames(this.gameInstance));
+                    console.log('Available methods on gameInstance prototype:', Object.getOwnPropertyNames(Object.getPrototypeOf(this.gameInstance)));
+                } else {
+                    console.log('❌ gameInstance is null/undefined:', this.gameInstance);
+                }
+                
+                event.preventDefault();
+                event.stopPropagation();
+                
+                // Method 1: Direct skill casting (primary approach)
+                if (window.gameInstance && window.gameInstance.castSkill) {
+                    console.log(`🚀 Method 1: Using gameInstance.castSkill for ${key}`);
+                    window.gameInstance.castSkill(key.toLowerCase());
+                    return; // Exit early if this works
+                }
+                
+                // Method 2: Direct skill system access (backup)
+                if (window.gameInstance && window.gameInstance.hero && window.gameInstance.skillManager) {
+                    console.log(`🎯 Method 2: Direct skill system access for ${key}`);
+                    const skillKey = key.toLowerCase();
+                    const hero = window.gameInstance.hero;
+                    const skillManager = window.gameInstance.skillManager;
+                    
+                    // Get the skill
+                    let skill = null;
+                    if (hero.skills instanceof Map) {
+                        skill = hero.skills.get(skillKey);
+                    } else {
+                        skill = hero.skills[skillKey];
+                    }
+                    
+                    if (skill && skill.name && skill.name !== 'unnamed') {
+                        console.log(`✅ Found skill "${skill.name}", checking cooldown...`);
+                        
+                        // Check cooldown
+                        let onCooldown = false;
+                        if (hero.cooldowns instanceof Map) {
+                            onCooldown = (hero.cooldowns.get(skillKey) || 0) > 0;
+                        } else {
+                            onCooldown = (hero.cooldowns[skillKey] || 0) > 0;
+                        }
+                        
+                        if (!onCooldown) {
+                            console.log(`🪄 Casting skill "${skill.name}" directly via skill manager`);
+                            
+                            // Cast the skill
+                            const heroPosition = hero.getPosition().clone();
+                            heroPosition.y += 1;
+                            const heroDirection = hero.getDirection();
+                            
+                            skillManager.useSkill(skill.name, heroPosition, heroDirection);
+                            
+                            // Set cooldown
+                            const cooldownDuration = skill.getCooldownDuration ? skill.getCooldownDuration() : (skill.cooldown || 1);
+                            if (hero.cooldowns instanceof Map) {
+                                hero.cooldowns.set(skillKey, cooldownDuration);
+                            } else {
+                                hero.cooldowns[skillKey] = cooldownDuration;
+                            }
+                            
+                            // Play sound if available
+                            if (window.gameInstance.soundManager) {
+                                window.gameInstance.soundManager.playSound(skill.name.toLowerCase().replace(/\s+/g, ""));
+                            }
+                            
+                            console.log(`✅ Successfully cast "${skill.name}" via direct method`);
+                            return;
+                        } else {
+                            console.log(`❌ Skill "${skill.name}" is on cooldown`);
+                        }
+                    } else {
+                        console.log(`❌ Skill ${skillKey} not found or unnamed`);
+                    }
+                }
+                
+                // Method 3: Keyboard simulation (last resort)
+                console.log(`⌨️ Method 3: Keyboard simulation for ${key}`);
+                if (window.inputHandler && window.inputHandler.keys) {
+                    console.log(`📝 Setting inputHandler key ${key.toLowerCase()} = true`);
+                    window.inputHandler.keys[key.toLowerCase()] = true;
+                    setTimeout(() => {
+                        window.inputHandler.keys[key.toLowerCase()] = false;
+                    }, 100);
+                } else {
+                    console.log(`❌ InputHandler not available`);
+                }
+                
+                console.log(`❌ All skill casting methods failed for ${key}`);
+            }, true);
+            
             // Add event listeners
             console.log(`Adding event listeners for skill ${key}`);
-            slot.addEventListener('click', handleSkillCast);
+            // Note: Click handler is already added above (comprehensive handler)
             slot.addEventListener('touchstart', handleTouchStart, { passive: false });
             slot.addEventListener('touchend', handleTouchEnd, { passive: false });
+            
+            // Debug: Log all event listeners
+            console.log(`🔍 Event listeners added for ${key}:`, {
+                click: 'comprehensive handler (above)',
+                touchstart: 'handleTouchStart',
+                touchend: 'handleTouchEnd'
+            });
             
             // Prevent context menu on long press
             slot.addEventListener('contextmenu', (event) => {
@@ -190,21 +367,17 @@ export default class HUD {
             
             // Debug: Add a simple test event to verify touch is working
             slot.addEventListener('touchstart', (event) => {
-                console.log(`Raw touchstart event on ${key} button`);
+                console.log(`🎮 Raw touchstart event on ${key} button`);
             }, true);
             
-            // Fallback: Direct keyboard simulation
-            slot.addEventListener('click', (event) => {
-                console.log(`🔄 Fallback: Simulating keyboard press for ${key}`);
-                // Simulate keyboard event as fallback
-                if (window.inputHandler) {
-                    console.log(`📝 Setting key ${key.toLowerCase()} to true via inputHandler`);
-                    window.inputHandler.keys[key.toLowerCase()] = true;
-                    setTimeout(() => {
-                        window.inputHandler.keys[key.toLowerCase()] = false;
-                    }, 100);
-                }
-            }, true);
+            // Add mousedown/mouseup for debugging
+            slot.addEventListener('mousedown', (event) => {
+                console.log(`🖱️ Mousedown on ${key} button`);
+            });
+            
+            slot.addEventListener('mouseup', (event) => {
+                console.log(`🖱️ Mouseup on ${key} button`);
+            });
         });
     }
 
@@ -271,11 +444,14 @@ export default class HUD {
                 overflow: visible;
                 min-width: 70px;
                 min-height: 70px;
-                pointer-events: auto;
+                pointer-events: auto !important;
                 touch-action: manipulation;
                 user-select: none;
                 -webkit-user-select: none;
                 -webkit-touch-callout: none;
+                z-index: 999;
+                background: rgba(255, 0, 0, 0.1); /* Debug: Red tint to see clickable area */
+                border: 1px solid rgba(255, 0, 0, 0.3); /* Debug: Red border */
             }
             
             /* Responsive skill bar - Make buttons larger for touch devices */
@@ -333,6 +509,7 @@ export default class HUD {
                 transform-style: preserve-3d;
                 transition: transform 0.3s ease;
                 transform: rotateX(0deg) rotateY(0deg);
+                pointer-events: none; /* Allow clicks to pass through to parent */
             }
 
             .skill-3d-face {
@@ -342,6 +519,7 @@ export default class HUD {
                 backface-visibility: visible;
                 border-radius: 5px;
                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                pointer-events: none; /* Allow clicks to pass through to parent */
             }
 
             .skill-3d-front {

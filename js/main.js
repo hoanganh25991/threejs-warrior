@@ -485,7 +485,15 @@ class Game {
           console.log(`🧪 Testing skill cast: ${key}`);
           this.castSkill(key);
         };
+        
+        // Test that HUD can access castSkill
+        console.log('🧪 HUD gameInstance type:', typeof this.hud.gameInstance);
+        console.log('🧪 HUD gameInstance castSkill:', typeof this.hud.gameInstance.castSkill);
+        console.log('🧪 HUD gameInstance === this:', this.hud.gameInstance === this);
       }
+
+      // Update player portrait with selected hero
+      this.updatePlayerPortrait();
 
       // Initialize combat system
       this.attack = new Attack(this.hero);
@@ -528,6 +536,58 @@ class Game {
       console.log("Game successfully started!");
     } catch (error) {
       console.error("Error in startGame method:", error);
+    }
+  }
+
+  updatePlayerPortrait() {
+    console.log('🖼️ Starting portrait update process...');
+    console.log('🔍 Selected hero:', this.selectedHero);
+    
+    const playerPortrait = document.getElementById('player-portrait');
+    console.log('🎯 Player portrait element:', playerPortrait);
+    
+    if (!playerPortrait) {
+      console.warn('❌ Player portrait element not found');
+      return;
+    }
+
+    if (!this.selectedHero) {
+      console.warn('❌ No hero selected for portrait update');
+      return;
+    }
+
+    // Map hero names to their image paths
+    const heroPortraitImages = {
+      'axe': './assets/images/heros/axe.jpg',
+      'crystal-maiden': './assets/images/heros/crystal-maiden.jpg',
+      'lich': './assets/images/heros/lich.jpg',
+      'storm-spirit': './assets/images/heros/storm-spirit.jpg',
+      'dragon-knight': './assets/images/heros/lich.jpg', // Using lich as fallback as shown in HTML
+      'lina': './assets/images/heros/storm-spirit.jpg' // Using storm-spirit as fallback as shown in HTML
+    };
+
+    const imagePath = heroPortraitImages[this.selectedHero];
+    console.log('🔍 Image path for hero:', imagePath);
+    
+    if (imagePath) {
+      // Clear any existing background image first
+      playerPortrait.style.backgroundImage = '';
+      
+      // Set the new background image
+      playerPortrait.style.backgroundImage = `url('${imagePath}')`;
+      playerPortrait.style.backgroundSize = 'cover';
+      playerPortrait.style.backgroundPosition = 'center';
+      playerPortrait.style.backgroundRepeat = 'no-repeat';
+      
+      console.log(`✅ Updated player portrait to ${this.selectedHero}: ${imagePath}`);
+      console.log('🎨 Applied styles:', {
+        backgroundImage: playerPortrait.style.backgroundImage,
+        backgroundSize: playerPortrait.style.backgroundSize,
+        backgroundPosition: playerPortrait.style.backgroundPosition
+      });
+    } else {
+      console.warn(`❌ No portrait image found for hero: ${this.selectedHero}`);
+      console.log('📝 Available heroes:', Object.keys(heroPortraitImages));
     }
   }
 
@@ -758,20 +818,48 @@ class Game {
     console.log('Hero skills:', this.hero.skills);
     console.log('Hero cooldowns:', this.hero.cooldowns);
 
-    // Check if skill is on cooldown
-    if (this.hero.cooldowns[skillKey] > 0) {
-      console.log(`Skill ${skillKey} is on cooldown`);
+    // Check if skill is on cooldown - handle both Map and object formats
+    let cooldownValue = 0;
+    if (this.hero.cooldowns instanceof Map) {
+      cooldownValue = this.hero.cooldowns.get(skillKey) || 0;
+    } else {
+      cooldownValue = this.hero.cooldowns[skillKey] || 0;
+    }
+    
+    if (cooldownValue > 0) {
+      console.log(`Skill ${skillKey} is on cooldown (${cooldownValue} remaining)`);
       return;
     }
 
     // Check if hero has this skill
-    if (!this.hero.skills[skillKey]) {
-      console.log(`Skill ${skillKey} not available`);
+    console.log(`🔍 Looking for skill with key: "${skillKey}"`);
+    console.log(`🔍 Hero skills type:`, typeof this.hero.skills);
+    console.log(`🔍 Hero skills:`, this.hero.skills);
+    
+    // Check both Map and object formats
+    let skill = null;
+    if (this.hero.skills instanceof Map) {
+      console.log(`🗺️ Skills is a Map, checking with key: ${skillKey}`);
+      skill = this.hero.skills.get(skillKey.toUpperCase()) || this.hero.skills.get(skillKey.toLowerCase()) || this.hero.skills.get(skillKey);
+      console.log(`🗺️ Found skill:`, skill);
+    } else if (typeof this.hero.skills === 'object') {
+      console.log(`📦 Skills is an object, checking with key: ${skillKey}`);
+      skill = this.hero.skills[skillKey.toUpperCase()] || this.hero.skills[skillKey.toLowerCase()] || this.hero.skills[skillKey];
+      console.log(`📦 Found skill:`, skill);
+    }
+    
+    if (!skill) {
+      console.log(`❌ Skill ${skillKey} not available in hero skills`);
+      if (this.hero.skills instanceof Map) {
+        console.log(`Available skill keys (Map):`, Array.from(this.hero.skills.keys()));
+      } else {
+        console.log(`Available skill keys (Object):`, Object.keys(this.hero.skills));
+      }
       return;
     }
 
     // Use skill
-    const skillName = this.hero.skills[skillKey].name;
+    const skillName = skill.name;
     console.log(`Casting skill: ${skillName}`);
 
     // Create skill effect using hero's direction
@@ -788,8 +876,12 @@ class Game {
       );
     }
 
-    // Set cooldown
-    this.hero.cooldowns[skillKey] = this.hero.skills[skillKey].cooldown;
+    // Set cooldown - handle both Map and object formats
+    if (this.hero.cooldowns instanceof Map) {
+      this.hero.cooldowns.set(skillKey, skill.getCooldownDuration ? skill.getCooldownDuration() : skill.cooldown);
+    } else {
+      this.hero.cooldowns[skillKey] = skill.getCooldownDuration ? skill.getCooldownDuration() : skill.cooldown;
+    }
 
     console.log(`Cast skill: ${skillName} via touch/click`);
   }

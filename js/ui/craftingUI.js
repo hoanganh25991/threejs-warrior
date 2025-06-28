@@ -41,7 +41,7 @@ export default class CraftingUI {
         style.textContent = `
             #crafting-button {
                 position: fixed;
-                top: 66px;
+                top: 63px;
                 right: 10px;
                 padding: 10px 20px;
                 background-color: #4a2b0f;
