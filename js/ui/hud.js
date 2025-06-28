@@ -2,8 +2,9 @@ import { config } from "../config/config.js";
 import CharacterInfo from "./character-info.js";
 
 export default class HUD {
-    constructor(hero) {
+    constructor(hero, gameInstance = null) {
         this.hero = hero;
+        this.gameInstance = gameInstance;
         this.init();
         
         // Initialize character info UI if hero is available
@@ -116,6 +117,92 @@ export default class HUD {
                     container.style.transform = 'rotateX(0deg) rotateY(0deg)';
                 }
             });
+            
+            // Add touch/click support for skill casting
+            const handleSkillCast = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log(`Touch/Click detected on skill ${key}`);
+                console.log('Game instance:', this.gameInstance);
+                console.log('Hero:', this.gameInstance?.hero);
+                
+                // Check if skill is available and not on cooldown
+                if (this.gameInstance && this.gameInstance.hero && this.gameInstance.hero.cooldowns) {
+                    const cooldown = this.gameInstance.hero.cooldowns[key.toLowerCase()];
+                    const hasSkill = this.gameInstance.hero.skills && this.gameInstance.hero.skills[key.toLowerCase()];
+                    
+                    console.log(`Skill ${key.toLowerCase()} - Has skill: ${hasSkill}, Cooldown: ${cooldown}`);
+                    
+                    if (!hasSkill) {
+                        console.log(`Skill ${key} not available`);
+                        return;
+                    }
+                    
+                    if (cooldown > 0) {
+                        console.log(`Skill ${key} is on cooldown (${cooldown.toFixed(1)}s remaining)`);
+                        // Visual feedback for cooldown
+                        if (navigator.vibrate) {
+                            navigator.vibrate([50, 50, 50]); // Triple short vibration for error
+                        }
+                        return;
+                    }
+                }
+                
+                // Cast the skill if game instance is available
+                console.log('Attempting to cast skill...');
+                if (this.gameInstance && this.gameInstance.castSkill) {
+                    console.log(`Calling castSkill with key: ${key.toLowerCase()}`);
+                    this.gameInstance.castSkill(key.toLowerCase());
+                } else {
+                    console.error('Game instance or castSkill method not available:', {
+                        gameInstance: this.gameInstance,
+                        castSkill: this.gameInstance?.castSkill
+                    });
+                }
+                
+                // Add pressed state for visual feedback
+                slot.classList.add('pressed');
+                
+                // Haptic feedback for mobile devices
+                if (navigator.vibrate) {
+                    navigator.vibrate(75); // Slightly longer vibration for successful cast
+                }
+                
+                // Remove pressed state after animation
+                setTimeout(() => {
+                    slot.classList.remove('pressed');
+                }, 150);
+            };
+            
+            // Handle touch start for visual feedback
+            const handleTouchStart = (event) => {
+                event.preventDefault();
+                slot.classList.add('pressed');
+            };
+            
+            // Handle touch end
+            const handleTouchEnd = (event) => {
+                event.preventDefault();
+                slot.classList.remove('pressed');
+                
+                // Check if touch ended on the button
+                const touch = event.changedTouches[0];
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (slot.contains(element)) {
+                    handleSkillCast(event);
+                }
+            };
+            
+            // Add event listeners
+            slot.addEventListener('click', handleSkillCast);
+            slot.addEventListener('touchstart', handleTouchStart, { passive: false });
+            slot.addEventListener('touchend', handleTouchEnd, { passive: false });
+            
+            // Prevent context menu on long press
+            slot.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+            });
         });
     }
 
@@ -181,45 +268,52 @@ export default class HUD {
                 overflow: visible;
                 min-width: 70px;
                 min-height: 70px;
+                pointer-events: auto;
+                touch-action: manipulation;
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
             }
             
-            /* Responsive skill bar */
+            /* Responsive skill bar - Make buttons larger for touch devices */
             @media screen and (max-width: 1024px) {
                 .skill-bar {
                     gap: 12px;
                     padding: 12px;
                 }
                 .skill-slot {
-                    width: 75px;
-                    height: 75px;
-                    min-width: 75px;
-                    min-height: 75px;
+                    width: 80px;
+                    height: 80px;
+                    min-width: 80px;
+                    min-height: 80px;
                 }
             }
             
             @media screen and (max-width: 768px) {
                 .skill-bar {
-                    gap: 10px;
-                    padding: 10px;
+                    gap: 15px;
+                    padding: 15px;
                 }
                 .skill-slot {
-                    width: 65px;
-                    height: 65px;
-                    min-width: 65px;
-                    min-height: 65px;
+                    width: 85px;
+                    height: 85px;
+                    min-width: 85px;
+                    min-height: 85px;
                 }
             }
             
             @media screen and (max-width: 480px) {
                 .skill-bar {
-                    gap: 8px;
-                    padding: 8px;
+                    gap: 12px;
+                    padding: 12px;
+                    flex-wrap: wrap;
+                    justify-content: center;
                 }
                 .skill-slot {
-                    width: 60px;
-                    height: 60px;
-                    min-width: 60px;
-                    min-height: 60px;
+                    width: 75px;
+                    height: 75px;
+                    min-width: 75px;
+                    min-height: 75px;
                 }
             }
 
@@ -289,9 +383,22 @@ export default class HUD {
                 bottom: -5px;
             }
 
-            .skill-slot:hover .skill-3d-front {
+            .skill-slot:hover .skill-3d-front,
+            .skill-slot:active .skill-3d-front,
+            .skill-slot.pressed .skill-3d-front {
                 border-color: #888;
                 box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            }
+            
+            /* Touch feedback */
+            .skill-slot:active,
+            .skill-slot.pressed {
+                transform: scale(0.95);
+            }
+            
+            .skill-slot:active .skill-3d-container,
+            .skill-slot.pressed .skill-3d-container {
+                transform: rotateX(10deg) rotateY(10deg) scale(0.95);
             }
 
             .key-bind {

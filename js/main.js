@@ -24,7 +24,7 @@ import ShopButton from "./ui/shopButton.js";
 import Boss from "./enemies/boss.js";
 import Attack from "./combat/attack.js";
 import Terrain from "./terrain/terrain.js";
-import MouseCaptureManager from "./ui/mouse-capture-manager.js";
+
 
 // Game class
 class Game {
@@ -396,9 +396,7 @@ class Game {
       this.inputHandler = new InputHandler();
       window.inputHandler = this.inputHandler;
       
-      // Initialize mouse capture manager
-      this.mouseCaptureManager = new MouseCaptureManager(this.inputHandler);
-      window.mouseCaptureManager = this.mouseCaptureManager;
+      // Touch camera controls are now integrated into InputHandler
 
       // Initialize game systems with performance settings
       this.skillManager = new SkillManager(this.scene);
@@ -457,7 +455,7 @@ class Game {
       this.skillTree = new SkillTree(this.selectedHero);
 
       // Initialize UI
-      this.hud = new HUD();
+      this.hud = new HUD(null, this);
       
       // Play background music
       if (this.soundManager) {
@@ -473,6 +471,11 @@ class Game {
         shop: this.shop,
         crafting: this.crafting
       });
+
+      // Update HUD with hero reference
+      if (this.hud) {
+        this.hud.hero = this.hero;
+      }
 
       // Initialize combat system
       this.attack = new Attack(this.hero);
@@ -729,6 +732,47 @@ class Game {
     if (this.effects) {
       this.effects.update(deltaTime);
     }
+  }
+
+  // Method to cast skill from UI interaction
+  castSkill(skillKey) {
+    if (!this.hero || !this.skillManager) {
+      return;
+    }
+
+    // Check if skill is on cooldown
+    if (this.hero.cooldowns[skillKey] > 0) {
+      console.log(`Skill ${skillKey} is on cooldown`);
+      return;
+    }
+
+    // Check if hero has this skill
+    if (!this.hero.skills[skillKey]) {
+      console.log(`Skill ${skillKey} not available`);
+      return;
+    }
+
+    // Use skill
+    const skillName = this.hero.skills[skillKey].name;
+
+    // Create skill effect using hero's direction
+    const heroPosition = this.hero.getPosition().clone();
+    heroPosition.y += 1; // Adjust to center of hero
+    const heroDirection = this.hero.getDirection();
+
+    this.skillManager.useSkill(skillName, heroPosition, heroDirection);
+
+    // Play sound
+    if (this.soundManager) {
+      this.soundManager.playSound(
+        skillName.toLowerCase().replace(/\s+/g, "")
+      );
+    }
+
+    // Set cooldown
+    this.hero.cooldowns[skillKey] = this.hero.skills[skillKey].cooldown;
+
+    console.log(`Cast skill: ${skillName} via touch/click`);
   }
 
   updateLights(deltaTime) {

@@ -1,5 +1,6 @@
 import { config } from './config/config.js';
 import VirtualJoystick from './ui/virtual-joystick.js';
+import TouchCameraControls from './ui/touch-camera-controls.js';
 
 export class InputHandler {
     constructor() {
@@ -11,12 +12,15 @@ export class InputHandler {
             movementY: 0,
             buttons: [false, false, false]
         };
-        this.isPointerLocked = false;
-        this.isMouseCaptured = false; // Flag to enable/disable mouse capture
-        this.mouseSensitivity = config.controls.mouse.sensitivity; // Use sensitivity from config
         
-        // Initialize virtual joystick for mobile/tablet
+        // Initialize virtual joystick for movement
         this.virtualJoystick = new VirtualJoystick();
+        
+        // Initialize touch camera controls for look direction
+        this.touchCameraControls = new TouchCameraControls({
+            sensitivity: config.controls.mouse.sensitivity || 1.0
+        });
+        
         this.detectAndSetupMobileControls();
         
         // Initialize key states
@@ -53,46 +57,9 @@ export class InputHandler {
             }
         });
         
-        // Mouse events
-        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        // Mouse events (simplified - no pointer lock needed)
         document.addEventListener('mousedown', this.handleMouseDown.bind(this));
         document.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        
-        // Pointer lock events
-        document.addEventListener('pointerlockchange', this.handlePointerLockChange.bind(this));
-        
-        // Add click event to canvas to request pointer lock
-        const canvas = document.getElementById('game-canvas');
-        if (canvas) {
-            canvas.addEventListener('click', this.requestPointerLock.bind(this));
-            if (config.game.debug) {
-                // Add instructions for pointer lock
-                const instructions = document.createElement('div');
-                instructions.id = 'pointer-lock-instructions';
-                instructions.innerHTML = 'Click to capture mouse and control look direction<br>Press ESC to release mouse';
-                instructions.style.position = 'fixed';
-                instructions.style.top = '10px';
-                instructions.style.width = '100%';
-                instructions.style.textAlign = 'center';
-                instructions.style.color = 'white';
-                instructions.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                instructions.style.padding = '10px';
-                instructions.style.zIndex = '100';
-                instructions.style.fontFamily = 'Arial, sans-serif';
-                instructions.style.display = 'none';
-                instructions.style.zIndex = '1';
-                document.body.appendChild(instructions);
-                
-                // Hide instructions when pointer is locked
-                document.addEventListener('pointerlockchange', () => {
-                    if (document.pointerLockElement === canvas) {
-                        instructions.style.display = 'none';
-                    } else {
-                        instructions.style.display = 'block';
-                    }
-                });
-            }
-        }
     }
     
     handleKeyDown(event) {
@@ -163,49 +130,16 @@ export class InputHandler {
         keyDisplay.textContent = `Pressed Keys: ${pressedKeys || 'None'}`;
     }
     
-    handleMouseMove(event) {
-        if (this.isPointerLocked && this.isMouseCaptured) {
-            // Store raw movement values
-            this.mouse.movementX = event.movementX * this.mouseSensitivity;
-            this.mouse.movementY = event.movementY * this.mouseSensitivity;
-            
-            // Accumulate for total position
-            this.mouse.x += this.mouse.movementX;
-            this.mouse.y += this.mouse.movementY;
-        } else {
-            // Use clientX and clientY for normal mouse
-            this.mouse.x = event.clientX;
-            this.mouse.y = event.clientY;
-            this.mouse.movementX = 0;
-            this.mouse.movementY = 0;
-        }
-    }
+    // Mouse move handling is now handled by TouchCameraControls
+    // Keeping this method for compatibility but it's no longer used for camera control
     
     handleMouseDown(event) {
         this.mouse.buttons[event.button] = true;
-        
-        // Request pointer lock on click if not already locked and mouse capture is enabled
-        if (!this.isPointerLocked && this.isMouseCaptured) {
-            this.requestPointerLock();
-        }
-        
-        event.preventDefault();
+        // Note: Camera control is now handled by TouchCameraControls
     }
     
     handleMouseUp(event) {
         this.mouse.buttons[event.button] = false;
-        event.preventDefault();
-    }
-    
-    requestPointerLock() {
-        const canvas = document.getElementById('game-canvas');
-        if (canvas && !this.isPointerLocked && this.isMouseCaptured) {
-            canvas.requestPointerLock();
-        }
-    }
-    
-    handlePointerLockChange() {
-        this.isPointerLocked = document.pointerLockElement === document.getElementById('game-canvas');
     }
     
     isKeyPressed(key) {
@@ -228,7 +162,7 @@ export class InputHandler {
         };
     }
     
-    // Get look direction from E and Q keys or mouse
+    // Get look direction from E and Q keys or touch/mouse drag
     getLookDirection() {
         let lookX = 0;
         let lookY = 0;
@@ -241,11 +175,10 @@ export class InputHandler {
             lookX -= 2; // Look left
         }
         
-        // Add mouse movement if pointer is locked and mouse capture is enabled
-        if (this.isPointerLocked && this.isMouseCaptured) {
-            lookX += this.mouse.movementX;
-            lookY += this.mouse.movementY; // Add vertical mouse movement
-        }
+        // Add touch/mouse camera movement
+        const cameraMovement = this.touchCameraControls.getMovementDelta();
+        lookX += cameraMovement.x;
+        lookY += cameraMovement.y;
         
         return {
             x: lookX,
@@ -257,6 +190,7 @@ export class InputHandler {
     resetMovement() {
         this.mouse.movementX = 0;
         this.mouse.movementY = 0;
+        // Note: Touch camera controls handle their own reset internally
     }
     
     // Detect mobile/tablet and setup controls accordingly
@@ -305,6 +239,31 @@ export class InputHandler {
     // Check if virtual joystick is being used
     isUsingVirtualJoystick() {
         return this.virtualJoystick.isInUse();
+    }
+    
+    // Check if touch camera is being used
+    isUsingTouchCamera() {
+        return this.touchCameraControls.isDraggingCamera();
+    }
+    
+    // Get current camera rotation from touch controls
+    getCameraRotation() {
+        return this.touchCameraControls.getRotation();
+    }
+    
+    // Reset camera rotation
+    resetCameraRotation() {
+        this.touchCameraControls.resetRotation();
+    }
+    
+    // Enable/disable touch camera controls
+    setTouchCameraEnabled(enabled) {
+        this.touchCameraControls.setEnabled(enabled);
+    }
+    
+    // Update camera sensitivity
+    setCameraSensitivity(sensitivity) {
+        this.touchCameraControls.setSensitivity(sensitivity);
     }
 }
 

@@ -1230,13 +1230,9 @@ body {
     cursor: not-allowed;
 }
 
-/* Mouse Capture Toggle Button */
+/* Mouse Capture Toggle Button - Hidden (replaced by touch camera controls) */
 #mouse-capture-toggle {
-    position: fixed;
-    top: 10px;
-    display: flex;
-    justify-content: center;
-    opacity: 0.5;
+    display: none !important;
 }
 
 #crafting-button {
