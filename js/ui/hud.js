@@ -77,6 +77,29 @@ export default class HUD {
         this.skillBar = document.createElement('div');
         this.skillBar.className = 'skill-bar';
         this.container.appendChild(this.skillBar);
+        
+        // Add debug button for testing skill casting
+        const debugButton = document.createElement('button');
+        debugButton.textContent = 'Test Cast K Skill';
+        debugButton.style.position = 'absolute';
+        debugButton.style.top = '10px';
+        debugButton.style.right = '10px';
+        debugButton.style.zIndex = '9999';
+        debugButton.style.padding = '10px';
+        debugButton.style.background = 'red';
+        debugButton.style.color = 'white';
+        debugButton.style.border = 'none';
+        debugButton.style.borderRadius = '5px';
+        debugButton.style.cursor = 'pointer';
+        
+        debugButton.addEventListener('click', () => {
+            console.log('🧪 Debug button clicked - testing K skill cast');
+            if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                window.gameInstance.castSkill('k');
+            }
+        });
+        
+        document.body.appendChild(debugButton);
 
         // Skill slots for Y, U, I, H, J, K keys
         const keys = ['Y', 'U', 'I', 'H', 'J', 'K'];
@@ -238,6 +261,100 @@ export default class HUD {
             console.log(`✅ Created skill slot for key: ${key}`, slot);
             console.log(`🎯 Slot classes: ${slot.className}`);
             console.log(`📍 Slot position in DOM:`, slot.getBoundingClientRect());
+            
+            // Add direct click handlers to the skill icon and key-bind
+            const skillIcon = slot.querySelector('.skill-icon');
+            const keyBind = slot.querySelector('.key-bind');
+            
+            // Add handler to skill icon
+            if (skillIcon) {
+                skillIcon.addEventListener('click', (event) => {
+                    console.log(`🎯 Direct icon click for ${key}`);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Add pressed state for visual feedback
+                    slot.classList.add('pressed');
+                    
+                    // Trigger the same castSkill logic
+                    if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                        window.gameInstance.castSkill(key.toLowerCase());
+                    }
+                    
+                    // Remove pressed state after animation
+                    setTimeout(() => {
+                        slot.classList.remove('pressed');
+                    }, 150);
+                });
+            }
+            
+            // Add handler to the 3D front face
+            const frontFace = slot.querySelector('.skill-3d-front');
+            if (frontFace) {
+                frontFace.addEventListener('click', (event) => {
+                    console.log(`🎯 Direct front face click for ${key}`);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Add pressed state for visual feedback
+                    slot.classList.add('pressed');
+                    
+                    // Trigger the same castSkill logic
+                    if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                        window.gameInstance.castSkill(key.toLowerCase());
+                    }
+                    
+                    // Remove pressed state after animation
+                    setTimeout(() => {
+                        slot.classList.remove('pressed');
+                    }, 150);
+                });
+            }
+            
+            // Add handler to the 3D container
+            const container3D = slot.querySelector('.skill-3d-container');
+            if (container3D) {
+                container3D.addEventListener('click', (event) => {
+                    console.log(`🎯 Direct 3D container click for ${key}`);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Add pressed state for visual feedback
+                    slot.classList.add('pressed');
+                    
+                    // Trigger the same castSkill logic
+                    if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                        window.gameInstance.castSkill(key.toLowerCase());
+                    }
+                    
+                    // Remove pressed state after animation
+                    setTimeout(() => {
+                        slot.classList.remove('pressed');
+                    }, 150);
+                });
+            }
+            
+            // Add handler to key-bind
+            if (keyBind) {
+                keyBind.addEventListener('click', (event) => {
+                    console.log(`🎯 Direct key-bind click for ${key}`);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Add pressed state for visual feedback
+                    slot.classList.add('pressed');
+                    
+                    // Trigger the same castSkill logic
+                    if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                        window.gameInstance.castSkill(key.toLowerCase());
+                    }
+                    
+                    // Remove pressed state after animation
+                    setTimeout(() => {
+                        slot.classList.remove('pressed');
+                    }, 150);
+                });
+            }
             
             // Add comprehensive skill casting on click with improved handling
             slot.addEventListener('click', (event) => {
@@ -539,7 +656,12 @@ export default class HUD {
                 -webkit-user-select: none;
                 -webkit-touch-callout: none;
                 z-index: 999;
-                /* Removed debug styling that might interfere with clicking */
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+            }
+            
+            .skill-slot.pressed {
+                transform: scale(0.95);
+                box-shadow: 0 0 15px rgba(255, 165, 0, 0.8);
             }
             
             /* Responsive skill bar - Make buttons larger for touch devices */
@@ -615,7 +737,9 @@ export default class HUD {
                 transform: translateZ(5px);
                 border: 2px solid #666;
                 overflow: hidden;
-                z-index: 1;
+                z-index: 10;
+                cursor: pointer;
+                pointer-events: auto !important;
             }
 
             .skill-3d-back {
@@ -679,8 +803,10 @@ export default class HUD {
                 background: rgba(0, 0, 0, 0.7);
                 padding: 2px 4px;
                 border-radius: 3px;
-                z-index: 2;
+                z-index: 20;
                 box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+                cursor: pointer;
+                pointer-events: auto !important;
             }
 
             .skill-icon {

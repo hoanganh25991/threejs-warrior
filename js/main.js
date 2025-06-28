@@ -817,48 +817,91 @@ class Game {
     }
   }
 
-  // Method to cast skill from UI interaction - updated to handle Map-based skills
+  // Method to cast skill from UI interaction - completely rewritten for robustness
   castSkill(skillKey) {
-    console.log(`🎯 Touch skill cast: ${skillKey}`);
+    console.log(`🎯 Touch skill cast attempt for key: ${skillKey}`);
     
     if (!this.hero || !this.skillManager) {
       console.error('❌ Hero or SkillManager not available');
       return false;
     }
 
+    // Normalize the key to lowercase
+    const normalizedKey = skillKey.toLowerCase();
+    console.log(`🔑 Normalized key: ${normalizedKey}`);
+    
     // Check if hero.skills is a Map (new system) or object (old system)
     const isMapBased = this.hero.skills instanceof Map;
     console.log(`🔍 Using ${isMapBased ? 'Map-based' : 'Object-based'} skill system`);
     
-    // Check if skill exists
-    let skill;
+    // Debug available skills
+    console.log('🔍 Available skills:');
     if (isMapBased) {
-      skill = this.hero.skills.get(skillKey);
+      this.hero.skills.forEach((skill, key) => {
+        console.log(`- Key: "${key}", Name: "${skill.name}"`);
+      });
     } else {
-      skill = this.hero.skills[skillKey];
+      Object.keys(this.hero.skills).forEach(key => {
+        console.log(`- Key: "${key}", Name: "${this.hero.skills[key].name}"`);
+      });
     }
     
+    // Try to find the skill with exact match first
+    let skill = null;
+    if (isMapBased) {
+      skill = this.hero.skills.get(normalizedKey);
+    } else {
+      skill = this.hero.skills[normalizedKey];
+    }
+    
+    // If skill not found, try case-insensitive search
+    if (!skill && isMapBased) {
+      // Try to find a case-insensitive match in the Map
+      for (const [key, value] of this.hero.skills.entries()) {
+        if (key.toLowerCase() === normalizedKey) {
+          skill = value;
+          console.log(`🔍 Found skill with case-insensitive match: ${key}`);
+          break;
+        }
+      }
+    }
+    
+    // If still not found, try with uppercase first letter (for 'K' vs 'k')
     if (!skill) {
-      console.log(`❌ Skill ${skillKey} not available`);
+      const capitalizedKey = normalizedKey.charAt(0).toUpperCase() + normalizedKey.slice(1);
+      console.log(`🔍 Trying with capitalized key: ${capitalizedKey}`);
+      
+      if (isMapBased) {
+        skill = this.hero.skills.get(capitalizedKey);
+      } else {
+        skill = this.hero.skills[capitalizedKey];
+      }
+    }
+    
+    // If still not found, give up
+    if (!skill) {
+      console.log(`❌ Skill for key "${normalizedKey}" not found after all attempts`);
       return false;
     }
+    
+    console.log(`✅ Found skill: ${skill.name}`);
     
     // Check if skill is on cooldown
     let cooldown = 0;
     if (isMapBased) {
-      cooldown = this.hero.cooldowns.get(skillKey) || 0;
+      cooldown = this.hero.cooldowns.get(normalizedKey) || 0;
     } else {
-      cooldown = this.hero.cooldowns[skillKey] || 0;
+      cooldown = this.hero.cooldowns[normalizedKey] || 0;
     }
     
     if (cooldown > 0) {
-      console.log(`⏰ Skill ${skillKey} is on cooldown (${cooldown} remaining)`);
+      console.log(`⏰ Skill ${skill.name} is on cooldown (${cooldown} remaining)`);
       return false;
     }
 
     // Get skill name
     const skillName = skill.name;
-    console.log(`✅ Casting skill: ${skillName}`);
+    console.log(`🚀 Casting skill: ${skillName}`);
 
     // Create skill effect using hero's direction
     const heroPosition = this.hero.getPosition().clone();
@@ -878,9 +921,9 @@ class Game {
     // Set cooldown
     const cooldownDuration = skill.getCooldownDuration ? skill.getCooldownDuration() : (skill.cooldown || 1);
     if (isMapBased) {
-      this.hero.cooldowns.set(skillKey, cooldownDuration);
+      this.hero.cooldowns.set(normalizedKey, cooldownDuration);
     } else {
-      this.hero.cooldowns[skillKey] = cooldownDuration;
+      this.hero.cooldowns[normalizedKey] = cooldownDuration;
     }
 
     console.log(`🎉 Successfully cast skill: ${skillName} via touch`);
