@@ -1,4 +1,5 @@
 import { config } from './config/config.js';
+import VirtualJoystick from './ui/virtual-joystick.js';
 
 export class InputHandler {
     constructor() {
@@ -13,6 +14,10 @@ export class InputHandler {
         this.isPointerLocked = false;
         this.isMouseCaptured = false; // Flag to enable/disable mouse capture
         this.mouseSensitivity = config.controls.mouse.sensitivity; // Use sensitivity from config
+        
+        // Initialize virtual joystick for mobile/tablet
+        this.virtualJoystick = new VirtualJoystick();
+        this.detectAndSetupMobileControls();
         
         // Initialize key states
         for (const action in config.controls.keyboard) {
@@ -38,25 +43,6 @@ export class InputHandler {
             if (event.key === ' ' || event.code === 'Space') {
                 console.log('Space key pressed (direct event)');
                 this.keys[' '] = true;
-                
-                // Add a visual indicator for space key press
-                let spaceIndicator = document.getElementById('space-indicator');
-                if (!spaceIndicator) {
-                    spaceIndicator = document.createElement('div');
-                    spaceIndicator.id = 'space-indicator';
-                    spaceIndicator.style.position = 'absolute';
-                    spaceIndicator.style.bottom = '20px';
-                    spaceIndicator.style.left = '20px';
-                    spaceIndicator.style.backgroundColor = 'green';
-                    spaceIndicator.style.color = 'white';
-                    spaceIndicator.style.padding = '10px';
-                    spaceIndicator.style.borderRadius = '5px';
-                    spaceIndicator.style.fontFamily = 'Arial, sans-serif';
-                    spaceIndicator.style.zIndex = '1000';
-                    document.body.appendChild(spaceIndicator);
-                }
-                spaceIndicator.textContent = 'SPACE PRESSED';
-                spaceIndicator.style.backgroundColor = 'green';
             }
         });
         
@@ -64,13 +50,6 @@ export class InputHandler {
             if (event.key === ' ' || event.code === 'Space') {
                 console.log('Space key released (direct event)');
                 this.keys[' '] = false;
-                
-                // Update visual indicator
-                const spaceIndicator = document.getElementById('space-indicator');
-                if (spaceIndicator) {
-                    spaceIndicator.textContent = 'SPACE RELEASED';
-                    spaceIndicator.style.backgroundColor = 'red';
-                }
             }
         });
         
@@ -278,6 +257,54 @@ export class InputHandler {
     resetMovement() {
         this.mouse.movementX = 0;
         this.mouse.movementY = 0;
+    }
+    
+    // Detect mobile/tablet and setup controls accordingly
+    detectAndSetupMobileControls() {
+        // Always show virtual joystick on all devices for consistency
+        // Users can choose to use keyboard or joystick
+        this.virtualJoystick.setVisible(true);
+    }
+    
+    // Get movement input combining keyboard and virtual joystick
+    getMovementInput() {
+        let x = 0;
+        let y = 0;
+        
+        // Keyboard input
+        if (this.keys['w']) y -= 1; // W moves forward (negative Y)
+        if (this.keys['s']) y += 1; // S moves backward (positive Y)
+        if (this.keys['a']) x -= 1;
+        if (this.keys['d']) x += 1;
+        
+        // Virtual joystick input (can be used with or without keyboard)
+        const joystickInput = this.virtualJoystick.getInput();
+        if (joystickInput.magnitude > 0.1) {
+            // Allow joystick to work independently or combined with keyboard
+            if (x === 0 && y === 0) {
+                // Use joystick exclusively when no keyboard input
+                x = joystickInput.x;
+                y = joystickInput.y;
+            } else {
+                // Blend joystick with keyboard input for enhanced control
+                x = Math.max(-1, Math.min(1, x + joystickInput.x * 0.5));
+                y = Math.max(-1, Math.min(1, y + joystickInput.y * 0.5));
+            }
+        }
+        
+        // Normalize diagonal movement
+        const magnitude = Math.sqrt(x * x + y * y);
+        if (magnitude > 1) {
+            x /= magnitude;
+            y /= magnitude;
+        }
+        
+        return { x, y, magnitude };
+    }
+    
+    // Check if virtual joystick is being used
+    isUsingVirtualJoystick() {
+        return this.virtualJoystick.isInUse();
     }
 }
 

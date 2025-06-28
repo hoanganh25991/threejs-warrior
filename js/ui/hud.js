@@ -166,14 +166,61 @@ export default class HUD {
                 gap: 15px;
                 margin-top: 20px;
                 perspective: 1000px;
+                flex-wrap: wrap;
+                padding: 10px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 15px;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             }
 
             .skill-slot {
-                width: 60px;
-                height: 60px;
+                width: 70px;
+                height: 70px;
                 position: relative;
                 cursor: pointer;
                 overflow: visible;
+                min-width: 70px;
+                min-height: 70px;
+            }
+            
+            /* Responsive skill bar */
+            @media screen and (max-width: 1024px) {
+                .skill-bar {
+                    gap: 12px;
+                    padding: 12px;
+                }
+                .skill-slot {
+                    width: 75px;
+                    height: 75px;
+                    min-width: 75px;
+                    min-height: 75px;
+                }
+            }
+            
+            @media screen and (max-width: 768px) {
+                .skill-bar {
+                    gap: 10px;
+                    padding: 10px;
+                }
+                .skill-slot {
+                    width: 65px;
+                    height: 65px;
+                    min-width: 65px;
+                    min-height: 65px;
+                }
+            }
+            
+            @media screen and (max-width: 480px) {
+                .skill-bar {
+                    gap: 8px;
+                    padding: 8px;
+                }
+                .skill-slot {
+                    width: 60px;
+                    height: 60px;
+                    min-width: 60px;
+                    min-height: 60px;
+                }
             }
 
             /* 3D Skill Slot Styling */

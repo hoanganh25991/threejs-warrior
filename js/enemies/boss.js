@@ -45,17 +45,17 @@ export default class Boss extends Enemy {
     }
 
     initializeBossRoom() {
-        // Create boss room boundary
-        const roomGeometry = new THREE.BoxGeometry(50, 20, 50);
-        const roomMaterial = new THREE.MeshPhongMaterial({
-            color: 0x333333,
-            transparent: true,
-            opacity: 0.2,
-            side: THREE.BackSide
-        });
-        this.roomBoundary = new THREE.Mesh(roomGeometry, roomMaterial);
-        this.roomBoundary.position.y = 10;
-        this.scene.add(this.roomBoundary);
+        // Boss room boundary removed to avoid dark atmosphere
+        // const roomGeometry = new THREE.BoxGeometry(50, 20, 50);
+        // const roomMaterial = new THREE.MeshPhongMaterial({
+        //     color: 0x333333,
+        //     transparent: true,
+        //     opacity: 0.2,
+        //     side: THREE.BackSide
+        // });
+        // this.roomBoundary = new THREE.Mesh(roomGeometry, roomMaterial);
+        // this.roomBoundary.position.y = 10;
+        // this.scene.add(this.roomBoundary);
 
         // Add atmospheric particles
         this.createAtmosphericEffects();
@@ -350,9 +350,10 @@ export default class Boss extends Enemy {
         }
 
         // Remove boss room effects
-        if (this.roomBoundary) {
-            this.scene.remove(this.roomBoundary);
-        }
+        // Room boundary no longer exists (commented out to remove dark atmosphere)
+        // if (this.roomBoundary) {
+        //     this.scene.remove(this.roomBoundary);
+        // }
         if (this.atmosphericParticles) {
             this.scene.remove(this.atmosphericParticles);
         }

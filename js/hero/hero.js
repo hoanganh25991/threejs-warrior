@@ -1119,7 +1119,7 @@ export default class Hero {
     }
 
     // Handle movement
-    this.handleMovement(deltaTime, keys);
+    this.handleMovement(deltaTime, keys, inputHandler);
 
     // Handle jumping and flying
     this.handleJumpAndFly(deltaTime, keys);
@@ -1745,59 +1745,79 @@ export default class Hero {
     this.direction.set(0, 0, -1).applyEuler(this.rotation);
   }
 
-  handleMovement(deltaTime, keys) {
+  handleMovement(deltaTime, keys, inputHandler) {
     const moveSpeed = config.player.moveSpeed * deltaTime;
 
-    // Calculate movement direction relative to facing direction
+    // Get unified movement input (keyboard + virtual joystick)
     let moveX = 0;
     let moveZ = 0;
     let lookDirectionChange = 0;
     let isMoving = false;
 
-    // Handle all movement combinations
-
-    // Forward movement (W)
-    if (keys.w) {
-      moveZ -= 1; // Forward
-      isMoving = true;
-
-      // Combined forward + left/right movement changes look direction
-      if (keys.a) {
-        lookDirectionChange = -1; // Look left while moving forward
-      } else if (keys.d) {
-        lookDirectionChange = 1; // Look right while moving forward
+    // Use new unified input system if available
+    if (inputHandler && inputHandler.getMovementInput) {
+      const movementInput = inputHandler.getMovementInput();
+      moveX = movementInput.x;
+      moveZ = movementInput.y; // Note: Y from joystick maps to Z in game coordinates
+      isMoving = movementInput.magnitude > 0.1;
+      
+      // For virtual joystick, we can also use the movement direction for look direction
+      if (inputHandler.isUsingVirtualJoystick && inputHandler.isUsingVirtualJoystick() && isMoving) {
+        // Convert movement to look direction change
+        lookDirectionChange = moveX * 2; // Scale for appropriate rotation speed
+      } else {
+        // Handle keyboard-specific look direction changes
+        if (keys.a) {
+          lookDirectionChange = -1;
+        } else if (keys.d) {
+          lookDirectionChange = 1;
+        }
       }
-    }
-
-    // Backward movement (S)
-    if (keys.s) {
-      moveZ += 1; // Backward
-      isMoving = true;
-
-      // Combined backward + left/right movement changes look direction
-      if (keys.a) {
-        lookDirectionChange = -1; // Look left while moving backward
-      } else if (keys.d) {
-        lookDirectionChange = 1; // Look right while moving backward
-      }
-    }
-
-    // Only handle horizontal look direction changes
-    if (keys.a) {
-      lookDirectionChange = -1;
-    } else if (keys.d) {
-      lookDirectionChange = 1;
-    }
-
-    // Handle left/right movement without forward/backward
-    if (!keys.w && !keys.s) {
-      if (keys.a) {
-        moveX -= 1; // Left
+    } else {
+      // Fallback to original keyboard-only system
+      // Forward movement (W)
+      if (keys.w) {
+        moveZ -= 1; // Forward
         isMoving = true;
+
+        // Combined forward + left/right movement changes look direction
+        if (keys.a) {
+          lookDirectionChange = -1; // Look left while moving forward
+        } else if (keys.d) {
+          lookDirectionChange = 1; // Look right while moving forward
+        }
       }
-      if (keys.d) {
-        moveX += 1; // Right
+
+      // Backward movement (S)
+      if (keys.s) {
+        moveZ += 1; // Backward
         isMoving = true;
+
+        // Combined backward + left/right movement changes look direction
+        if (keys.a) {
+          lookDirectionChange = -1; // Look left while moving backward
+        } else if (keys.d) {
+          lookDirectionChange = 1; // Look right while moving backward
+        }
+      }
+
+      // Only handle horizontal look direction changes
+      if (keys.a) {
+        lookDirectionChange = -1;
+      } else if (keys.d) {
+        lookDirectionChange = 1;
+      }
+
+      // Handle left/right movement without forward/backward
+      if (!keys.w && !keys.s) {
+        if (keys.a) {
+          moveX -= 1; // Left
+          isMoving = true;
+        }
+        if (keys.d) {
+          moveX += 1; // Right
+          isMoving = true;
+        }
       }
     }
 
