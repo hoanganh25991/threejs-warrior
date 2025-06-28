@@ -12,7 +12,7 @@ export default class CounterHelix extends Skill {
     }
 
     getCooldownDuration() {
-        return 6.0;
+        return 1.0;
     }
 
     createEffect() {

@@ -15,7 +15,7 @@ export default class IceShards extends Skill {
     }
 
     getCooldownDuration() {
-        return 4.0;
+        return 1.0;
     }
 
     createEffect() {

@@ -14,7 +14,7 @@ export default class BerserkersRage extends Skill {
     }
 
     getCooldownDuration() {
-        return 18.0;
+        return 1.0;
     }
 
     canUse() {

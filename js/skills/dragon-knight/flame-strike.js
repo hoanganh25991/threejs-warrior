@@ -16,7 +16,8 @@ export default class FlameStrike extends Skill {
     }
 
     getCooldownDuration() {
-        return 6.0;
+        // DEBOUNCE: 1 second cooldown to prevent spam
+        return 1.0;
     }
 
     createEffect() {

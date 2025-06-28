@@ -13,7 +13,7 @@ export default class BattleHunger extends Skill {
     }
 
     getCooldownDuration() {
-        return 10.0;
+        return 1.0;
     }
 
     createEffect() {

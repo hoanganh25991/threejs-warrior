@@ -47,7 +47,7 @@ export default class DragonRush extends Skill {
     _detectPerformanceLevel() {
         // For MacBook Pro with 10 GPU cores, we can use a higher quality level
         // but still optimize for performance
-        return 0.8;
+        return 1.0;
     }
     
     /**
@@ -224,7 +224,7 @@ export default class DragonRush extends Skill {
     }
 
     getCooldownDuration() {
-        return 8.0;
+        return 1.0;
     }
 
     createEffect() {

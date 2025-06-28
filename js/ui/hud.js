@@ -239,43 +239,45 @@ export default class HUD {
             console.log(`🎯 Slot classes: ${slot.className}`);
             console.log(`📍 Slot position in DOM:`, slot.getBoundingClientRect());
             
-            // Add comprehensive skill casting on click
+            // Add comprehensive skill casting on click with improved handling
             slot.addEventListener('click', (event) => {
                 console.log(`🎯 COMPREHENSIVE CLICK HANDLER for ${key} slot!`);
-                console.log(`🔍 this.gameInstance in click handler:`, this.gameInstance);
-                console.log(`🔍 window.gameInstance:`, window.gameInstance);
                 
-                // ADD THE MISSING DEBUG LOGS HERE
-                console.log(`🎮 Touch/Click detected on skill ${key}`);
-                console.log('Game instance available:', !!this.gameInstance);
-                console.log('Game instance type:', typeof this.gameInstance);
-                console.log('Game instance:', this.gameInstance);
-                console.log('castSkill method available:', !!this.gameInstance?.castSkill);
-                console.log('castSkill method type:', typeof this.gameInstance?.castSkill);
-                
-                // Check what methods are available on gameInstance
-                console.log('🔍 DEBUG: About to check gameInstance methods...');
-                if (this.gameInstance) {
-                    console.log('✅ gameInstance exists, logging methods...');
-                    console.log('Available methods on gameInstance:', Object.getOwnPropertyNames(this.gameInstance));
-                    console.log('Available methods on gameInstance prototype:', Object.getOwnPropertyNames(Object.getPrototypeOf(this.gameInstance)));
-                } else {
-                    console.log('❌ gameInstance is null/undefined:', this.gameInstance);
-                }
-                
+                // Ensure the event is properly captured
                 event.preventDefault();
                 event.stopPropagation();
                 
-                // Method 1: Direct skill casting (primary approach)
-                if (window.gameInstance && window.gameInstance.castSkill) {
-                    console.log(`🚀 Method 1: Using gameInstance.castSkill for ${key}`);
-                    window.gameInstance.castSkill(key.toLowerCase());
-                    return; // Exit early if this works
+                // Add pressed state for visual feedback
+                slot.classList.add('pressed');
+                
+                // Provide haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
                 }
                 
-                // Method 2: Direct skill system access (backup)
-                if (window.gameInstance && window.gameInstance.hero && window.gameInstance.skillManager) {
-                    console.log(`🎯 Method 2: Direct skill system access for ${key}`);
+                // Method 1: Try using window.gameInstance (most reliable)
+                if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                    console.log(`🚀 Using global gameInstance.castSkill for ${key}`);
+                    try {
+                        window.gameInstance.castSkill(key.toLowerCase());
+                        console.log(`✅ Successfully cast skill ${key}`);
+                    } catch (error) {
+                        console.error(`❌ Error casting skill:`, error);
+                    }
+                }
+                // Method 2: Try using this.gameInstance
+                else if (this.gameInstance && typeof this.gameInstance.castSkill === 'function') {
+                    console.log(`🚀 Using this.gameInstance.castSkill for ${key}`);
+                    try {
+                        this.gameInstance.castSkill(key.toLowerCase());
+                        console.log(`✅ Successfully cast skill ${key}`);
+                    } catch (error) {
+                        console.error(`❌ Error casting skill:`, error);
+                    }
+                }
+                // Method 3: Direct skill system access (fallback)
+                else if (window.gameInstance && window.gameInstance.hero && window.gameInstance.skillManager) {
+                    console.log(`🎯 Using direct skill system access for ${key}`);
                     const skillKey = key.toLowerCase();
                     const hero = window.gameInstance.hero;
                     const skillManager = window.gameInstance.skillManager;
@@ -345,6 +347,11 @@ export default class HUD {
                 }
                 
                 console.log(`❌ All skill casting methods failed for ${key}`);
+                
+                // Remove pressed state after animation
+                setTimeout(() => {
+                    slot.classList.remove('pressed');
+                }, 150);
             }, true);
             
             // Add event listeners
@@ -433,7 +440,8 @@ export default class HUD {
                 background: rgba(0, 0, 0, 0.6);
                 border-radius: 15px;
                 box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-                pointer-events: auto;
+                pointer-events: auto !important; /* Ensure clicks are always captured */
+                z-index: 1000; /* Ensure it's above other elements */
             }
 
             .skill-slot {
@@ -450,8 +458,7 @@ export default class HUD {
                 -webkit-user-select: none;
                 -webkit-touch-callout: none;
                 z-index: 999;
-                background: rgba(255, 0, 0, 0.1); /* Debug: Red tint to see clickable area */
-                border: 1px solid rgba(255, 0, 0, 0.3); /* Debug: Red border */
+                /* Removed debug styling that might interfere with clicking */
             }
             
             /* Responsive skill bar - Make buttons larger for touch devices */
@@ -509,7 +516,7 @@ export default class HUD {
                 transform-style: preserve-3d;
                 transition: transform 0.3s ease;
                 transform: rotateX(0deg) rotateY(0deg);
-                pointer-events: none; /* Allow clicks to pass through to parent */
+                pointer-events: auto; /* Changed to auto to allow clicks */
             }
 
             .skill-3d-face {
@@ -519,7 +526,7 @@ export default class HUD {
                 backface-visibility: visible;
                 border-radius: 5px;
                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                pointer-events: none; /* Allow clicks to pass through to parent */
+                pointer-events: auto; /* Changed to auto to allow clicks */
             }
 
             .skill-3d-front {
@@ -655,8 +662,8 @@ export default class HUD {
                 color: white;
                 padding: 12px;
                 border-radius: 8px;
-                z-index: 10;
-                pointer-events: none;
+                z-index: 100; /* Increased z-index */
+                pointer-events: none; /* Keep this to prevent tooltip from blocking clicks */
                 box-shadow: 0 0 15px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.1);
                 border: 1px solid rgba(100, 100, 100, 0.5);
             }

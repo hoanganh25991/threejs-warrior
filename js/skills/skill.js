@@ -39,7 +39,8 @@ export default class Skill {
         if (!this.canUse()) return false;
 
         this.isActive = true;
-        this.cooldown = this.getCooldownDuration();
+        // DEBOUNCE: Set cooldown to 1 second to prevent spam clicking
+        this.cooldown = 1.0;
         this.hero.mana -= this.manaCost;
         this.createEffect();
         
@@ -315,7 +316,7 @@ export default class Skill {
     }
 
     getCooldownDuration() {
-        // Override in subclass
+        // DEBOUNCE: 1 second cooldown for all skills to prevent spam
         return 1.0;
     }
 

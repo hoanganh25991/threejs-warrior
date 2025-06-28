@@ -18,7 +18,7 @@ export default class GlacialBarrier extends Skill {
     }
 
     getCooldownDuration() {
-        return 15.0;
+        return 1.0;
     }
 
     createEffect() {

@@ -19,7 +19,7 @@ export default class FrozenOrb extends Skill {
     }
 
     getCooldownDuration() {
-        return 12.0;
+        return 1.0;
     }
 
     createEffect() {

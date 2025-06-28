@@ -16,7 +16,7 @@ export default class FrostArmor extends Skill {
     }
 
     getCooldownDuration() {
-        return 18.0;
+        return 1.0;
     }
 
     createEffect() {

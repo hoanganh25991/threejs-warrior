@@ -17,7 +17,7 @@ export default class ElderDragonForm extends Skill {
     }
 
     getCooldownDuration() {
-        return 30.0;
+        return 1.0;
     }
 
     createEffect() {

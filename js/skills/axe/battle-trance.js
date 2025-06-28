@@ -14,7 +14,7 @@ export default class BattleTrance extends Skill {
     }
 
     getCooldownDuration() {
-        return 25.0;
+        return 1.0;
     }
 
     canUse() {

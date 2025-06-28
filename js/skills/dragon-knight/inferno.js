@@ -15,7 +15,7 @@ export default class Inferno extends Skill {
     }
 
     getCooldownDuration() {
-        return 20.0;
+        return 1.0;
     }
 
     createEffect() {

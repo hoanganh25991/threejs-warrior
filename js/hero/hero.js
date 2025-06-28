@@ -429,14 +429,33 @@ export default class Hero {
     // This will use our enhanced skill implementations
     if (input.keys.y) {
       console.log("Y key pressed!");
+      console.log("Skills map size:", this.skills.size);
+      console.log("Skills has 'y':", this.skills.has('y'));
+      
       // Use the proper skill from the skills map
       if (this.skills.has('y')) {
         const skill = this.skills.get('y');
         console.log(`Using skill from map: ${skill.name}`);
+        console.log(`Skill object:`, skill);
+        console.log(`Skill can use:`, skill.canUse ? skill.canUse() : 'No canUse method');
+        console.log(`Hero mana:`, this.mana);
+        console.log(`Skill mana cost:`, skill.manaCost);
+        console.log(`Skill cooldown:`, skill.cooldown);
+        
         if (skill.activate) {
-          skill.activate();
+          console.log("Calling skill.activate()");
+          try {
+            const result = skill.activate();
+            console.log(`Skill activation result: ${result}`);
+          } catch (error) {
+            console.error(`Error in skill activation: ${error.message}`);
+            console.error(error.stack);
+          }
+        } else {
+          console.log("Skill has no activate method!");
         }
       } else {
+        console.log("No skill found for 'y', using fallback");
         // Fallback to simple skill if not found in map
         this.useSimpleSkill('y', this.heroType === 'crystal-maiden' ? 'Frost Nova' : 'Fireball', 
                           this.heroType === 'crystal-maiden' ? 0x00ffff : 0xff4500);
@@ -2562,6 +2581,7 @@ export default class Hero {
     // Update all skill cooldowns
     for (const [key, cooldown] of this.cooldowns) {
       if (cooldown > 0) {
+        // DEBOUNCE: Normal cooldown countdown (1 second to prevent spam)
         this.cooldowns.set(key, cooldown - deltaTime);
 
         // Update UI to show cooldown

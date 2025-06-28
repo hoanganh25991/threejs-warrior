@@ -20,7 +20,8 @@ export default class IceBlast extends Skill {
     }
 
     getCooldownDuration() {
-        return 5.0;
+        // DEBOUNCE: 1 second cooldown to prevent spam
+        return 1.0;
     }
 
     createEffect() {

@@ -13,7 +13,8 @@ export default class BerserkersCall extends Skill {
     }
 
     getCooldownDuration() {
-        return 12.0;
+        // DEBOUNCE: 1 second cooldown to prevent spam
+        return 1.0;
     }
 
     createEffect() {
