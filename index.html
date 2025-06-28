@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ARPG Game</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/skill-circle.css">
     <link rel="stylesheet" href="css/skill-tree.css">
+    <link rel="stylesheet" href="css/tablet-optimizations.css">
     <!-- Import Three.js from CDN -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -270,6 +271,9 @@
         </div>
     </div>
 
+    <!-- Orientation handling -->
+    <script src="orientation-lock.js"></script>
+    
     <!-- Main script module -->
     <script type="module" src="js/main.js"></script>
 </body>

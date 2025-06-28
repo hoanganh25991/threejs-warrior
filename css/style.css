@@ -28,8 +28,13 @@ body {
     z-index: 1;
 }
 
-.hidden {
+.hidden,
+#hero-selection.hidden,
+#game-ui.hidden {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
 }
 
 /* Loading Screen */
@@ -116,6 +121,7 @@ body {
     gap: 2rem;
     width: 80%;
     max-width: 1200px;
+    margin: 0 auto;
 }
 
 .hero-card {
@@ -237,6 +243,139 @@ body {
     pointer-events: auto;
 }
 
+/* Responsive design for different screen sizes */
+
+/* Tablet optimizations */
+@media screen and (max-width: 1024px) {
+    #left-ui {
+        top: 10px;
+        left: 140px; /* Move right to avoid overlapping with joystick */
+        width: 220px;
+    }
+    
+    #abilities-container {
+        gap: 12px;
+        padding: 18px;
+        min-width: 350px;
+    }
+    
+    .ability {
+        width: 75px;
+        height: 75px;
+        font-size: 1.9rem;
+        min-width: 75px;
+        min-height: 75px;
+    }
+    
+    #right-ui {
+        bottom: 15px;
+        right: 15px;
+    }
+}
+
+/* Mobile optimizations */
+@media screen and (max-width: 768px) {
+    #left-ui {
+        left: 120px;
+        width: 200px;
+    }
+    
+    #abilities-container {
+        gap: 8px;
+        padding: 12px;
+        min-width: 300px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .ability {
+        width: 65px;
+        height: 65px;
+        font-size: 1.6rem;
+        min-width: 65px;
+        min-height: 65px;
+    }
+    
+    #right-ui {
+        bottom: 10px;
+        right: 10px;
+    }
+}
+
+/* Small mobile optimizations */
+@media screen and (max-width: 480px) {
+    #left-ui {
+        left: 110px;
+        width: 180px;
+        top: 5px;
+    }
+    
+    #abilities-container {
+        gap: 6px;
+        padding: 10px;
+        min-width: 280px;
+    }
+    
+    .ability {
+        width: 60px;
+        height: 60px;
+        font-size: 1.4rem;
+        min-width: 60px;
+        min-height: 60px;
+    }
+}
+
+/* Mobile landscape optimizations */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    #game-ui {
+        padding: 5px;
+    }
+    
+    #left-ui {
+        top: 5px;
+        left: 130px;
+        width: 200px;
+    }
+    
+    #right-ui {
+        bottom: 5px;
+        right: 5px;
+    }
+    
+    #abilities-container {
+        gap: 8px;
+        padding: 8px;
+        min-width: 320px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    .ability {
+        width: 55px;
+        height: 55px;
+        font-size: 1.3rem;
+        min-width: 55px;
+        min-height: 55px;
+        flex-shrink: 0;
+    }
+    
+    /* Adjust virtual joystick for landscape */
+    .virtual-joystick {
+        bottom: 15px;
+        left: 15px;
+    }
+    
+    .joystick-base {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .joystick-knob {
+        width: 32px;
+        height: 32px;
+    }
+}
+
 #player-info {
     display: flex;
     background-color: rgba(0, 0, 0, 0.6);
@@ -353,18 +492,21 @@ body {
     justify-content: center;
     gap: 10px;
     margin-bottom: 10px;
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    flex-wrap: wrap;
+    max-width: 100%;
+    min-width: 400px;
 }
 
 .ability {
-    width: 60px;
-    height: 60px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 3px solid #666;
-    border-radius: 10px;
+    width: 70px;
+    height: 70px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 3px solid #777;
+    border-radius: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -374,12 +516,15 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.1);
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.1);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
     user-select: none; /* Prevent text selection */
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    /* Improved touch targets */
+    min-width: 70px;
+    min-height: 70px;
 }
 
 .ability:hover {
@@ -389,7 +534,43 @@ body {
 }
 
 .ability:active {
-    transform: translateY(1px);
+    transform: translateY(1px) scale(0.95);
+    box-shadow: 0 0 25px rgba(248, 208, 0, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Touch device specific optimizations */
+@media (pointer: coarse) {
+    .ability {
+        /* Larger touch targets on touch devices */
+        padding: 8px;
+        /* Improve touch response */
+        -webkit-tap-highlight-color: rgba(248, 208, 0, 0.3);
+        touch-action: manipulation;
+    }
+    
+    .ability:hover {
+        /* Remove hover effects on touch devices to prevent sticky states */
+        transform: none;
+        border-color: #777;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+    
+    .ability:active {
+        transform: scale(0.9);
+        box-shadow: 0 0 30px rgba(248, 208, 0, 1), inset 0 0 25px rgba(255, 255, 255, 0.4);
+        border-color: #f8d000;
+        transition: all 0.1s ease;
+    }
+    
+    /* Improve virtual joystick touch response */
+    .virtual-joystick {
+        touch-action: none;
+    }
+    
+    .joystick-base, .joystick-knob {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+    }
 }
 
 #special-abilities {
@@ -1016,4 +1197,445 @@ body {
 
 .hero-image.storm-spirit {
     background-color: #32a832;
+}
+
+/* Tablet Hero Selection Optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    #hero-selection {
+        padding: 2.5rem 1.5rem;
+    }
+    
+    #hero-selection h2 {
+        font-size: 2.8rem;
+        margin-bottom: 2.5rem;
+    }
+    
+    .hero-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2.5rem;
+        width: 85%;
+        max-width: 900px;
+    }
+    
+    .hero-card {
+        padding: 2rem;
+        border-radius: 15px;
+        transition: all 0.3s ease, transform 0.2s ease;
+    }
+    
+    .hero-card:hover {
+        transform: translateY(-8px);
+    }
+    
+    .hero-card h3 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .hero-image {
+        width: 180px;
+        height: 180px;
+        margin-bottom: 1.5rem;
+        border-width: 4px;
+    }
+    
+    .hero-card p {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+    
+    .select-hero-btn {
+        font-size: 1.1rem;
+        padding: 0.8rem 2.5rem;
+        border-radius: 8px;
+        min-height: 50px;
+        transition: all 0.2s ease;
+    }
+    
+    .select-hero-btn:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Large Tablet Landscape */
+@media screen and (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+    .hero-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        width: 90%;
+        max-width: 1200px;
+    }
+    
+    .hero-card {
+        padding: 1.5rem;
+    }
+    
+    .hero-image {
+        width: 140px;
+        height: 140px;
+    }
+    
+    .hero-card h3 {
+        font-size: 1.4rem;
+    }
+    
+    .hero-card p {
+        font-size: 0.95rem;
+    }
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    /* Prevent horizontal scrolling */
+    body {
+        overflow-x: hidden;
+    }
+    
+    /* Adjust hero selection for mobile */
+    #hero-selection {
+        padding: 1rem;
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+    
+    #hero-selection h2 {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+        margin-bottom: 1rem;
+    }
+    
+    .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .hero-card {
+        padding: 1rem;
+    }
+    
+    .hero-card h3 {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+    }
+    
+    .hero-card p {
+        font-size: clamp(0.9rem, 3vw, 1rem);
+    }
+    
+    .select-hero-btn {
+        font-size: clamp(0.9rem, 3.5vw, 1rem);
+        padding: clamp(0.6rem, 3vw, 0.8rem) clamp(1rem, 4vw, 1.5rem);
+        min-height: 44px; /* Touch-friendly */
+    }
+}
+
+@media screen and (max-width: 480px) {
+    /* Extra small phones */
+    #hero-selection {
+        padding: 0.5rem;
+    }
+    
+    .hero-card {
+        padding: 0.8rem;
+    }
+    
+    .hero-image {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* 
+ * Mobile/Tablet Landscape Optimization - All 4 heroes must be visible without scrolling
+ * Target: iPhone Pro Max (926px × 428px), tablets, and similar landscape orientations
+ * Solution: Ultra-compact 4-column grid that fits in available height
+ */
+@media screen and (max-width: 1024px) and (max-height: 600px) and (orientation: landscape) {
+    #hero-selection:not(.hidden) {
+        padding: 0.3rem !important;
+        overflow: hidden !important; /* No scrolling allowed */
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    #hero-selection h2 {
+        font-size: clamp(1rem, 3vh, 1.4rem) !important;
+        margin: 0 0 0.5rem 0 !important;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    
+    .hero-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: clamp(0.3rem, 1vw, 0.6rem) !important;
+        width: 98% !important;
+        max-width: 95vw !important;
+        margin: 0 auto !important;
+        height: auto !important;
+        flex-shrink: 0;
+    }
+    
+    .hero-card {
+        padding: clamp(0.8rem, 2vh, 1.2rem) !important;
+        border-radius: 8px !important;
+        height: clamp(280px, 45vh, 360px) !important;
+        max-height: 80vh !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    
+    .hero-card h3 {
+        font-size: clamp(1rem, 3vh, 1.4rem) !important;
+        margin: 0 0 0.5rem 0 !important;
+        text-align: center;
+        line-height: 1.2;
+        font-weight: bold;
+    }
+    
+    .hero-image {
+        width: clamp(80px, 12vh, 120px) !important;
+        height: clamp(80px, 12vh, 120px) !important;
+        margin: 0.5rem 0 !important;
+        flex-shrink: 0;
+        border: 3px solid #555;
+        transition: all 0.2s ease;
+    }
+    
+    .hero-card:hover .hero-image {
+        border-color: #f8d000;
+        transform: scale(1.05);
+    }
+    
+    .hero-card p {
+        font-size: clamp(0.8rem, 2.2vh, 1rem) !important;
+        margin: 0.5rem 0 !important;
+        line-height: 1.4 !important;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 3 !important;
+        -webkit-box-orient: vertical;
+        flex-grow: 1;
+        color: #ddd;
+    }
+    
+    .select-hero-btn {
+        font-size: clamp(0.9rem, 2.5vh, 1.1rem) !important;
+        padding: clamp(0.6rem, 1.5vh, 0.8rem) clamp(1rem, 3vw, 1.5rem) !important;
+        min-height: clamp(40px, 6vh, 48px) !important;
+        height: clamp(40px, 6vh, 48px) !important;
+        border-radius: 6px !important;
+        width: 100% !important;
+        margin-top: 0.5rem !important;
+        flex-shrink: 0;
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+}
+
+/* Extra compact for very short screens like iPhone SE landscape */
+@media screen and (max-width: 1024px) and (max-height: 400px) and (orientation: landscape) {
+    #hero-selection h2 {
+        font-size: clamp(0.9rem, 2.5vh, 1.2rem) !important;
+        margin: 0 0 0.3rem 0 !important;
+    }
+    
+    .hero-card {
+        height: clamp(200px, 35vh, 250px) !important;
+        max-height: 70vh !important;
+        padding: clamp(0.4rem, 1.5vh, 0.8rem) !important;
+    }
+    
+    .hero-card h3 {
+        font-size: clamp(0.8rem, 2.5vh, 1rem) !important;
+        margin: 0 0 0.3rem 0 !important;
+    }
+    
+    .hero-image {
+        width: clamp(50px, 8vh, 80px) !important;
+        height: clamp(50px, 8vh, 80px) !important;
+        margin: 0.3rem 0 !important;
+    }
+    
+    .hero-card p {
+        font-size: clamp(0.6rem, 1.8vh, 0.8rem) !important;
+        -webkit-line-clamp: 2 !important;
+        margin: 0.3rem 0 !important;
+    }
+    
+    .select-hero-btn {
+        font-size: clamp(0.7rem, 2vh, 0.9rem) !important;
+        padding: clamp(0.4rem, 1.2vh, 0.6rem) clamp(0.8rem, 2.5vw, 1.2rem) !important;
+        min-height: clamp(32px, 5vh, 40px) !important;
+        height: clamp(32px, 5vh, 40px) !important;
+    }
+}
+
+
+
+/* Portrait mode specific adjustments */
+@media screen and (orientation: portrait) {
+    /* Ensure game UI is usable in portrait if user continues anyway */
+    #game-ui {
+        overflow-y: auto;
+        height: 100vh;
+    }
+    
+    #left-ui, #right-ui {
+        position: relative;
+        width: 100%;
+        max-width: none;
+    }
+    
+    #left-ui {
+        margin-bottom: 1rem;
+    }
+    
+    #abilities-container {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .ability {
+        width: clamp(50px, 12vw, 60px);
+        height: clamp(50px, 12vw, 60px);
+        font-size: clamp(0.8rem, 3vw, 1rem);
+    }
+}
+
+/* Tablet Specific Optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    /* Right UI positioning for tablets */
+    #right-ui {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    /* Ability containers for tablets */
+    #abilities-container {
+        gap: 12px;
+        padding: 12px;
+        max-width: 450px;
+    }
+    
+    .ability {
+        width: 65px;
+        height: 65px;
+        font-size: 1.6rem;
+        border-width: 2px;
+    }
+    
+    /* Better touch targets for tablets */
+    .ability:active {
+        transform: translateY(1px) scale(0.95);
+        transition: transform 0.1s ease;
+    }
+    
+    /* Mouse capture toggle for tablets */
+    #mouse-capture-toggle {
+        opacity: 0.8;
+    }
+    
+    #toggle-mouse-capture {
+        padding: 10px 18px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Large tablet landscape */
+@media screen and (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+    #right-ui {
+        bottom: 20px;
+        right: 20px;
+    }
+    
+    #abilities-container {
+        gap: 15px;
+        padding: 15px;
+        max-width: 500px;
+    }
+    
+    .ability {
+        width: 70px;
+        height: 70px;
+        font-size: 1.7rem;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase touch target sizes */
+    button, .ability, .hero-card {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Better touch feedback */
+    .ability {
+        transition: all 0.15s ease;
+    }
+    
+    .ability:active {
+        transform: translateY(2px) scale(0.9);
+        background-color: rgba(0, 0, 0, 0.9);
+        border-color: #f8d000;
+        box-shadow: 0 0 20px rgba(248, 208, 0, 0.8);
+    }
+    
+    /* Touch feedback for hero cards */
+    .hero-card:active {
+        transform: scale(0.98);
+        background-color: rgba(40, 40, 40, 0.9);
+        border-color: #f8d000;
+        box-shadow: 0 0 25px rgba(248, 208, 0, 0.4);
+    }
+    
+    .select-hero-btn:active {
+        background-color: #ff6b00;
+        transform: scale(0.95);
+    }
+    
+    /* Remove hover effects on pure touch devices */
+    @media (hover: none) {
+        .hero-card:hover {
+            transform: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .select-hero-btn:hover {
+            background-color: #f8d000;
+            transform: none;
+        }
+    }
+    
+    /* Touch-friendly ability positioning */
+    #abilities-container {
+        padding: 15px;
+        gap: 8px;
+    }
+    
+    /* Ensure abilities don't overlap on small tablets */
+    @media screen and (max-width: 800px) {
+        #abilities-container {
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 350px;
+        }
+        
+        .ability {
+            width: 55px;
+            height: 55px;
+            font-size: 1.4rem;
+            margin: 2px;
+        }
+    }
 }

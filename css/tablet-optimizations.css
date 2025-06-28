@@ -1,0 +1,219 @@
+/* Tablet-specific optimizations for ARPG Game */
+
+/* General tablet viewport optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    /* Ensure proper scaling on tablets */
+    html {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+    }
+    
+    /* Optimize touch targets */
+    button, .ability, .hero-card, .select-hero-btn {
+        min-height: 48px;
+        min-width: 48px;
+    }
+    
+    /* Improve tap highlights */
+    * {
+        -webkit-tap-highlight-color: rgba(248, 208, 0, 0.3);
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    /* Allow text selection for specific elements */
+    p, h1, h2, h3, h4, h5, h6, span {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+    }
+}
+
+/* Virtual Joystick enhancements for tablets */
+@media screen and (min-width: 768px) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
+    .virtual-joystick {
+        /* Add subtle animation to draw attention */
+        animation: subtle-pulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes subtle-pulse {
+        0%, 100% { 
+            opacity: 0.8; 
+            transform: scale(1); 
+        }
+        50% { 
+            opacity: 0.9; 
+            transform: scale(1.02); 
+        }
+    }
+    
+    /* Stop animation when active */
+    .virtual-joystick .joystick-base.active {
+        animation: none;
+    }
+}
+
+/* Tablet landscape specific optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    /* Optimize game UI layout for landscape tablets */
+    #game-ui {
+        padding: 0 20px;
+    }
+    
+    /* Adjust left UI to work better with virtual joystick */
+    #left-ui {
+        left: 160px;
+        top: 15px;
+        width: 240px;
+    }
+    
+    /* Optimize right UI positioning */
+    #right-ui {
+        bottom: 20px;
+        right: 20px;
+    }
+    
+    /* Better ability layout for landscape tablets */
+    #abilities-container {
+        gap: 14px;
+        padding: 14px;
+        border-radius: 12px;
+        max-width: 480px;
+    }
+    
+    .ability {
+        width: 68px;
+        height: 68px;
+        font-size: 1.65rem;
+        border-radius: 12px;
+    }
+    
+    /* Enhance hero selection for landscape tablets */
+    .hero-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        max-width: 800px;
+    }
+    
+    .hero-card {
+        padding: 1.8rem;
+        max-width: 380px;
+        margin: 0 auto;
+    }
+}
+
+/* Tablet portrait optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+    /* Stack UI elements vertically for portrait */
+    #game-ui {
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+    }
+    
+    #left-ui {
+        position: relative;
+        left: auto;
+        top: auto;
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 20px;
+    }
+    
+    #right-ui {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        width: 100%;
+        max-width: 500px;
+        align-items: center;
+    }
+    
+    /* Adjust virtual joystick for portrait */
+    .virtual-joystick {
+        bottom: 140px;
+        left: 30px;
+    }
+    
+    /* Hero selection for portrait tablets */
+    .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        max-width: 500px;
+    }
+    
+    .hero-card {
+        padding: 2rem;
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    
+    .hero-image {
+        width: 200px;
+        height: 200px;
+    }
+}
+
+/* High-resolution tablet optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) {
+    /* Enhance graphics for retina tablets */
+    .hero-image, .ability, .joystick-base, .joystick-knob {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+    
+    /* Sharper borders and shadows */
+    .hero-card, .ability, .joystick-base {
+        border-width: 1.5px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Accessibility improvements for tablets */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    /* Focus indicators for keyboard navigation */
+    button:focus, .ability:focus, .hero-card:focus {
+        outline: 3px solid #f8d000;
+        outline-offset: 2px;
+    }
+    
+    /* Enhanced contrast for better visibility */
+    .hero-card h3, .ability {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    }
+    
+    /* Larger text for better readability */
+    .hero-card p {
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    
+    /* Better spacing for touch interaction */
+    .hero-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Tablet performance optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+    /* Optimize animations for smoother performance */
+    .hero-card, .ability, .joystick-knob {
+        will-change: transform;
+        transform: translateZ(0); /* Hardware acceleration */
+    }
+    
+    /* Reduce complexity for better performance */
+    .hero-card:hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .ability:active {
+        transition: transform 0.1s ease;
+    }
+}
