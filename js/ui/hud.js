@@ -71,6 +71,7 @@ export default class HUD {
         keys.forEach(key => {
             const slot = document.createElement('div');
             slot.className = 'skill-slot skill-slot-3d';
+            slot.dataset.skillKey = key; // Add data attribute for debugging
             slot.innerHTML = `
                 <div class="skill-3d-container">
                     <div class="skill-3d-face skill-3d-front">
@@ -123,50 +124,32 @@ export default class HUD {
                 event.preventDefault();
                 event.stopPropagation();
                 
-                console.log(`Touch/Click detected on skill ${key}`);
-                console.log('Game instance:', this.gameInstance);
-                console.log('Hero:', this.gameInstance?.hero);
+                console.log(`🎮 Touch/Click detected on skill ${key}`);
+                console.log('Game instance available:', !!this.gameInstance);
+                console.log('castSkill method available:', !!this.gameInstance?.castSkill);
                 
-                // Check if skill is available and not on cooldown
-                if (this.gameInstance && this.gameInstance.hero && this.gameInstance.hero.cooldowns) {
-                    const cooldown = this.gameInstance.hero.cooldowns[key.toLowerCase()];
-                    const hasSkill = this.gameInstance.hero.skills && this.gameInstance.hero.skills[key.toLowerCase()];
-                    
-                    console.log(`Skill ${key.toLowerCase()} - Has skill: ${hasSkill}, Cooldown: ${cooldown}`);
-                    
-                    if (!hasSkill) {
-                        console.log(`Skill ${key} not available`);
-                        return;
-                    }
-                    
-                    if (cooldown > 0) {
-                        console.log(`Skill ${key} is on cooldown (${cooldown.toFixed(1)}s remaining)`);
-                        // Visual feedback for cooldown
-                        if (navigator.vibrate) {
-                            navigator.vibrate([50, 50, 50]); // Triple short vibration for error
-                        }
-                        return;
-                    }
-                }
-                
-                // Cast the skill if game instance is available
-                console.log('Attempting to cast skill...');
-                if (this.gameInstance && this.gameInstance.castSkill) {
-                    console.log(`Calling castSkill with key: ${key.toLowerCase()}`);
-                    this.gameInstance.castSkill(key.toLowerCase());
-                } else {
-                    console.error('Game instance or castSkill method not available:', {
-                        gameInstance: this.gameInstance,
-                        castSkill: this.gameInstance?.castSkill
-                    });
-                }
-                
-                // Add pressed state for visual feedback
+                // Add pressed state for visual feedback immediately
                 slot.classList.add('pressed');
                 
-                // Haptic feedback for mobile devices
-                if (navigator.vibrate) {
-                    navigator.vibrate(75); // Slightly longer vibration for successful cast
+                // Cast the skill if game instance is available
+                if (this.gameInstance && this.gameInstance.castSkill) {
+                    console.log(`🚀 Calling castSkill with key: ${key.toLowerCase()}`);
+                    this.gameInstance.castSkill(key.toLowerCase());
+                    
+                    // Haptic feedback for successful attempt
+                    if (navigator.vibrate) {
+                        navigator.vibrate(75);
+                    }
+                } else {
+                    console.error('❌ Game instance or castSkill method not available:', {
+                        gameInstance: !!this.gameInstance,
+                        castSkillMethod: !!this.gameInstance?.castSkill
+                    });
+                    
+                    // Error haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate([50, 50, 50]);
+                    }
                 }
                 
                 // Remove pressed state after animation
@@ -195,6 +178,7 @@ export default class HUD {
             };
             
             // Add event listeners
+            console.log(`Adding event listeners for skill ${key}`);
             slot.addEventListener('click', handleSkillCast);
             slot.addEventListener('touchstart', handleTouchStart, { passive: false });
             slot.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -203,6 +187,24 @@ export default class HUD {
             slot.addEventListener('contextmenu', (event) => {
                 event.preventDefault();
             });
+            
+            // Debug: Add a simple test event to verify touch is working
+            slot.addEventListener('touchstart', (event) => {
+                console.log(`Raw touchstart event on ${key} button`);
+            }, true);
+            
+            // Fallback: Direct keyboard simulation
+            slot.addEventListener('click', (event) => {
+                console.log(`🔄 Fallback: Simulating keyboard press for ${key}`);
+                // Simulate keyboard event as fallback
+                if (window.inputHandler) {
+                    console.log(`📝 Setting key ${key.toLowerCase()} to true via inputHandler`);
+                    window.inputHandler.keys[key.toLowerCase()] = true;
+                    setTimeout(() => {
+                        window.inputHandler.keys[key.toLowerCase()] = false;
+                    }, 100);
+                }
+            }, true);
         });
     }
 
@@ -258,6 +260,7 @@ export default class HUD {
                 background: rgba(0, 0, 0, 0.6);
                 border-radius: 15px;
                 box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+                pointer-events: auto;
             }
 
             .skill-slot {

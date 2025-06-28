@@ -475,6 +475,16 @@ class Game {
       // Update HUD with hero reference
       if (this.hud) {
         this.hud.hero = this.hero;
+        console.log('🎯 HUD updated with hero reference');
+        console.log('🎯 Game instance has castSkill method:', typeof this.castSkill);
+        console.log('🎯 HUD has game instance:', !!this.hud.gameInstance);
+        
+        // Add global reference for debugging
+        window.gameInstance = this;
+        window.testSkillCast = (key) => {
+          console.log(`🧪 Testing skill cast: ${key}`);
+          this.castSkill(key);
+        };
       }
 
       // Initialize combat system
@@ -736,9 +746,17 @@ class Game {
 
   // Method to cast skill from UI interaction
   castSkill(skillKey) {
+    console.log(`castSkill called with key: ${skillKey}`);
+    console.log('Hero:', this.hero);
+    console.log('SkillManager:', this.skillManager);
+    
     if (!this.hero || !this.skillManager) {
+      console.error('Hero or SkillManager not available');
       return;
     }
+
+    console.log('Hero skills:', this.hero.skills);
+    console.log('Hero cooldowns:', this.hero.cooldowns);
 
     // Check if skill is on cooldown
     if (this.hero.cooldowns[skillKey] > 0) {
@@ -754,6 +772,7 @@ class Game {
 
     // Use skill
     const skillName = this.hero.skills[skillKey].name;
+    console.log(`Casting skill: ${skillName}`);
 
     // Create skill effect using hero's direction
     const heroPosition = this.hero.getPosition().clone();
