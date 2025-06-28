@@ -249,7 +249,7 @@ body {
 @media screen and (max-width: 1024px) {
     #left-ui {
         top: 10px;
-        left: 140px; /* Move right to avoid overlapping with joystick */
+        left: 1rem;
         width: 220px;
     }
     
@@ -276,7 +276,7 @@ body {
 /* Mobile optimizations */
 @media screen and (max-width: 768px) {
     #left-ui {
-        left: 120px;
+        left: 10px;
         width: 200px;
     }
     
@@ -305,7 +305,7 @@ body {
 /* Small mobile optimizations */
 @media screen and (max-width: 480px) {
     #left-ui {
-        left: 110px;
+        left: 0.5rem;
         width: 180px;
         top: 5px;
     }
@@ -325,6 +325,42 @@ body {
     }
 }
 
+/* Extra small mobile optimizations */
+@media screen and (max-width: 360px) {
+    #left-ui {
+        left: 0.5rem;
+        width: 160px;
+        top: 5px;
+    }
+    
+    #player-info {
+        padding: 8px;
+    }
+    
+    #player-portrait {
+        width: 50px;
+        height: 50px;
+        margin-right: 8px;
+    }
+    
+    #health-bar-container, #mana-bar-container {
+        height: 18px;
+        margin-bottom: 6px;
+    }
+    
+    #health-text, #mana-text {
+        font-size: 11px;
+    }
+    
+    #level-info {
+        padding: 6px;
+    }
+    
+    #level-text {
+        font-size: 12px;
+    }
+}
+
 /* Mobile landscape optimizations */
 @media screen and (max-height: 500px) and (orientation: landscape) {
     #game-ui {
@@ -333,7 +369,7 @@ body {
     
     #left-ui {
         top: 5px;
-        left: 130px;
+        left: 10px;
         width: 200px;
     }
     
