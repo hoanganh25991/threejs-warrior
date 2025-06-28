@@ -259,8 +259,27 @@ export default class HUD {
                 if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
                     console.log(`🚀 Using global gameInstance.castSkill for ${key}`);
                     try {
-                        window.gameInstance.castSkill(key.toLowerCase());
-                        console.log(`✅ Successfully cast skill ${key}`);
+                        // Log the key being used
+                        const skillKey = key.toLowerCase();
+                        console.log(`🔑 Using key: ${skillKey} for skill casting`);
+                        
+                        // Debug available skills
+                        if (window.gameInstance.hero && window.gameInstance.hero.skills) {
+                            console.log('Available skills:');
+                            if (window.gameInstance.hero.skills instanceof Map) {
+                                window.gameInstance.hero.skills.forEach((skill, k) => {
+                                    console.log(`- Key: ${k}, Skill: ${skill.name}`);
+                                });
+                                console.log(`Skill for key ${skillKey} exists:`, window.gameInstance.hero.skills.has(skillKey));
+                            } else {
+                                console.log(Object.keys(window.gameInstance.hero.skills));
+                                console.log(`Skill for key ${skillKey} exists:`, skillKey in window.gameInstance.hero.skills);
+                            }
+                        }
+                        
+                        // Cast the skill with the lowercase key
+                        const result = window.gameInstance.castSkill(skillKey);
+                        console.log(`✅ Skill cast result: ${result ? 'success' : 'failed'}`);
                     } catch (error) {
                         console.error(`❌ Error casting skill:`, error);
                     }
@@ -269,8 +288,27 @@ export default class HUD {
                 else if (this.gameInstance && typeof this.gameInstance.castSkill === 'function') {
                     console.log(`🚀 Using this.gameInstance.castSkill for ${key}`);
                     try {
-                        this.gameInstance.castSkill(key.toLowerCase());
-                        console.log(`✅ Successfully cast skill ${key}`);
+                        // Log the key being used
+                        const skillKey = key.toLowerCase();
+                        console.log(`🔑 Using key: ${skillKey} for skill casting`);
+                        
+                        // Debug available skills
+                        if (this.gameInstance.hero && this.gameInstance.hero.skills) {
+                            console.log('Available skills:');
+                            if (this.gameInstance.hero.skills instanceof Map) {
+                                this.gameInstance.hero.skills.forEach((skill, k) => {
+                                    console.log(`- Key: ${k}, Skill: ${skill.name}`);
+                                });
+                                console.log(`Skill for key ${skillKey} exists:`, this.gameInstance.hero.skills.has(skillKey));
+                            } else {
+                                console.log(Object.keys(this.gameInstance.hero.skills));
+                                console.log(`Skill for key ${skillKey} exists:`, skillKey in this.gameInstance.hero.skills);
+                            }
+                        }
+                        
+                        // Cast the skill with the lowercase key
+                        const result = this.gameInstance.castSkill(skillKey);
+                        console.log(`✅ Skill cast result: ${result ? 'success' : 'failed'}`);
                     } catch (error) {
                         console.error(`❌ Error casting skill:`, error);
                     }
@@ -354,17 +392,60 @@ export default class HUD {
                 }, 150);
             }, true);
             
-            // Add event listeners
-            console.log(`Adding event listeners for skill ${key}`);
-            // Note: Click handler is already added above (comprehensive handler)
-            slot.addEventListener('touchstart', handleTouchStart, { passive: false });
-            slot.addEventListener('touchend', handleTouchEnd, { passive: false });
+            // Add touch event listeners for mobile devices
+            console.log(`Adding touch event listeners for skill ${key}`);
+            
+            // Touch start handler
+            slot.addEventListener('touchstart', (event) => {
+                console.log(`Touch started on skill ${key}`);
+                event.preventDefault(); // Prevent scrolling
+                slot.classList.add('pressed');
+                
+                // Provide haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }, { passive: false });
+            
+            // Touch end handler
+            slot.addEventListener('touchend', (event) => {
+                console.log(`Touch ended on skill ${key}`);
+                event.preventDefault();
+                
+                // Trigger the same logic as click
+                if (window.gameInstance && typeof window.gameInstance.castSkill === 'function') {
+                    const skillKey = key.toLowerCase();
+                    console.log(`🔑 Touch using key: ${skillKey} for skill casting`);
+                    
+                    // Debug available skills
+                    if (window.gameInstance.hero && window.gameInstance.hero.skills) {
+                        console.log('Available skills for touch:');
+                        if (window.gameInstance.hero.skills instanceof Map) {
+                            window.gameInstance.hero.skills.forEach((skill, k) => {
+                                console.log(`- Key: ${k}, Skill: ${skill.name}`);
+                            });
+                            console.log(`Skill for key ${skillKey} exists:`, window.gameInstance.hero.skills.has(skillKey));
+                        } else {
+                            console.log(Object.keys(window.gameInstance.hero.skills));
+                            console.log(`Skill for key ${skillKey} exists:`, skillKey in window.gameInstance.hero.skills);
+                        }
+                    }
+                    
+                    const result = window.gameInstance.castSkill(skillKey);
+                    console.log(`✅ Touch skill cast result: ${result ? 'success' : 'failed'}`);
+                }
+                
+                // Remove pressed state
+                setTimeout(() => {
+                    slot.classList.remove('pressed');
+                }, 150);
+            }, { passive: false });
             
             // Debug: Log all event listeners
             console.log(`🔍 Event listeners added for ${key}:`, {
-                click: 'comprehensive handler (above)',
-                touchstart: 'handleTouchStart',
-                touchend: 'handleTouchEnd'
+                click: 'comprehensive handler',
+                touchstart: 'custom touch handler',
+                touchend: 'custom touch handler'
             });
             
             // Prevent context menu on long press
@@ -608,11 +689,13 @@ export default class HUD {
                 background-size: cover;
                 background-position: center;
                 position: relative;
-                z-index: 1;
+                z-index: 5; /* Increased z-index */
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+                pointer-events: auto; /* Ensure clicks work */
+                cursor: pointer; /* Show pointer cursor */
             }
 
             .skill-glow {
@@ -649,6 +732,7 @@ export default class HUD {
                 transition: height 0.1s;
                 z-index: 3;
                 border-radius: 0 0 5px 5px;
+                pointer-events: none; /* Ensure cooldown overlay doesn't block clicks */
             }
 
             .skill-tooltip {

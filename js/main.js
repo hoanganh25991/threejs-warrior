@@ -494,6 +494,20 @@ class Game {
           this.castSkill(key);
         };
         
+        // Debug hero skills
+        console.log('🔍 DEBUG: Hero skills available:');
+        if (this.hero.skills instanceof Map) {
+          console.log('Skills are stored in a Map:');
+          this.hero.skills.forEach((skill, key) => {
+            console.log(`Skill key: ${key}, name: ${skill.name}`);
+          });
+        } else {
+          console.log('Skills are stored in an object:');
+          for (const key in this.hero.skills) {
+            console.log(`Skill key: ${key}, name: ${this.hero.skills[key].name}`);
+          }
+        }
+        
         // Test that HUD can access castSkill
         console.log('🧪 HUD gameInstance type:', typeof this.hud.gameInstance);
         console.log('🧪 HUD gameInstance castSkill:', typeof this.hud.gameInstance.castSkill);
@@ -785,27 +799,9 @@ class Game {
       const skillKeys = ["y", "u", "i", "h", "j", "k"];
 
       for (const key of skillKeys) {
-        if (
-          this.inputHandler.isKeyPressed(key) &&
-          this.hero.cooldowns[key] <= 0
-        ) {
-          // Use skill
-          const skillName = this.hero.skills[key].name;
-
-          // Create skill effect using hero's direction
-          const heroPosition = this.hero.getPosition().clone();
-          heroPosition.y += 1; // Adjust to center of hero
-          const heroDirection = this.hero.getDirection();
-
-          this.skillManager.useSkill(skillName, heroPosition, heroDirection);
-
-          // Play sound
-          this.soundManager.playSound(
-            skillName.toLowerCase().replace(/\s+/g, "")
-          );
-
-          // Set cooldown
-          this.hero.cooldowns[key] = this.hero.skills[key].cooldown;
+        if (this.inputHandler.isKeyPressed(key)) {
+          // Use the same castSkill method for consistency
+          this.castSkill(key);
         }
       }
     }
@@ -821,29 +817,47 @@ class Game {
     }
   }
 
-  // Method to cast skill from UI interaction - mirrors keyboard system exactly
+  // Method to cast skill from UI interaction - updated to handle Map-based skills
   castSkill(skillKey) {
     console.log(`🎯 Touch skill cast: ${skillKey}`);
     
     if (!this.hero || !this.skillManager) {
       console.error('❌ Hero or SkillManager not available');
-      return;
+      return false;
     }
 
-    // Check if skill is on cooldown (same logic as keyboard system)
-    if (this.hero.cooldowns[skillKey] > 0) {
-      console.log(`⏰ Skill ${skillKey} is on cooldown (${this.hero.cooldowns[skillKey]} remaining)`);
-      return;
+    // Check if hero.skills is a Map (new system) or object (old system)
+    const isMapBased = this.hero.skills instanceof Map;
+    console.log(`🔍 Using ${isMapBased ? 'Map-based' : 'Object-based'} skill system`);
+    
+    // Check if skill exists
+    let skill;
+    if (isMapBased) {
+      skill = this.hero.skills.get(skillKey);
+    } else {
+      skill = this.hero.skills[skillKey];
     }
-
-    // Check if skill exists (same logic as keyboard system)
-    if (!this.hero.skills[skillKey]) {
+    
+    if (!skill) {
       console.log(`❌ Skill ${skillKey} not available`);
-      return;
+      return false;
+    }
+    
+    // Check if skill is on cooldown
+    let cooldown = 0;
+    if (isMapBased) {
+      cooldown = this.hero.cooldowns.get(skillKey) || 0;
+    } else {
+      cooldown = this.hero.cooldowns[skillKey] || 0;
+    }
+    
+    if (cooldown > 0) {
+      console.log(`⏰ Skill ${skillKey} is on cooldown (${cooldown} remaining)`);
+      return false;
     }
 
-    // Use skill (EXACT same logic as keyboard system)
-    const skillName = this.hero.skills[skillKey].name;
+    // Get skill name
+    const skillName = skill.name;
     console.log(`✅ Casting skill: ${skillName}`);
 
     // Create skill effect using hero's direction
@@ -851,19 +865,26 @@ class Game {
     heroPosition.y += 1; // Adjust to center of hero
     const heroDirection = this.hero.getDirection();
 
+    // Use the skill
     this.skillManager.useSkill(skillName, heroPosition, heroDirection);
 
-    // Play sound (same as keyboard system)
+    // Play sound
     if (this.soundManager) {
       this.soundManager.playSound(
         skillName.toLowerCase().replace(/\s+/g, "")
       );
     }
 
-    // Set cooldown (EXACT same logic as keyboard system)
-    this.hero.cooldowns[skillKey] = this.hero.skills[skillKey].cooldown;
+    // Set cooldown
+    const cooldownDuration = skill.getCooldownDuration ? skill.getCooldownDuration() : (skill.cooldown || 1);
+    if (isMapBased) {
+      this.hero.cooldowns.set(skillKey, cooldownDuration);
+    } else {
+      this.hero.cooldowns[skillKey] = cooldownDuration;
+    }
 
     console.log(`🎉 Successfully cast skill: ${skillName} via touch`);
+    return true;
   }
 
   updateLights(deltaTime) {
