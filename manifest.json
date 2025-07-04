@@ -2,7 +2,7 @@
   "name": "Warrior",
   "short_name": "Warrior",
   "description": "A 3D action role-playing game with multiple heroes and skills",
-  "start_url": "/",
+  "start_url": "threejs-warrior",
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#000000",
